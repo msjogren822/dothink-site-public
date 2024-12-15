@@ -1,3 +1,0 @@
-# dothinksite
-
-Nothing here.
