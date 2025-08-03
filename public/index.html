@@ -407,5 +407,19 @@ function refreshIframe() {
         <script src="assets/js/jquery-panelslider/jquery.panelslider.min.js"></script>
         <script src="assets/js/fresh.js"></script>
         <!-- /JS -->
+
+<script>
+  // 1. Try fetching the current time from Postgres
+  supabase
+    .rpc('now')           // Supabase exposes a built-in `now()` function
+    .then(({ data, error }) => {
+      if (error) {
+        console.error('Supabase RPC error:', error);
+      } else {
+        console.log('✅ Supabase is alive! Server time is:', data);
+      }
+    });
+</script>
+        
     </body>
 </html>
