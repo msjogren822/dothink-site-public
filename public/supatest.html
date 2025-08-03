@@ -1,48 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Supabase Test</title>
+  <meta charset="UTF-8" />
+  <title>Supabase One-Page Test</title>
 </head>
 <body>
-  <h1>Supabase Test2</h1>
-  <!-- 1) Load the Supabase client -->
+  <h1>Supabase Connectivity Test</h1>
+  <p>Open your browser console (F12) to see the ping result.</p>
+
+  <!-- 1. Load the Supabase client library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- 2) Initialize after Netlify injects window.env -->
+  <!-- 2. Initialize with your Supabase URL + anon key -->
   <script>
-    // If window.env is undefined, you're not running via Netlify:
-    if (!window.env) {
-      console.error('❌ window.env is undefined – run via Netlify (netlify dev or deploy).');
-    } else {
-      // Create client under a non-shadowing name
-      const sb = supabase.createClient(
-        window.env.SUPABASE_URL,
-        window.env.SUPABASE_ANON_KEY
-      );
+    // ⚠️ TEST-ONLY: replace these with your real values
+    const SUPABASE_URL     = 'https://dqxeoablgvqaessahzwm.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGc…yourAnonKey…';
 
-      // 3) Ping the DB
-      sb.rpc('now')
-        .then(({ data, error }) => {
-          if (error) console.error('Supabase RPC error:', error);
-          else console.log('✅ Supabase live! Server time:', data);
-        });
-    }
+    // Create the client instance
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  // ⚠️ Hard-coded for testing only — remove these values afterward!
-  const sb = supabase.createClient(
-    'https://dqxeoablgvqaessahzwm.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxeGVvYWJsZ3ZxYWVzc2FoendtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxODQxNjIsImV4cCI6MjA2OTc2MDE2Mn0.dINhv4hZ4nyUNnt1DNiTj4swL-L2P9OQDBVZeD7AlF8'
-  );
-  sb.rpc('now')
-    .then(({ data, error }) => {
-      if (error) console.error('Supabase ping error:', error);
-      else console.log('✅ Supabase live! Server time:', data);
-    });
-</script>
-  
+  <!-- 3. Ping the `pings` table -->
+  <script>
+    // Query the `pings` table (must exist with at least one row)
+    sb
+      .from('pings')
+      .select('id')
+      .limit(1)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('❌ Supabase table ping failed:', error);
+        } else if (data && data.length) {
+          console.log('✅ Supabase ping OK! Row:', data[0]);
+        } else {
+          console.warn('⚠️ Supabase ping OK, but no rows returned.');
+        }
+      });
+  </script>
 </body>
 </html>
