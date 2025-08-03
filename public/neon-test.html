@@ -16,12 +16,12 @@
       try {
         const res = await fetch('/.netlify/functions/neon-connect');
         if (!res.ok) throw new Error(await res.text());
-        const { row, ok } = await res.json();
-        s.textContent = ok
-          ? row
-            ? '✅ Got row: ' + JSON.stringify(row)
+        const data = await res.json();
+        s.textContent = data.ok
+          ? data.row
+            ? '✅ Got row: ' + JSON.stringify(data.row)
             : '⚠️ No rows returned.'
-          : '❌ Error: ' + JSON.stringify(row);
+          : '❌ Error: ' + data.error;
       } catch (e) {
         s.textContent = '🚨 ' + e.message;
       }
