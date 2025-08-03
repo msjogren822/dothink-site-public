@@ -18,7 +18,7 @@
       const s = document.getElementById('status');
       s.textContent = 'Pinging…';
       try {
-        const res = await fetch('/.netlify/functions/neon-connect');
+        const res = await fetch('netlify/functions/neon-connect');
         const j  = await res.json();
         if (!res.ok) throw new Error(j.error || res.statusText);
         if (j.row) {
