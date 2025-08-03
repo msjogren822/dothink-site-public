@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Supabase One-Page Test</title>
+  <meta charset="utf-8">
+  <title>Supabase Connectivity Test</title>
 </head>
 <body>
   <h1>Supabase Connectivity Test</h1>
@@ -11,11 +11,11 @@
   <!-- 1. Load the Supabase client library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- 2. Initialize with your Supabase URL + anon key -->
+  <!-- 2. Initialize with Netlify-injected env vars -->
   <script>
-    // ⚠️ TEST-ONLY: replace these with your real values
-    const SUPABASE_URL     = 'https://dqxeoablgvqaessahzwm.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxeGVvYWJsZ3ZxYWVzc2FoendtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxODQxNjIsImV4cCI6MjA2OTc2MDE2Mn0.dINhv4hZ4nyUNnt1DNiTj4swL-L2P9OQDBVZeD7AlF8';
+    // These get inlined at build time by netlify-plugin-inline-env-vars
+    const SUPABASE_URL     = process.env.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
     // Create the client instance
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -23,14 +23,13 @@
 
   <!-- 3. Ping the `pings` table -->
   <script>
-    // Query the `pings` table (must exist with at least one row)
     sb
       .from('pings')
       .select('id')
       .limit(1)
       .then(({ data, error }) => {
         if (error) {
-          console.error('❌ Supabase table ping failed:', error);
+          console.error('❌ Supabase ping failed:', error);
         } else if (data && data.length) {
           console.log('✅ Supabase ping OK! Row:', data[0]);
         } else {
