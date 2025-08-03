@@ -2,28 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Netlify Function Ping Test</title>
+  <title>Supabase Connectivity via Netlify Function</title>
   <style>
     body { font-family: sans-serif; padding: 2rem; }
     #status { margin-top: 1rem; font-weight: bold; }
   </style>
 </head>
 <body>
-  <h1>Netlify Function Ping Test</h1>
-  <p>This page will call <code>/.netlify/functions/ping</code> and display the result.</p>
-  <button id="ping-btn">Ping Netlify Function</button>
+  <h1>Supabase Connectivity Test</h1>
+  <p>This page calls your Netlify Function <code>/.netlify/functions/ping</code> which hides your keys server-side.</p>
+  <button id="ping-btn">Ping Supabase</button>
   <pre id="status">Not pinged yet.</pre>
 
   <script>
     document.getElementById('ping-btn').addEventListener('click', () => {
       const statusEl = document.getElementById('status');
-      statusEl.textContent = 'Pinging...';
+      statusEl.textContent = 'Pinging…';
 
       fetch('/.netlify/functions/ping')
-        .then(async (res) => {
+        .then(async res => {
           if (!res.ok) {
             const text = await res.text();
-            throw new Error(`Status ${res.status}: ${text}`);
+            throw new Error(`HTTP ${res.status}: ${text}`);
           }
           return res.json();
         })
@@ -31,14 +31,13 @@
           if (error) {
             statusEl.textContent = `❌ Function error: ${JSON.stringify(error)}`;
           } else if (data && data.length) {
-            statusEl.textContent = `✅ Function ping OK, row: ${JSON.stringify(data[0])}`;
+            statusEl.textContent = `✅ Supabase ping OK, row: ${JSON.stringify(data[0])}`;
           } else {
-            statusEl.textContent = '⚠️ Function ping OK, but no rows returned.';
+            statusEl.textContent = '⚠️ Supabase ping OK, but no rows returned.';
           }
         })
         .catch(err => {
           statusEl.textContent = `🚨 Fetch failed: ${err.message}`;
-          console.error(err);
         });
     });
   </script>
