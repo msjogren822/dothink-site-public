@@ -29,5 +29,20 @@
         });
     }
   </script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ⚠️ Hard-coded for testing only — remove these values afterward!
+  const sb = supabase.createClient(
+    'https://dqxeoablgvqaessahzwm.supabase.co',
+    'eyJhbGc…anonPublicJWT…'
+  );
+  sb.rpc('now')
+    .then(({ data, error }) => {
+      if (error) console.error('Supabase ping error:', error);
+      else console.log('✅ Supabase live! Server time:', data);
+    });
+</script>
+  
 </body>
 </html>
