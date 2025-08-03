@@ -2,32 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Neon Connector Test</title>
-  <style>
-    body { font-family: sans-serif; padding: 2rem; }
-    #status { margin-top: 1rem; white-space: pre-wrap; }
-  </style>
+  <title>Neon Ping (Single‐Page)</title>
+  <style>body{font-family:sans-serif;padding:2rem;}#status{margin-top:1rem;}</style>
 </head>
 <body>
-  <h1>Neon Connectivity Test</h1>
-  <button id="ping">Ping Neon</button>
-  <div id="status">Not yet pinged</div>
-
+  <h1>Neon Ping</h1>
+  <button id="btn">Ping Neon</button>
+  <div id="status">Waiting…</div>
   <script>
-    document.getElementById('ping').onclick = async () => {
+    document.getElementById('btn').onclick = async () => {
       const s = document.getElementById('status');
-      s.textContent = 'Pinging…';
+      s.textContent = '…pinging…';
       try {
-        const res = await fetch('/netlify/functions/neon-connect');
-        const j  = await res.json();
-        if (!res.ok) throw new Error(j.error || res.statusText);
-        if (j.row) {
-          s.textContent = `✅ Success! Latest row: ${JSON.stringify(j.row)}`;
-        } else {
-          s.textContent = '⚠️ Success but no rows found (table empty).';
-        }
-      } catch (err) {
-        s.textContent = `❌ Error: ${err.message}`;
+        const res = await fetch('/.netlify/functions/neon-connect');
+        if (!res.ok) throw new Error(await res.text());
+        const { row, ok } = await res.json();
+        s.textContent = ok
+          ? row
+            ? '✅ Got row: ' + JSON.stringify(row)
+            : '⚠️ No rows returned.'
+          : '❌ Error: ' + JSON.stringify(row);
+      } catch (e) {
+        s.textContent = '🚨 ' + e.message;
       }
     };
   </script>
