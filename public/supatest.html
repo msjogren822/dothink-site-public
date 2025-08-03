@@ -2,40 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Supabase Connectivity Test</title>
+  <title>Supabase via Netlify Function</title>
 </head>
 <body>
   <h1>Supabase Connectivity Test</h1>
-  <p>Open your browser console (F12) to see the ping result.</p>
+  <p>Check your browser console for the result.</p>
 
-  <!-- 1. Load the Supabase client library -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- 2. Initialize with Netlify-injected env vars -->
   <script>
-    // These get inlined at build time by netlify-plugin-inline-env-vars
-    const SUPABASE_URL     = process.env.SUPABASE_URL;
-    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-
-    // Create the client instance
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  </script>
-
-  <!-- 3. Ping the `pings` table -->
-  <script>
-    sb
-      .from('pings')
-      .select('id')
-      .limit(1)
+    // Call the Netlify Function instead of Supabase directly
+    fetch('/.netlify/functions/ping')
+      .then(res => res.json())
       .then(({ data, error }) => {
         if (error) {
-          console.error('❌ Supabase ping failed:', error);
+          console.error('❌ Ping failed:', error);
         } else if (data && data.length) {
-          console.log('✅ Supabase ping OK! Row:', data[0]);
+          console.log('✅ Ping OK! Row:', data[0]);
         } else {
-          console.warn('⚠️ Supabase ping OK, but no rows returned.');
+          console.warn('⚠️ Ping OK but no rows returned.');
         }
-      });
+      })
+      .catch(err => console.error('Fetch error:', err));
   </script>
 </body>
 </html>
