@@ -1,27 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Supabase via Netlify Function</title>
+  <meta charset="UTF-8" />
+  <title>Netlify Function Ping Test</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+    #status { margin-top: 1rem; font-weight: bold; }
+  </style>
 </head>
 <body>
-  <h1>Supabase Connectivity Test</h1>
-  <p>Check your browser console for the result.</p>
+  <h1>Netlify Function Ping Test</h1>
+  <p>This page will call <code>/.netlify/functions/ping</code> and display the result.</p>
+  <button id="ping-btn">Ping Netlify Function</button>
+  <pre id="status">Not pinged yet.</pre>
 
   <script>
-    // Call the Netlify Function instead of Supabase directly
-    fetch('/.netlify/functions/ping')
-      .then(res => res.json())
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('❌ Ping failed:', error);
-        } else if (data && data.length) {
-          console.log('✅ Ping OK! Row:', data[0]);
-        } else {
-          console.warn('⚠️ Ping OK but no rows returned.');
-        }
-      })
-      .catch(err => console.error('Fetch error:', err));
+    document.getElementById('ping-btn').addEventListener('click', () => {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = 'Pinging...';
+
+      fetch('/.netlify/functions/ping')
+        .then(async (res) => {
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Status ${res.status}: ${text}`);
+          }
+          return res.json();
+        })
+        .then(({ data, error }) => {
+          if (error) {
+            statusEl.textContent = `❌ Function error: ${JSON.stringify(error)}`;
+          } else if (data && data.length) {
+            statusEl.textContent = `✅ Function ping OK, row: ${JSON.stringify(data[0])}`;
+          } else {
+            statusEl.textContent = '⚠️ Function ping OK, but no rows returned.';
+          }
+        })
+        .catch(err => {
+          statusEl.textContent = `🚨 Fetch failed: ${err.message}`;
+          console.error(err);
+        });
+    });
   </script>
 </body>
 </html>
