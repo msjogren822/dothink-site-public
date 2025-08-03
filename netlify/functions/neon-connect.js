@@ -8,10 +8,10 @@ exports.handler = async function (event, context) {
     console.log('Starting database query...');
     
     const result = await sql`
-      SELECT id, datetime
+      SELECT *
       FROM public.wispyt3
       ORDER BY id DESC
-      LIMIT 1
+      LIMIT 3
     `;
     
     console.log('Query result:', JSON.stringify(result, null, 2));
