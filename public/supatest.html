@@ -35,7 +35,7 @@
   // ⚠️ Hard-coded for testing only — remove these values afterward!
   const sb = supabase.createClient(
     'https://dqxeoablgvqaessahzwm.supabase.co',
-    'eyJhbGc…anonPublicJWT…'
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxeGVvYWJsZ3ZxYWVzc2FoendtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxODQxNjIsImV4cCI6MjA2OTc2MDE2Mn0.dINhv4hZ4nyUNnt1DNiTj4swL-L2P9OQDBVZeD7AlF8'
   );
   sb.rpc('now')
     .then(({ data, error }) => {
