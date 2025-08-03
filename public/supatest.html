@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>My Supabase Test</title>
+</head>
+<body>
+  <h1>Hello, Netlify + Supabase!</h1>
+
+  <!-- 1. Load the Supabase client library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- 2. Initialize it with your env vars -->
+  <script>
+    const supabase = supabase.createClient(
+      window.env.SUPABASE_URL,
+      window.env.SUPABASE_ANON_KEY
+    );
+  </script>
+
+  <!-- 3. Quick ping to prove it’s working -->
+  <script>
+    supabase
+      .rpc('now')
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('❌ Supabase error:', error);
+        } else {
+          console.log('✅ Supabase live! Server time:', data);
+        }
+      });
+  </script>
+</body>
+</html>
