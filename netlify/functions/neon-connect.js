@@ -5,6 +5,8 @@ const sql = neon(); // reads NETLIFY_DATABASE_URL automatically
 
 exports.handler = async function (event, context) {
   try {
+    console.log('Starting database query...');
+    
     const result = await sql`
       SELECT id, datetime
       FROM public.wispyt3
@@ -12,13 +14,27 @@ exports.handler = async function (event, context) {
       LIMIT 1
     `;
     
+    console.log('Query result:', JSON.stringify(result, null, 2));
+    
     // Add defensive checking
-    if (!result || !result.rows) {
+    if (!result) {
       return {
         statusCode: 500,
         body: JSON.stringify({ 
           ok: false, 
-          error: 'No result or rows returned from database' 
+          error: 'No result returned from database',
+          debug: { result }
+        })
+      };
+    }
+
+    if (!result.rows) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ 
+          ok: false, 
+          error: 'No rows property in result',
+          debug: { result }
         })
       };
     }
@@ -28,7 +44,10 @@ exports.handler = async function (event, context) {
       body: JSON.stringify({ 
         ok: true, 
         row: result.rows[0] || null,
-        debug: { rowCount: result.rows.length }
+        debug: { 
+          rowCount: result.rows.length,
+          resultKeys: Object.keys(result)
+        }
       })
     };
   } catch (e) {
@@ -38,7 +57,8 @@ exports.handler = async function (event, context) {
       body: JSON.stringify({ 
         ok: false, 
         error: e.message,
-        stack: process.env.NODE_ENV === 'development' ? e.stack : undefined
+        stack: process.env.NODE_ENV === 'development' ? e.stack : undefined,
+        debug: { errorName: e.name }
       })
     };
   }
