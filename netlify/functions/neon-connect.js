@@ -1,7 +1,7 @@
 // netlify/functions/neon-connect.js
 const { neon } = require('@netlify/neon');
 
-const sql = neon(); // reads NETLIFY_DATABASE_URL automatically
+const sql = neon();
 
 exports.handler = async function (event, context) {
   try {
@@ -11,12 +11,10 @@ exports.handler = async function (event, context) {
       SELECT *
       FROM public.wispyt3
       ORDER BY id DESC
-      LIMIT 3
-    `;
+    `; // Removed LIMIT 3
     
     console.log('Query result:', JSON.stringify(result, null, 2));
     
-    // Add defensive checking
     if (!result) {
       return {
         statusCode: 500,
@@ -28,13 +26,12 @@ exports.handler = async function (event, context) {
       };
     }
 
-    // Handle array result directly
     if (Array.isArray(result)) {
       return {
         statusCode: 200,
         body: JSON.stringify({ 
           ok: true, 
-          row: result[0] || null,
+          rows: result, // Changed to return all rows
           debug: { 
             rowCount: result.length,
             resultType: 'array'

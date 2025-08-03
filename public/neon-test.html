@@ -3,11 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <title>Neon Ping (Single‐Page)</title>
-  <style>body{font-family:sans-serif;padding:2rem;}#status{margin-top:1rem;}</style>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+    #status { margin-top: 1rem; }
+    .row { margin: 0.5rem 0; padding: 0.5rem; background: #f5f5f5; }
+  </style>
 </head>
 <body>
   <h1>Neon Ping</h1>
-  <button id="btn">Ping Neon</button>
+  <button id="btn">Fetch Rows</button>
   <div id="status">Waiting…</div>
   <script>
     document.getElementById('btn').onclick = async () => {
@@ -17,11 +21,14 @@
         const res = await fetch('/.netlify/functions/neon-connect');
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        s.textContent = data.ok
-          ? data.row
-            ? '✅ Got row: ' + JSON.stringify(data.row)
-            : '⚠️ No rows returned.'
-          : '❌ Error: ' + data.error;
+        if (data.ok && data.rows) {
+          s.innerHTML = `✅ Got ${data.rows.length} rows:<br>` + 
+            data.rows.map(row => 
+              `<div class="row">${JSON.stringify(row)}</div>`
+            ).join('');
+        } else {
+          s.textContent = data.ok ? '⚠️ No rows returned.' : '❌ Error: ' + data.error;
+        }
       } catch (e) {
         s.textContent = '🚨 ' + e.message;
       }
