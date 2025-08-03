@@ -7,7 +7,7 @@ exports.handler = async function (event, context) {
   try {
     const { rows } = await sql`
       SELECT id, datetime
-      FROM wispyt3
+      FROM public.wispyt3
       ORDER BY id DESC
       LIMIT 1
     `;
