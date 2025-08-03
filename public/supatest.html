@@ -1,23 +1,34 @@
-<!-- 1) Load the library -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Supabase Test</title>
+</head>
+<body>
+  <h1>Supabase Test</h1>
 
-<!-- 2) Initialize your client -->
-<script>
-  const sbClient = supabase.createClient(
-    window.env.SUPABASE_URL,
-    window.env.SUPABASE_ANON_KEY
-  );
-  // Optionally attach to window so all scripts see it:
-  window.sbClient = sbClient;
-</script>
+  <!-- 1) Load the Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- 3) Then—and only then—ping your database -->
-<script>
-  // Using the non-shadowing name:
-  window.sbClient
-    .rpc('now')
-    .then(({ data, error }) => {
-      if (error) console.error('Supabase RPC error', error);
-      else console.log('✅ Supabase live, server time:', data);
-    });
-</script>
+  <!-- 2) Initialize after Netlify injects window.env -->
+  <script>
+    // If window.env is undefined, you're not running via Netlify:
+    if (!window.env) {
+      console.error('❌ window.env is undefined – run via Netlify (netlify dev or deploy).');
+    } else {
+      // Create client under a non-shadowing name
+      const sb = supabase.createClient(
+        window.env.SUPABASE_URL,
+        window.env.SUPABASE_ANON_KEY
+      );
+
+      // 3) Ping the DB
+      sb.rpc('now')
+        .then(({ data, error }) => {
+          if (error) console.error('Supabase RPC error:', error);
+          else console.log('✅ Supabase live! Server time:', data);
+        });
+    }
+  </script>
+</body>
+</html>
