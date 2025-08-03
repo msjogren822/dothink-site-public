@@ -28,26 +28,27 @@ exports.handler = async function (event, context) {
       };
     }
 
-    if (!result.rows) {
+    // Handle array result directly
+    if (Array.isArray(result)) {
       return {
-        statusCode: 500,
+        statusCode: 200,
         body: JSON.stringify({ 
-          ok: false, 
-          error: 'No rows property in result',
-          debug: { result }
+          ok: true, 
+          row: result[0] || null,
+          debug: { 
+            rowCount: result.length,
+            resultType: 'array'
+          }
         })
       };
     }
 
     return {
-      statusCode: 200,
+      statusCode: 500,
       body: JSON.stringify({ 
-        ok: true, 
-        row: result.rows[0] || null,
-        debug: { 
-          rowCount: result.rows.length,
-          resultKeys: Object.keys(result)
-        }
+        ok: false, 
+        error: 'Unexpected result format',
+        debug: { result }
       })
     };
   } catch (e) {
