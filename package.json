@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@netlify/neon": "^0.1.0"
+    "@netlify/neon": "^0.1.0",
+    "@supabase/supabase-js": "^2.38.0"
   },
   "devDependencies": {
     "netlify-cli": "^15.0.0"

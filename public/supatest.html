@@ -4,41 +4,81 @@
   <meta charset="UTF-8" />
   <title>Supabase Connectivity via Netlify Function</title>
   <style>
-    body { font-family: sans-serif; padding: 2rem; }
-    #status { margin-top: 1rem; font-weight: bold; }
+    body { 
+      font-family: system-ui, -apple-system, sans-serif; 
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+    #status { 
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 4px;
+      background: #f5f5f5;
+      white-space: pre-wrap;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      background: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    button:hover {
+      background: #0051b3;
+    }
+    .error { color: #d32f2f; }
+    .success { color: #388e3c; }
   </style>
 </head>
 <body>
   <h1>Supabase Connectivity Test</h1>
-  <p>This page calls your Netlify Function <code>/.netlify/functions/ping</code> which hides your keys server-side.</p>
+  <p>This page calls your Netlify Function <code>/.netlify/functions/ping</code> which connects to Supabase.</p>
   <button id="ping-btn">Ping Supabase</button>
   <pre id="status">Not pinged yet.</pre>
 
   <script>
-    document.getElementById('ping-btn').addEventListener('click', () => {
+    document.getElementById('ping-btn').addEventListener('click', async () => {
       const statusEl = document.getElementById('status');
-      statusEl.textContent = 'Pinging…';
+      const btn = document.getElementById('ping-btn');
+      
+      try {
+        btn.disabled = true;
+        statusEl.textContent = 'Pinging Supabase...';
+        statusEl.className = '';
 
-      fetch('/.netlify/functions/ping')
-        .then(async res => {
-          if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`HTTP ${res.status}: ${text}`);
+        const res = await fetch('/.netlify/functions/ping');
+        const text = await res.text();
+
+        try {
+          const { ok, data, error } = JSON.parse(text);
+          
+          if (!res.ok || error) {
+            throw new Error(error || `HTTP ${res.status}`);
           }
-          return res.json();
-        })
-        .then(({ data, error }) => {
-          if (error) {
-            statusEl.textContent = `❌ Function error: ${JSON.stringify(error)}`;
-          } else if (data && data.length) {
-            statusEl.textContent = `✅ Supabase ping OK, row: ${JSON.stringify(data[0])}`;
-          } else {
-            statusEl.textContent = '⚠️ Supabase ping OK, but no rows returned.';
+
+          if (!data || !data.length) {
+            statusEl.textContent = '⚠️ No data returned from Supabase';
+            statusEl.className = 'warning';
+            return;
           }
-        })
-        .catch(err => {
-          statusEl.textContent = `🚨 Fetch failed: ${err.message}`;
-        });
+
+          statusEl.innerHTML = `✅ Success!\n\nData:\n${JSON.stringify(data[0], null, 2)}`;
+          statusEl.className = 'success';
+
+        } catch (parseError) {
+          throw new Error(`Invalid JSON response: ${text}`);
+        }
+
+      } catch (err) {
+        statusEl.textContent = `🚨 Error: ${err.message}`;
+        statusEl.className = 'error';
+      } finally {
+        btn.disabled = false;
+      }
     });
   </script>
 </body>
