@@ -47,30 +47,35 @@
       
       try {
         btn.disabled = true;
-        statusEl.textContent = 'Pinging Supabase...';
+        statusEl.textContent = '🔄 Pinging Supabase...';
         statusEl.className = '';
 
         const res = await fetch('/.netlify/functions/ping');
         const text = await res.text();
 
         try {
-          const { ok, data, error } = JSON.parse(text);
+          const data = JSON.parse(text);
           
-          if (!res.ok || error) {
-            throw new Error(error || `HTTP ${res.status}`);
+          if (data.errorMessage) {
+            throw new Error(data.errorMessage);
           }
 
-          if (!data || !data.length) {
+          if (!data.ok || data.error) {
+            throw new Error(data.error || `HTTP ${res.status}`);
+          }
+
+          if (!data.data || !data.data.length) {
             statusEl.textContent = '⚠️ No data returned from Supabase';
             statusEl.className = 'warning';
             return;
           }
 
-          statusEl.innerHTML = `✅ Success!\n\nData:\n${JSON.stringify(data[0], null, 2)}`;
+          statusEl.innerHTML = `✅ Success!\n\nData:\n${JSON.stringify(data.data[0], null, 2)}`;
           statusEl.className = 'success';
 
         } catch (parseError) {
-          throw new Error(`Invalid JSON response: ${text}`);
+          console.error('Full response:', text);
+          throw new Error(`Server error: ${parseError.message}`);
         }
 
       } catch (err) {

@@ -1,13 +1,13 @@
 // netlify/functions/ping.js
 import { createClient } from '@supabase/supabase-js';
 
-// Validate environment variables
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+// Validate environment variables using the actual names from your Netlify config
+if (!process.env.SUPABASE_DATABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error('Missing required Supabase environment variables');
 }
 
 const sb = createClient(
-  process.env.SUPABASE_URL,
+  process.env.SUPABASE_DATABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
