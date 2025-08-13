@@ -43,7 +43,7 @@ export async function handler() {
       statusCode: 200,
       body: JSON.stringify({
         ok: true,
-        inserted: data && data[0],
+        data: data // return inserted row(s) in data array as expected by frontend
       })
     };
   } catch (e) {
