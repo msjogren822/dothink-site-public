@@ -11,18 +11,24 @@ const sb = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Helper to get a random word
+const randomWords = ['apple', 'banana', 'cherry', 'dragonfruit', 'elderberry', 'fig', 'grape'];
+function getRandomWord() {
+  return randomWords[Math.floor(Math.random() * randomWords.length)];
+}
+
 export async function handler() {
   try {
-    console.log('Starting Supabase query...');
-    
+    const pingage = getRandomWord();
+
+    // Insert a new row into the pings table
     const { data, error } = await sb
       .from('pings')
-      .select('*')  // Get all columns instead of just id
-      .order('id', { ascending: false })
-      .limit(1);
+      .insert([{ pingage }])
+      .select('*'); // Return the inserted row
 
     if (error) {
-      console.error('Supabase query error:', error);
+      console.error('Supabase insert error:', error);
       return {
         statusCode: 500,
         body: JSON.stringify({
@@ -37,8 +43,7 @@ export async function handler() {
       statusCode: 200,
       body: JSON.stringify({
         ok: true,
-        data,
-        debug: { rowCount: data?.length }
+        inserted: data && data[0],
       })
     };
   } catch (e) {
