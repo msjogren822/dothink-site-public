@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dogify Your Photo</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      background: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    button:hover {
+      background: #0051b3;
+    }
+    #status {
+      margin-top: 1rem;
+      white-space: pre-wrap;
+    }
+    video, canvas, img {
+      max-width: 100%;
+      border-radius: 4px;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dogify Your Photo</h1>
+  <p>Grant camera access and capture your photo. We'll mix it with a special dog image and send it to an AI that returns a dogified version!</p>
+
+  <button id="start-camera">Start Camera</button>
+  <video id="video" autoplay playsinline style="display: none;"></video>
+  <button id="capture-btn" style="display: none;">Capture Photo</button>
+  <canvas id="canvas" style="display: none;"></canvas>
+
+  <button id="dogify-btn" disabled style="display: none;">Dogify!</button>
+
+  <div id="status"></div>
+  <img id="dogified-image" alt="Dogified Image" style="display: none;" />
+
+  <script>
+    const startCameraBtn = document.getElementById('start-camera');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const captureBtn = document.getElementById('capture-btn');
+    const dogifyBtn = document.getElementById('dogify-btn');
+    const statusEl = document.getElementById('status');
+    const dogifiedImgEl = document.getElementById('dogified-image');
+
+    // Update this path to wherever you host your special dog image (e.g. in your Netlify/public folder)
+    const specialDogURL = '/images/special_dog.png';
+
+    let stream = null;
+    let capturedImageData = '';
+
+    // Start the webcam
+    startCameraBtn.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.style.display = 'block';
+        captureBtn.style.display = 'inline-block';
+        statusEl.textContent = '';
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Could not access camera: ' + err.message;
+      }
+    });
+
+    // Capture a frame from the webcam
+    captureBtn.addEventListener('click', () => {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      capturedImageData = canvas.toDataURL('image/png');
+      video.style.display = 'none';
+      canvas.style.display = 'block';
+      captureBtn.style.display = 'none';
+      dogifyBtn.style.display = 'inline-block';
+      dogifyBtn.disabled = false;
+    });
+
+    // Fetch an image and convert it to a data URL
+    async function fetchImageAsDataURL(url) {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    // Send the captured photo and dog image to your Netlify function
+    dogifyBtn.addEventListener('click', async () => {
+      if (!capturedImageData) {
+        statusEl.textContent = 'Please capture an image first.';
+        return;
+      }
+      statusEl.textContent = '🐶 Dogifying your photo...';
+      dogifyBtn.disabled = true;
+      dogifiedImgEl.style.display = 'none';
+
+      try {
+        const dogDataUrl = await fetchImageAsDataURL(specialDogURL);
+
+        const response = await fetch('/.netlify/functions/dogify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userImage: capturedImageData, dogImage: dogDataUrl })
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.ok) {
+          throw new Error(result.error || 'Unexpected error');
+        }
+
+        // The function should respond with a Data URL for the merged image
+        dogifiedImgEl.src = result.mergedImage;
+        dogifiedImgEl.style.display = 'block';
+        statusEl.textContent = '✅ Dogification complete!';
+
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = '🚨 Error: ' + err.message;
+      } finally {
+        dogifyBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
