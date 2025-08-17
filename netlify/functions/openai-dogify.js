@@ -14,16 +14,16 @@ exports.handler = async function (event) {
 
     const { userImage, dogImage, prompt } = JSON.parse(event.body);
     
-    if (!userImage || !dogImage || !prompt) {
+    if (!userImage || !dogImage) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ ok: false, error: 'Missing userImage, dogImage, or prompt' })
+        body: JSON.stringify({ ok: false, error: 'Missing userImage or dogImage' })
       };
     }
 
-    console.log('Testing minimal prompt approach...');
+    console.log('Creating artistic fusion...');
 
-    // FIRST: Let's see what the AI actually sees in both images
+    // Analyze what's in both images
     const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -37,7 +37,7 @@ exports.handler = async function (event) {
           content: [
             { 
               type: "text", 
-              text: "Describe exactly what you see in these two images. Be specific about the dog breed, size, colors, and any distinctive features." 
+              text: "Describe exactly what you see in these two images. Be specific about the setting, lighting, people, and the dog's breed, size, colors, and distinctive features." 
             },
             { 
               type: "image_url", 
@@ -49,7 +49,7 @@ exports.handler = async function (event) {
             }
           ]
         }],
-        max_tokens: 300
+        max_tokens: 400
       })
     });
 
@@ -57,15 +57,35 @@ exports.handler = async function (event) {
     if (visionResponse.ok) {
       const visionResult = await visionResponse.json();
       imageAnalysis = visionResult.choices[0].message.content;
-      console.log('What AI actually sees:', imageAnalysis);
+      console.log('What AI sees:', imageAnalysis);
     }
 
-    // MINIMAL PROMPT: Just ask to blend, no style requirements
-    const minimalPrompt = `Blend these two images together naturally: ${imageAnalysis}`;
+    // CREATIVE FUSION PROMPTS - randomize for variety
+    const fusionPrompts = [
+      `Creatively morph these two images together into a single artistic scene: ${imageAnalysis}. Blend the elements naturally while maintaining the essence of both subjects.`,
+      
+      `Fuse these two images together creatively: ${imageAnalysis}. Create an imaginative scene where both subjects coexist in a magical, artistic way.`,
+      
+      `Artistically blend these two images: ${imageAnalysis}. Transform them into a whimsical, creative composition where both elements complement each other beautifully.`,
+      
+      `Merge these images into a creative fusion: ${imageAnalysis}. Let your imagination create a unique artistic interpretation that celebrates both subjects.`,
+      
+      `Combine these two images in an unexpected, creative way: ${imageAnalysis}. Create something magical that brings both elements together in harmony.`,
+      
+      `Transform these images into a creative fusion piece: ${imageAnalysis}. Imagine them as part of the same enchanting story or scene.`
+    ];
 
-    console.log('Minimal prompt:', minimalPrompt);
+    // Pick a random fusion approach for variety
+    const randomPrompt = fusionPrompts[Math.floor(Math.random() * fusionPrompts.length)];
+    
+    // If a style was selected, add it as a hint
+    const finalPrompt = prompt && prompt !== 'creative' 
+      ? `${randomPrompt} Style suggestion: ${prompt} elements.`
+      : randomPrompt;
 
-    // Generate with minimal prompt
+    console.log('Fusion prompt:', finalPrompt);
+
+    // Generate the fused image
     const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -74,7 +94,7 @@ exports.handler = async function (event) {
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: minimalPrompt,
+        prompt: finalPrompt,
         n: 1,
         size: "1024x1024",
         quality: "standard",
@@ -109,10 +129,9 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         ok: true,
         generatedImageUrl: imageResult.data[0].url,
-        prompt: minimalPrompt,
-        sceneDescription: "Minimal prompt test",
-        imageAnalysis: imageAnalysis, // Show what the AI actually saw
-        processingTime: "Testing image recognition"
+        prompt: finalPrompt,
+        imageAnalysis: imageAnalysis,
+        fusionType: "Creative artistic fusion"
       })
     };
 

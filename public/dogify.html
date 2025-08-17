@@ -145,7 +145,7 @@
       });
     }
 
-    // Update the dogify button event listener with animated counter
+    // Simplified dogify button (no dropdown required)
     dogifyBtn.addEventListener('click', async () => {
       try {
         dogifyBtn.disabled = true;
@@ -159,29 +159,26 @@
           const dots = '.'.repeat((seconds % 4));
           const progress = Math.min(Math.round((seconds / maxSeconds) * 100), 100);
           
-          if (seconds <= 10) {
-            statusEl.innerHTML = `🔍 Analyzing your photos${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
+          if (seconds <= 8) {
+            statusEl.innerHTML = `🔍 Analyzing your images${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
           } else {
-            statusEl.innerHTML = `🎨 Generating your artistic masterpiece${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
+            statusEl.innerHTML = `✨ Creating artistic fusion${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
           }
         }, 1000);
         
-        // Fetch the special dog image as data URL
-        statusEl.innerHTML = '📸 Loading special dog image...';
+        // Fetch the special dog image
         const dogImageData = await fetchImageAsDataURL(specialDogURL);
-        console.log('Dog image fetched, size:', dogImageData.length);
         
         const response = await fetch('/.netlify/functions/openai-dogify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userImage: capturedImageData,
-            dogImage: dogImageData,  // NOW WE'RE SENDING THE SPECIAL DOG TOO!
-            prompt: promptSelect.value
+            dogImage: dogImageData,
+            prompt: promptSelect?.value || 'creative' // Optional style hint
           })
         });
 
-        // Stop the counter
         clearInterval(counterInterval);
 
         if (!response.ok) {
@@ -193,20 +190,21 @@
         const result = await response.json();
         if (!result.ok) throw new Error(result.error);
 
-        // Display the generated image
+        // Display the fused image
         dogifiedImgEl.src = result.generatedImageUrl;
         dogifiedImgEl.style.display = 'block';
         
         statusEl.innerHTML = `
-          ✨ <strong>AI Magic Complete!</strong> (${seconds}s)<br><br>
-          <strong>Style:</strong> ${promptSelect.options[promptSelect.selectedIndex].text}<br><br>
-          <strong>Scene detected:</strong> ${result.sceneDescription}<br><br>
-          <em>Try again for different variations!</em>
+          ✨ <strong>Artistic Fusion Complete!</strong> (${seconds}s)<br><br>
+          <strong>Type:</strong> ${result.fusionType}<br><br>
+          <strong>What AI saw:</strong><br>
+          <small>${result.imageAnalysis}</small><br><br>
+          <em>Try again for a completely different fusion!</em>
         `;
         
       } catch (err) {
-        console.error('OpenAI Dogify error:', err);
-        statusEl.innerHTML = `🚨 <strong>Error:</strong> ${err.message}<br><small>Try again or select a different style</small>`;
+        console.error('Fusion error:', err);
+        statusEl.innerHTML = `🚨 <strong>Error:</strong> ${err.message}<br><small>Try capturing a new photo</small>`;
       } finally {
         dogifyBtn.disabled = false;
       }
