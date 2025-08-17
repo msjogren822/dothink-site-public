@@ -1,5 +1,5 @@
 // netlify/functions/ai-dogify.js
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenerativeAI, Modality } = require('@google/generative-ai');
 
 exports.handler = async function (event) {
   try {
@@ -16,57 +16,62 @@ exports.handler = async function (event) {
       };
     }
 
-    // Initialize the Google AI client
+    // Initialize the Google AI client with your API key
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
-    
-    // Map prompt values to creative descriptions
+
+    // --- Step 1: Create the text prompt for the image editing task ---
     const promptMap = {
-      cartoon: "Transform this person into a playful cartoon dog adventure scene with bright colors, whimsical style, and the person as a cartoon character alongside a cute dog wearing sunglasses",
-      renaissance: "Create a Renaissance-style portrait featuring this person with an elegant dog companion, using classical painting techniques, rich colors, and ornate details",
-      superhero: "Transform this person into a superhero scene with a heroic dog sidekick, dramatic lighting, action poses, and comic book style",
-      steampunk: "Create a steampunk masterpiece featuring this person with a Victorian-era dog companion, brass gears, mechanical details, and steampunk aesthetics",
-      space: "Send this person on a space exploration adventure with a dog astronaut companion, cosmic backgrounds, planets, and futuristic elements",
-      fairy: "Transform this person into a magical fairy tale scene with an enchanted dog companion, sparkles, mystical creatures, and fantasy elements",
-      pixel: "Convert this person into pixel art style with a retro gaming dog companion, 8-bit aesthetics, blocky details, and retro gaming vibes"
+      cartoon: "Add a friendly, cartoon-style dog wearing sunglasses to this scene. Make the entire image look like a playful, modern animated movie.",
+      renaissance: "Add an elegant dog wearing a small ruff collar to this scene. Transform the entire image into a Renaissance-style oil painting with rich colors and dramatic lighting.",
+      superhero: "Add a heroic dog wearing a small cape as a sidekick in this scene. Redraw the entire image in a dynamic, vibrant comic book style.",
+      steampunk: "Add a dog wearing brass goggles to this scene. Reimagine the entire image in a steampunk style, with intricate gears, copper pipes, and a sepia tone.",
+      space: "Add a dog wearing a small astronaut helmet to this scene. Set the entire image in outer space, with nebulae and planets in the background, in a sci-fi concept art style.",
+      fairy: "Add a magical dog with faint, glowing wings to this scene. Transform the image into an enchanted fairy tale illustration with soft, sparkling light.",
+      pixel: "Add a dog to this scene and redraw the entire image in a 16-bit pixel art style, like a classic video game."
     };
+    const finalPrompt = promptMap[prompt] || `Add a dog to this scene in a creative ${prompt} style.`;
 
-    const fullPrompt = promptMap[prompt] || `Transform this person into a creative ${prompt} style scene with a dog companion`;
-
-    // First, analyze the user image to get a description using Gemini
-    const visionModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    const visionResult = await visionModel.generateContent([
-      "Describe this person's appearance, pose, and setting in detail for image generation:",
+    // --- Step 2: Prepare the content parts for the API call ---
+    // This follows the "Image editing (text-and-image-to-image)" example you found.
+    const contentParts = [
+      { text: finalPrompt },
       {
         inlineData: {
-          data: userImage.split(',')[1],
-          mimeType: 'image/png'
-        }
+          mimeType: "image/png",
+          data: userImage.split(',')[1], // Remove the "data:image/png;base64," prefix
+        },
+      },
+    ];
+
+    // --- Step 3: Call the correct Gemini image generation model ---
+    const response = await genAI.models.generateContent({
+      model: "gemini-2.0-flash-preview-image-generation", // The correct model from the docs
+      contents: contentParts,
+      config: {
+        responseModalities: [Modality.TEXT, Modality.IMAGE], // Required config
+      },
+    });
+
+    // --- Step 4: Process the response to find the generated image ---
+    let generatedImageData = null;
+    for (const part of response.candidates[0].content.parts) {
+      if (part.inlineData) {
+        generatedImageData = part.inlineData.data;
+        break; // Stop once we find the first image
       }
-    ]);
+    }
 
-    const personDescription = visionResult.response.text();
-    
-    // Create enhanced prompt with person description
-    const enhancedPrompt = `${fullPrompt}. Based on this person: ${personDescription}. Create a completely new artistic interpretation that captures their essence while transforming them into the requested style.`;
-
-    // Use Gemini to generate a detailed creative description
-    const creativeModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    const creativeResult = await creativeModel.generateContent(
-      `Create a detailed, artistic description for: ${enhancedPrompt}. Focus on visual details, colors, composition, and artistic style. Make it creative and imaginative while staying true to the ${prompt} theme.`
-    );
-
-    const creativeDescription = creativeResult.response.text();
+    if (!generatedImageData) {
+      console.error("API Response did not contain an image:", JSON.stringify(response, null, 2));
+      throw new Error("The AI did not return an image. It might have only returned text. Check the function logs.");
+    }
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         ok: true,
-        // For now, return the creative description as text
-        // We'll work on actual image generation in the next step
-        generatedDescription: creativeDescription,
-        prompt: enhancedPrompt,
-        personDescription,
-        note: "Image generation coming soon - currently showing AI creative vision"
+        generatedImage: `data:image/png;base64,${generatedImageData}`,
+        prompt: finalPrompt
       })
     };
 
@@ -76,8 +81,7 @@ exports.handler = async function (event) {
       statusCode: 500,
       body: JSON.stringify({ 
         ok: false, 
-        error: err.message,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        error: err.message
       })
     };
   }
