@@ -145,13 +145,26 @@
       });
     }
 
-    // Update the dogify button event listener with better progress tracking
+    // Update the dogify button event listener with animated counter
     dogifyBtn.addEventListener('click', async () => {
       try {
         dogifyBtn.disabled = true;
         
-        // Step 1: Analyzing phase
-        statusEl.innerHTML = '🔍 Step 1/2: Analyzing your photo...<br><small>This may take 15-20 seconds</small>';
+        let seconds = 0;
+        const maxSeconds = 25;
+        
+        // Start the counter
+        const counterInterval = setInterval(() => {
+          seconds++;
+          const dots = '.'.repeat((seconds % 4));
+          const progress = Math.min(Math.round((seconds / maxSeconds) * 100), 100);
+          
+          if (seconds <= 10) {
+            statusEl.innerHTML = `🔍 Analyzing your photo${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
+          } else {
+            statusEl.innerHTML = `🎨 Generating your artistic masterpiece${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
+          }
+        }, 1000);
         
         const response = await fetch('/.netlify/functions/openai-dogify', {
           method: 'POST',
@@ -162,8 +175,8 @@
           })
         });
 
-        // Step 2: Processing phase (this happens on the server but we can show progress)
-        statusEl.innerHTML = '🎨 Step 2/2: Generating your artistic image...<br><small>Almost done! Creating magic...</small>';
+        // Stop the counter
+        clearInterval(counterInterval);
 
         if (!response.ok) {
           const text = await response.text();
@@ -178,12 +191,10 @@
         dogifiedImgEl.src = result.generatedImageUrl;
         dogifiedImgEl.style.display = 'block';
         
-        // Show what the AI understood about your photo
         statusEl.innerHTML = `
-          ✨ <strong>AI Magic Complete!</strong><br><br>
+          ✨ <strong>AI Magic Complete!</strong> (${seconds}s)<br><br>
           <strong>Style:</strong> ${promptSelect.options[promptSelect.selectedIndex].text}<br><br>
-          <strong>What AI saw in your photo:</strong><br>
-          <small>${result.personDescription}</small><br><br>
+          <strong>Scene detected:</strong> ${result.sceneDescription}<br><br>
           <em>Try again for different variations!</em>
         `;
         

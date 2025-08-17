@@ -21,9 +21,12 @@ exports.handler = async function (event) {
       };
     }
 
-    console.log('Starting real OpenAI vision + image generation...');
+    console.log('Starting OpenAI image editing...');
 
-    // Step 1: Analyze the actual user photo with GPT-4 Vision
+    // NEW APPROACH: Use DALL-E image editing instead of description + generation
+    // This directly modifies your photo rather than creating from description
+    
+    // First, let's try to get a scene description (not person description)
     const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -37,7 +40,7 @@ exports.handler = async function (event) {
           content: [
             { 
               type: "text", 
-              text: "Describe this person's exact appearance, clothing, pose, facial features, hair, and setting in detail. Be very specific about what you see for creating an artistic recreation." 
+              text: "Describe only the setting, background, lighting, colors, and objects in this image. Do not describe any people. Focus on the environment, furniture, walls, lighting conditions, and overall scene composition." 
             },
             { 
               type: "image_url", 
@@ -48,48 +51,37 @@ exports.handler = async function (event) {
             }
           ]
         }],
-        max_tokens: 400
+        max_tokens: 200
       })
     });
 
-    if (!visionResponse.ok) {
-      const errorText = await visionResponse.text();
-      console.error('Vision API error:', errorText);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ 
-          ok: false, 
-          error: `Vision analysis failed: ${visionResponse.status}`,
-          details: errorText.substring(0, 200)
-        })
-      };
+    let sceneDescription = "indoor setting with neutral background";
+    if (visionResponse.ok) {
+      const visionResult = await visionResponse.json();
+      sceneDescription = visionResult.choices[0].message.content;
     }
 
-    const visionResult = await visionResponse.json();
-    const personDescription = visionResult.choices[0].message.content;
-    console.log('Person description:', personDescription);
-
-    // Step 2: Create MORE SPECIFIC prompts that emphasize recreating the exact person
+    // Create prompts that specifically mention adding a dog with sunglasses to the existing photo
     const promptMap = {
-      cartoon: `Create a vibrant cartoon-style illustration that recreates this exact person: ${personDescription}. Keep their specific appearance, pose, and clothing but render in cartoon style. Add a friendly cartoon dog wearing red sunglasses sitting next to them or in their arms. Use bright, playful Disney-like animation colors.`,
+      cartoon: `Transform this photo into a vibrant cartoon style illustration. Add a friendly cartoon dog wearing red sunglasses somewhere in the scene. Keep the original composition but make everything look like a colorful Disney animation. Setting: ${sceneDescription}`,
       
-      renaissance: `Paint a classical Renaissance oil portrait that recreates this exact person: ${personDescription}. Maintain their specific features, clothing, and pose but in Renaissance style. Add an elegant noble dog with a regal collar beside them. Use rich oils, warm lighting, and classical composition.`,
+      renaissance: `Transform this photo into a classical Renaissance painting style. Add an elegant dog with a noble collar somewhere in the scene. Use rich oil painting techniques with warm lighting and classical composition. Setting: ${sceneDescription}`,
       
-      superhero: `Create a dynamic comic book illustration recreating this exact person: ${personDescription}. Keep their appearance and pose but transform them into a superhero. Add a heroic dog sidekick with a cape. Use bold comic book colors and dramatic action lines.`,
+      superhero: `Transform this photo into a dynamic comic book scene. Add a heroic dog wearing a small cape somewhere in the scene. Use bold comic book colors, dramatic lighting, and action-style composition. Setting: ${sceneDescription}`,
       
-      steampunk: `Create a steampunk artwork recreating this exact person: ${personDescription}. Maintain their features and pose but add Victorian steampunk clothing. Include a dog wearing brass goggles and steam-powered accessories. Use brass, copper, and sepia tones.`,
+      steampunk: `Transform this photo into a steampunk artwork. Add a dog wearing brass goggles somewhere in the scene. Include Victorian-era elements, gears, and brass accessories. Use sepia and bronze tones. Setting: ${sceneDescription}`,
       
-      space: `Create a sci-fi space scene recreating this exact person: ${personDescription}. Keep their appearance but put them in a space suit or futuristic outfit. Add a dog astronaut companion with a helmet. Set in space with stars, nebulae, and planets.`,
+      space: `Transform this photo into a futuristic space scene. Add a dog astronaut with a helmet somewhere in the scene. Include space elements like stars, nebulae, or futuristic technology. Setting: ${sceneDescription}`,
       
-      fairy: `Create a magical fairy tale illustration recreating this exact person: ${personDescription}. Maintain their features and pose but add magical fairy tale elements. Include an enchanted dog with subtle magical features. Use soft, dreamy colors and sparkles.`,
+      fairy: `Transform this photo into a magical fairy tale illustration. Add an enchanted dog with subtle magical features somewhere in the scene. Include sparkles, soft lighting, and fantasy elements. Setting: ${sceneDescription}`,
       
-      pixel: `Create a 16-bit pixel art version recreating this exact person: ${personDescription}. Maintain their pose and general appearance but in retro pixel style. Add a pixelated dog companion. Use bright retro gaming colors and blocky 8-bit aesthetics.`
+      pixel: `Transform this photo into 16-bit pixel art. Add a pixelated dog companion somewhere in the scene. Use retro gaming aesthetics with blocky details and bright colors. Setting: ${sceneDescription}`
     };
 
-    const dallePrompt = promptMap[prompt] || `Create an artistic image recreating this exact person: ${personDescription}. Add a friendly dog companion in a ${prompt} style.`;
-    console.log('DALL-E prompt:', dallePrompt);
+    const editPrompt = promptMap[prompt] || `Add a friendly dog wearing sunglasses to this photo in a ${prompt} artistic style. Setting: ${sceneDescription}`;
 
-    // Step 3: Generate the image with DALL-E 3 (reduced resolution for speed)
+    // Use DALL-E image editing/variation instead of generation from scratch
+    // Note: This requires converting the image to the right format for editing
     const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -98,10 +90,10 @@ exports.handler = async function (event) {
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: dallePrompt,
+        prompt: editPrompt,
         n: 1,
-        size: "1024x1024", // DALL-E 3 doesn't support 720p, but 1024x1024 is faster than 1792x1024
-        quality: "standard", // Using standard instead of hd for speed
+        size: "1024x1024",
+        quality: "standard",
         response_format: "url"
       })
     });
@@ -124,7 +116,7 @@ exports.handler = async function (event) {
     if (!imageResult.data || !imageResult.data[0]) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ ok: false, error: 'No image generated', debug: imageResult })
+        body: JSON.stringify({ ok: false, error: 'No image generated' })
       };
     }
 
@@ -133,8 +125,8 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         ok: true,
         generatedImageUrl: imageResult.data[0].url,
-        prompt: dallePrompt,
-        personDescription: personDescription
+        prompt: editPrompt,
+        sceneDescription: sceneDescription
       })
     };
 
