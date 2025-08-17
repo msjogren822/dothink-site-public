@@ -7,7 +7,7 @@ exports.handler = async function (event) {
       return { statusCode: 405, body: JSON.stringify({ ok: false, error: 'Method not allowed' }) };
     }
 
-    const { userImage, dogImage, prompt } = JSON.parse(event.body);
+    const { userImage, prompt } = JSON.parse(event.body);
     
     if (!userImage || !prompt) {
       return {
@@ -18,11 +18,10 @@ exports.handler = async function (event) {
 
     // Initialize the Google AI client
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'imagen-4' });
-
+    
     // Map prompt values to creative descriptions
     const promptMap = {
-      cartoon: "Transform this person into a playful cartoon dog adventure scene with bright colors, whimsical style, and the person as a cartoon character alongside a cute dog",
+      cartoon: "Transform this person into a playful cartoon dog adventure scene with bright colors, whimsical style, and the person as a cartoon character alongside a cute dog wearing sunglasses",
       renaissance: "Create a Renaissance-style portrait featuring this person with an elegant dog companion, using classical painting techniques, rich colors, and ornate details",
       superhero: "Transform this person into a superhero scene with a heroic dog sidekick, dramatic lighting, action poses, and comic book style",
       steampunk: "Create a steampunk masterpiece featuring this person with a Victorian-era dog companion, brass gears, mechanical details, and steampunk aesthetics",
@@ -33,10 +32,10 @@ exports.handler = async function (event) {
 
     const fullPrompt = promptMap[prompt] || `Transform this person into a creative ${prompt} style scene with a dog companion`;
 
-    // First, analyze the user image to get a description
+    // First, analyze the user image to get a description using Gemini
     const visionModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const visionResult = await visionModel.generateContent([
-      "Describe this person's appearance, pose, and setting for image generation (focus on visual details):",
+      "Describe this person's appearance, pose, and setting in detail for image generation:",
       {
         inlineData: {
           data: userImage.split(',')[1],
@@ -46,52 +45,33 @@ exports.handler = async function (event) {
     ]);
 
     const personDescription = visionResult.response.text();
-    const enhancedPrompt = `${fullPrompt}. Person details: ${personDescription}`;
+    
+    // Create enhanced prompt with person description
+    const enhancedPrompt = `${fullPrompt}. Based on this person: ${personDescription}. Create a completely new artistic interpretation that captures their essence while transforming them into the requested style.`;
 
-    // Generate the new image using Imagen 4
-    const result = await model.generate({
-      prompt: enhancedPrompt,
-      responseModalities: ['IMAGE'],
-      // You might need to adjust these parameters based on the actual Imagen 4 API
-    });
+    // Use Gemini to generate a detailed creative description
+    const creativeModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const creativeResult = await creativeModel.generateContent(
+      `Create a detailed, artistic description for: ${enhancedPrompt}. Focus on visual details, colors, composition, and artistic style. Make it creative and imaginative while staying true to the ${prompt} theme.`
+    );
 
-    // Extract the generated image
-    let generatedImageData;
-    if (result.image && result.image[0]) {
-      if (result.image[0].imageUri) {
-        // If it returns a URI, fetch the image and convert to base64
-        const imageResponse = await fetch(result.image[0].imageUri);
-        const imageBuffer = await imageResponse.buffer();
-        generatedImageData = `data:image/png;base64,${imageBuffer.toString('base64')}`;
-      } else if (result.image[0].base64) {
-        // If it returns base64 directly
-        generatedImageData = `data:image/png;base64,${result.image[0].base64}`;
-      }
-    }
-
-    if (!generatedImageData) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ 
-          ok: false, 
-          error: 'No image generated',
-          debug: result
-        })
-      };
-    }
+    const creativeDescription = creativeResult.response.text();
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         ok: true,
-        generatedImage: generatedImageData,
+        // For now, return the creative description as text
+        // We'll work on actual image generation in the next step
+        generatedDescription: creativeDescription,
         prompt: enhancedPrompt,
-        personDescription
+        personDescription,
+        note: "Image generation coming soon - currently showing AI creative vision"
       })
     };
 
   } catch (err) {
-    console.error('Imagen function error:', err);
+    console.error('AI function error:', err);
     return {
       statusCode: 500,
       body: JSON.stringify({ 

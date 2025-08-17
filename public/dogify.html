@@ -169,10 +169,11 @@
         const result = await response.json();
         if (!result.ok) throw new Error(result.error);
 
-        // Display the generated image
-        dogifiedImgEl.src = result.generatedImage;
-        dogifiedImgEl.style.display = 'block';
-        statusEl.innerHTML = `✨ AI Magic Complete!<br><br>Style: ${promptSelect.options[promptSelect.selectedIndex].text}`;
+        // For now, display the creative description
+        statusEl.innerHTML = `✨ AI Creative Vision:<br><br>${result.generatedDescription}<br><br><em>Style: ${promptSelect.options[promptSelect.selectedIndex].text}</em>`;
+        
+        // Hide the dogified image element since we're showing text
+        dogifiedImgEl.style.display = 'none';
         
       } catch (err) {
         console.error('AI Dogify error:', err);
