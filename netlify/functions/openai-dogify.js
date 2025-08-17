@@ -5,7 +5,6 @@ exports.handler = async function (event) {
       return { statusCode: 405, body: JSON.stringify({ ok: false, error: 'Method not allowed' }) };
     }
 
-    // Check if API key is available
     if (!process.env.OPENAI_API_KEY) {
       return {
         statusCode: 500,
@@ -32,13 +31,13 @@ exports.handler = async function (event) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: "gpt-4o", // Vision-capable model
+        model: "gpt-4o",
         messages: [{
           role: "user",
           content: [
             { 
               type: "text", 
-              text: "Describe this person's appearance, clothing, pose, and setting in detail for creating an artistic image. Be specific about visual details, colors, and the scene." 
+              text: "Describe this person's exact appearance, clothing, pose, facial features, hair, and setting in detail. Be very specific about what you see for creating an artistic recreation." 
             },
             { 
               type: "image_url", 
@@ -49,7 +48,7 @@ exports.handler = async function (event) {
             }
           ]
         }],
-        max_tokens: 300
+        max_tokens: 400
       })
     });
 
@@ -70,27 +69,27 @@ exports.handler = async function (event) {
     const personDescription = visionResult.choices[0].message.content;
     console.log('Person description:', personDescription);
 
-    // Step 2: Create detailed prompts for DALL-E based on the style
+    // Step 2: Create MORE SPECIFIC prompts that emphasize recreating the exact person
     const promptMap = {
-      cartoon: `Create a vibrant cartoon-style illustration. ${personDescription} Add a friendly cartoon dog wearing red sunglasses as a companion. Use bright, playful colors and a whimsical Disney-like animation style.`,
+      cartoon: `Create a vibrant cartoon-style illustration that recreates this exact person: ${personDescription}. Keep their specific appearance, pose, and clothing but render in cartoon style. Add a friendly cartoon dog wearing red sunglasses sitting next to them or in their arms. Use bright, playful Disney-like animation colors.`,
       
-      renaissance: `Create a classical Renaissance oil painting. ${personDescription} Include an elegant dog with a noble expression beside them. Use rich, warm colors and dramatic lighting like a formal portrait from the 1500s.`,
+      renaissance: `Paint a classical Renaissance oil portrait that recreates this exact person: ${personDescription}. Maintain their specific features, clothing, and pose but in Renaissance style. Add an elegant noble dog with a regal collar beside them. Use rich oils, warm lighting, and classical composition.`,
       
-      superhero: `Create a dynamic comic book style illustration. ${personDescription} Transform them into a superhero with a heroic dog sidekick wearing a small cape. Use bold colors and classic comic book aesthetics.`,
+      superhero: `Create a dynamic comic book illustration recreating this exact person: ${personDescription}. Keep their appearance and pose but transform them into a superhero. Add a heroic dog sidekick with a cape. Use bold comic book colors and dramatic action lines.`,
       
-      steampunk: `Create a steampunk artwork. ${personDescription} Show them in Victorian-era clothing with a dog wearing brass goggles. Add gears, copper pipes, and mechanical elements with sepia tones.`,
+      steampunk: `Create a steampunk artwork recreating this exact person: ${personDescription}. Maintain their features and pose but add Victorian steampunk clothing. Include a dog wearing brass goggles and steam-powered accessories. Use brass, copper, and sepia tones.`,
       
-      space: `Create a sci-fi space scene. ${personDescription} Show them as a space explorer with a dog in a space suit. Set it in outer space with nebulae, planets, and stars.`,
+      space: `Create a sci-fi space scene recreating this exact person: ${personDescription}. Keep their appearance but put them in a space suit or futuristic outfit. Add a dog astronaut companion with a helmet. Set in space with stars, nebulae, and planets.`,
       
-      fairy: `Create a magical fairy tale illustration. ${personDescription} Place them in an enchanted setting with a mystical dog companion. Add magical elements and soft, dreamy colors.`,
+      fairy: `Create a magical fairy tale illustration recreating this exact person: ${personDescription}. Maintain their features and pose but add magical fairy tale elements. Include an enchanted dog with subtle magical features. Use soft, dreamy colors and sparkles.`,
       
-      pixel: `Create a 16-bit pixel art scene. ${personDescription} Show them with a pixelated dog companion. Use classic video game aesthetics with blocky details and bright retro colors.`
+      pixel: `Create a 16-bit pixel art version recreating this exact person: ${personDescription}. Maintain their pose and general appearance but in retro pixel style. Add a pixelated dog companion. Use bright retro gaming colors and blocky 8-bit aesthetics.`
     };
 
-    const dallePrompt = promptMap[prompt] || `Create an artistic image. ${personDescription} Add a friendly dog companion in a ${prompt} style.`;
+    const dallePrompt = promptMap[prompt] || `Create an artistic image recreating this exact person: ${personDescription}. Add a friendly dog companion in a ${prompt} style.`;
     console.log('DALL-E prompt:', dallePrompt);
 
-    // Step 3: Generate the image with DALL-E 3
+    // Step 3: Generate the image with DALL-E 3 (reduced resolution for speed)
     const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -101,8 +100,8 @@ exports.handler = async function (event) {
         model: "dall-e-3",
         prompt: dallePrompt,
         n: 1,
-        size: "1024x1024",
-        quality: "standard",
+        size: "1024x1024", // DALL-E 3 doesn't support 720p, but 1024x1024 is faster than 1792x1024
+        quality: "standard", // Using standard instead of hd for speed
         response_format: "url"
       })
     });

@@ -145,11 +145,13 @@
       });
     }
 
-    // Update the dogify button event listener for real image generation
+    // Update the dogify button event listener with better progress tracking
     dogifyBtn.addEventListener('click', async () => {
       try {
         dogifyBtn.disabled = true;
-        statusEl.textContent = 'Analyzing your photo...';
+        
+        // Step 1: Analyzing phase
+        statusEl.innerHTML = '🔍 Step 1/2: Analyzing your photo...<br><small>This may take 15-20 seconds</small>';
         
         const response = await fetch('/.netlify/functions/openai-dogify', {
           method: 'POST',
@@ -159,6 +161,9 @@
             prompt: promptSelect.value
           })
         });
+
+        // Step 2: Processing phase (this happens on the server but we can show progress)
+        statusEl.innerHTML = '🎨 Step 2/2: Generating your artistic image...<br><small>Almost done! Creating magic...</small>';
 
         if (!response.ok) {
           const text = await response.text();
@@ -172,11 +177,19 @@
         // Display the generated image
         dogifiedImgEl.src = result.generatedImageUrl;
         dogifiedImgEl.style.display = 'block';
-        statusEl.innerHTML = `✨ AI Magic Complete!<br><br>Style: ${promptSelect.options[promptSelect.selectedIndex].text}`;
+        
+        // Show what the AI understood about your photo
+        statusEl.innerHTML = `
+          ✨ <strong>AI Magic Complete!</strong><br><br>
+          <strong>Style:</strong> ${promptSelect.options[promptSelect.selectedIndex].text}<br><br>
+          <strong>What AI saw in your photo:</strong><br>
+          <small>${result.personDescription}</small><br><br>
+          <em>Try again for different variations!</em>
+        `;
         
       } catch (err) {
         console.error('OpenAI Dogify error:', err);
-        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.innerHTML = `🚨 <strong>Error:</strong> ${err.message}<br><small>Try again or select a different style</small>`;
       } finally {
         dogifyBtn.disabled = false;
       }
