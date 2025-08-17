@@ -25,7 +25,7 @@ exports.handler = async function (event) {
     console.log('API Key present:', !!process.env.OPENAI_API_KEY);
     console.log('Starting OpenAI process...');
 
-    // Step 1: Simple text-only call first to test the API
+    // Step 1: Simple text-only call first to test the API with current model
     const testResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -33,7 +33,7 @@ exports.handler = async function (event) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini", // Updated to current available model
         messages: [{
           role: "user",
           content: "Describe a person in a photo for artistic purposes in 50 words."
