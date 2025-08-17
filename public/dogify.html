@@ -169,8 +169,8 @@
         const result = await response.json();
         if (!result.ok) throw new Error(result.error);
 
-        // Display the generated image
-        dogifiedImgEl.src = result.generatedImage;
+        // Display the generated image using the URL
+        dogifiedImgEl.src = result.generatedImageUrl;
         dogifiedImgEl.style.display = 'block';
         statusEl.innerHTML = `✨ AI Magic Complete!<br><br>Style: ${promptSelect.options[promptSelect.selectedIndex].text}`;
         
