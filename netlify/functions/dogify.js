@@ -1,4 +1,4 @@
-const { default: sharp } = require('sharp');
+const sharp = require('sharp');
 
 function dataUrlToBuffer(dataUrl) {
   try {
@@ -12,7 +12,14 @@ function dataUrlToBuffer(dataUrl) {
 }
 
 exports.handler = async function (event) {
+  console.log('Function starting...'); // Add debug logging
+  
   try {
+    // Validate sharp is working
+    if (typeof sharp !== 'function') {
+      throw new Error('Sharp module not loaded correctly');
+    }
+
     if (event.httpMethod !== 'POST') {
       return { 
         statusCode: 405, 
