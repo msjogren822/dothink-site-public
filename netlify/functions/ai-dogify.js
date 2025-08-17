@@ -32,7 +32,6 @@ exports.handler = async function (event) {
     const finalPrompt = promptMap[prompt] || `Add a dog to this scene in a creative ${prompt} style.`;
 
     // --- Step 2: Prepare the content parts for the API call ---
-    // This follows the "Image editing (text-and-image-to-image)" example you found.
     const contentParts = [
       { text: finalPrompt },
       {
@@ -43,22 +42,23 @@ exports.handler = async function (event) {
       },
     ];
 
-    // --- Step 3: Call the correct Gemini image generation model ---
-    const response = await genAI.models.generateContent({
-      model: "gemini-2.0-flash-preview-image-generation", // The correct model from the docs
-      contents: contentParts,
-      config: {
-        responseModalities: [Modality.TEXT, Modality.IMAGE], // Required config
+    // --- Step 3: Get the specific model and then call generateContent ---
+    // This is the corrected part.
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash-preview-0514", // Using a specific, recent preview model
+      generationConfig: {
+        responseMimeType: "image/png", // Specify we want an image back
       },
     });
 
+    const result = await model.generateContent(contentParts);
+    const response = result.response;
+
     // --- Step 4: Process the response to find the generated image ---
     let generatedImageData = null;
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData) {
-        generatedImageData = part.inlineData.data;
-        break; // Stop once we find the first image
-      }
+    // The response structure is simpler with this direct call
+    if (response.candidates && response.candidates[0].content.parts[0].inlineData) {
+      generatedImageData = response.candidates[0].content.parts[0].inlineData.data;
     }
 
     if (!generatedImageData) {
