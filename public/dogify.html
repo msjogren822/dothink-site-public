@@ -145,11 +145,11 @@
       });
     }
 
-    // Update the dogify button event listener
+    // Update the dogify button event listener (temporary test version)
     dogifyBtn.addEventListener('click', async () => {
       try {
         dogifyBtn.disabled = true;
-        statusEl.textContent = 'Analyzing your photo...';
+        statusEl.textContent = 'Testing OpenAI connection...';
         
         const response = await fetch('/.netlify/functions/openai-dogify', {
           method: 'POST',
@@ -169,13 +169,11 @@
         const result = await response.json();
         if (!result.ok) throw new Error(result.error);
 
-        // Display the generated image using the URL
-        dogifiedImgEl.src = result.generatedImageUrl;
-        dogifiedImgEl.style.display = 'block';
-        statusEl.innerHTML = `✨ AI Magic Complete!<br><br>Style: ${promptSelect.options[promptSelect.selectedIndex].text}`;
+        // For now, just show the test message
+        statusEl.innerHTML = `✅ ${result.message}<br><br>Test response: ${result.test}`;
         
       } catch (err) {
-        console.error('OpenAI Dogify error:', err);
+        console.error('OpenAI test error:', err);
         statusEl.textContent = `Error: ${err.message}`;
       } finally {
         dogifyBtn.disabled = false;
