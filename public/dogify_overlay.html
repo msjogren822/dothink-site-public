@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dogify Your Photo (Overlay)</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      background: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    button:hover {
+      background: #0051b3;
+    }
+    #status {
+      margin-top: 1rem;
+      white-space: pre-wrap;
+    }
+    video, canvas, img {
+      max-width: 100%;
+      border-radius: 4px;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dogify Your Photo</h1>
+  <!-- updated description -->
+  <p>Grant camera access and capture your photo. We'll slap a special dog image on top of your captured photo right in your browser.</p>
+
+  <button id="start-camera">Start Camera</button>
+  <video id="video" autoplay playsinline style="display: none;"></video>
+  <button id="capture-btn" style="display: none;">Capture Photo</button>
+  <canvas id="canvas" style="display: none;"></canvas>
+
+  <button id="overlay-btn" disabled style="display: none;">Overlay Dog</button>
+
+  <div id="status"></div>
+  <img id="result-image" alt="Dogified Image" style="display: none;" />
+
+  <script>
+    const startCameraBtn = document.getElementById('start-camera');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const captureBtn = document.getElementById('capture-btn');
+    const overlayBtn = document.getElementById('overlay-btn');
+    const statusEl = document.getElementById('status');
+    const resultImgEl = document.getElementById('result-image');
+
+    // Path to your special dog image. Place the file at this location in your site.
+    const specialDogURL = 'special_dog.png';
+
+    let stream = null;
+    let capturedImageData = '';
+
+    // Start webcam
+    startCameraBtn.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.style.display = 'block';
+        captureBtn.style.display = 'inline-block';
+        statusEl.textContent = '';
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Could not access camera: ' + err.message;
+      }
+    });
+
+    // Capture a frame
+    captureBtn.addEventListener('click', () => {
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      capturedImageData = canvas.toDataURL('image/png');
+      video.style.display = 'none';
+      canvas.style.display = 'block';
+      captureBtn.style.display = 'none';
+      overlayBtn.style.display = 'inline-block';
+      overlayBtn.disabled = false;
+    });
+
+    // Overlay the dog image onto the captured image
+    overlayBtn.addEventListener('click', () => {
+      if (!capturedImageData) {
+        statusEl.textContent = 'Please capture an image first.';
+        return;
+      }
+      statusEl.textContent = '🐶 Putting the dog on your photo...';
+      overlayBtn.disabled = true;
+      resultImgEl.style.display = 'none';
+
+      const ctx = canvas.getContext('2d');
+      const dogImg = new Image();
+      dogImg.onload = () => {
+        // Determine overlay size: 40% of canvas width
+        const overlayWidth = canvas.width * 0.4;
+        const overlayHeight = dogImg.height * (overlayWidth / dogImg.width);
+        // Center the dog overlay
+        const x = (canvas.width - overlayWidth) / 2;
+        const y = (canvas.height - overlayHeight) / 2;
+        // Redraw base image to ensure no stacking
+        const baseImg = new Image();
+        baseImg.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(baseImg, 0, 0, canvas.width, canvas.height);
+          ctx.drawImage(dogImg, x, y, overlayWidth, overlayHeight);
+          const mergedData = canvas.toDataURL('image/png');
+          resultImgEl.src = mergedData;
+          resultImgEl.style.display = 'block';
+          statusEl.textContent = '✅ Dog slapped on top!';
+          overlayBtn.disabled = false;
+        };
+        baseImg.src = capturedImageData;
+      };
+      dogImg.onerror = () => {
+        statusEl.textContent = '🚨 Error loading dog image.';
+        overlayBtn.disabled = false;
+      };
+      dogImg.src = specialDogURL;
+    });
+  </script>
+</body>
+</html>
