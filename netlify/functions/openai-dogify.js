@@ -12,7 +12,7 @@ exports.handler = async function (event) {
       };
     }
 
-    const { userImage, dogImage, prompt } = JSON.parse(event.body);
+    const { userImage, dogImage } = JSON.parse(event.body);
     
     if (!userImage || !dogImage) {
       return {
@@ -21,9 +21,9 @@ exports.handler = async function (event) {
       };
     }
 
-    console.log('Creating artistic fusion...');
+    console.log('Analyzing scene and placing dog...');
 
-    // Analyze what's in both images
+    // Step 1: Get AI to describe the captured scene
     const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -37,11 +37,33 @@ exports.handler = async function (event) {
           content: [
             { 
               type: "text", 
-              text: "Describe exactly what you see in these two images. Be specific about the setting, lighting, people, and the dog's breed, size, colors, and distinctive features." 
+              text: "Describe this scene in detail for recreating it with an additional dog present. Include lighting, setting, furniture, colors, and atmosphere." 
             },
             { 
               type: "image_url", 
               image_url: { url: userImage, detail: "low" } 
+            }
+          ]
+        }],
+        max_tokens: 200
+      })
+    });
+
+    // Step 2: Get AI to describe the specific dog
+    const dogVisionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [{
+          role: "user",
+          content: [
+            { 
+              type: "text", 
+              text: "Describe this dog in detail - breed, size, colors, pose, any accessories or distinctive features." 
             },
             { 
               type: "image_url", 
@@ -49,43 +71,31 @@ exports.handler = async function (event) {
             }
           ]
         }],
-        max_tokens: 400
+        max_tokens: 150
       })
     });
 
-    let imageAnalysis = "Could not analyze images";
+    let sceneDescription = "indoor setting with natural lighting";
+    let dogDescription = "a small dog";
+    
     if (visionResponse.ok) {
       const visionResult = await visionResponse.json();
-      imageAnalysis = visionResult.choices[0].message.content;
-      console.log('What AI sees:', imageAnalysis);
+      sceneDescription = visionResult.choices[0].message.content;
+      console.log('Scene:', sceneDescription);
+    }
+    
+    if (dogVisionResponse.ok) {
+      const dogResult = await dogVisionResponse.json();
+      dogDescription = dogResult.choices[0].message.content;
+      console.log('Dog:', dogDescription);
     }
 
-    // CREATIVE FUSION PROMPTS - randomize for variety
-    const fusionPrompts = [
-      `Creatively morph these two images together into a single artistic scene: ${imageAnalysis}. Blend the elements naturally while maintaining the essence of both subjects.`,
-      
-      `Fuse these two images together creatively: ${imageAnalysis}. Create an imaginative scene where both subjects coexist in a magical, artistic way.`,
-      
-      `Artistically blend these two images: ${imageAnalysis}. Transform them into a whimsical, creative composition where both elements complement each other beautifully.`,
-      
-      `Merge these images into a creative fusion: ${imageAnalysis}. Let your imagination create a unique artistic interpretation that celebrates both subjects.`,
-      
-      `Combine these two images in an unexpected, creative way: ${imageAnalysis}. Create something magical that brings both elements together in harmony.`,
-      
-      `Transform these images into a creative fusion piece: ${imageAnalysis}. Imagine them as part of the same enchanting story or scene.`
-    ];
-
-    // Pick a random fusion approach for variety
-    const randomPrompt = fusionPrompts[Math.floor(Math.random() * fusionPrompts.length)];
+    // Step 3: Simple, direct prompt to place the dog in the scene
+    const placementPrompt = `Recreate this scene: ${sceneDescription}. Add this dog to the scene: ${dogDescription}. Place the dog naturally in the environment so it looks like it belongs there.`;
     
-    // If a style was selected, add it as a hint
-    const finalPrompt = prompt && prompt !== 'creative' 
-      ? `${randomPrompt} Style suggestion: ${prompt} elements.`
-      : randomPrompt;
+    console.log('Placement prompt:', placementPrompt);
 
-    console.log('Fusion prompt:', finalPrompt);
-
-    // Generate the fused image
+    // Step 4: Generate the image
     const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -94,7 +104,7 @@ exports.handler = async function (event) {
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: finalPrompt,
+        prompt: placementPrompt,
         n: 1,
         size: "1024x1024",
         quality: "standard",
@@ -129,9 +139,9 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         ok: true,
         generatedImageUrl: imageResult.data[0].url,
-        prompt: finalPrompt,
-        imageAnalysis: imageAnalysis,
-        fusionType: "Creative artistic fusion"
+        sceneDescription: sceneDescription,
+        dogDescription: dogDescription,
+        placementPrompt: placementPrompt
       })
     };
 

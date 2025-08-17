@@ -37,44 +37,18 @@
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    select {
-      display: block;
-      margin: 1rem 0;
-      padding: 0.5rem;
-      font-size: 1rem;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      width: 100%;
-      max-width: 400px;
-    }
-    select:focus {
-      outline: none;
-      border-color: #0070f3;
-      box-shadow: 0 0 0 2px rgba(0,112,243,0.2);
-    }
   </style>
 </head>
 <body>
   <h1>Dogify Your Photo</h1>
-  <p>Grant camera access, capture your photo, select a prompt, and let AI create something magical!</p>
+  <p>Capture your photo and let AI add a special dog companion to your scene!</p>
 
   <button id="start-camera">Start Camera</button>
   <video id="video" autoplay playsinline style="display: none;"></video>
   <button id="capture-btn" style="display: none;">Capture Photo</button>
   <canvas id="canvas" style="display: none;"></canvas>
 
-  <select id="prompt-select" style="display: none;">
-    <option value="">Select a creative direction...</option>
-    <option value="cartoon">Make it a playful cartoon dog adventure</option>
-    <option value="renaissance">Transform it into a Renaissance pet portrait</option>
-    <option value="superhero">Turn the dog into a superhero sidekick</option>
-    <option value="steampunk">Create a steampunk dog masterpiece</option>
-    <option value="space">Send the dog on a space exploration</option>
-    <option value="fairy">Make it a magical fairy tale scene</option>
-    <option value="pixel">Transform it into pixel art style</option>
-  </select>
-
-  <button id="dogify-btn" disabled style="display: none;">Create AI Magic!</button>
+  <button id="dogify-btn" disabled style="display: none;">Add My Dog Companion!</button>
 
   <div id="status"></div>
   <img id="dogified-image" alt="AI Generated Image" style="display: none;" />
@@ -87,9 +61,8 @@
     const dogifyBtn = document.getElementById('dogify-btn');
     const statusEl = document.getElementById('status');
     const dogifiedImgEl = document.getElementById('dogified-image');
-    const promptSelect = document.getElementById('prompt-select');
 
-    // Update this path to wherever you host your special dog image (e.g. in your Netlify/public folder)
+    // Update this path to wherever you host your special dog image
     const specialDogURL = '/assets/images/special_dog.png';
 
     let stream = null;
@@ -120,14 +93,6 @@
       video.style.display = 'none';
       captureBtn.style.display = 'none';
       
-      // Show prompt selector after capture
-      document.getElementById('prompt-select').style.display = 'block';
-      
-      // Only enable the dogify button when a prompt is selected
-      document.getElementById('prompt-select').addEventListener('change', (e) => {
-        dogifyBtn.disabled = !e.target.value;
-      });
-      
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
@@ -145,7 +110,7 @@
       });
     }
 
-    // Simplified dogify button (no dropdown required)
+    // Add dog companion
     dogifyBtn.addEventListener('click', async () => {
       try {
         dogifyBtn.disabled = true;
@@ -160,9 +125,9 @@
           const progress = Math.min(Math.round((seconds / maxSeconds) * 100), 100);
           
           if (seconds <= 8) {
-            statusEl.innerHTML = `🔍 Analyzing your images${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
+            statusEl.innerHTML = `🔍 Analyzing your scene${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
           } else {
-            statusEl.innerHTML = `✨ Creating artistic fusion${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
+            statusEl.innerHTML = `🐕 Adding your dog companion${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
           }
         }, 1000);
         
@@ -174,8 +139,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userImage: capturedImageData,
-            dogImage: dogImageData,
-            prompt: promptSelect?.value || 'creative' // Optional style hint
+            dogImage: dogImageData
           })
         });
 
@@ -190,20 +154,19 @@
         const result = await response.json();
         if (!result.ok) throw new Error(result.error);
 
-        // Display the fused image
+        // Display the result
         dogifiedImgEl.src = result.generatedImageUrl;
         dogifiedImgEl.style.display = 'block';
         
         statusEl.innerHTML = `
-          ✨ <strong>Artistic Fusion Complete!</strong> (${seconds}s)<br><br>
-          <strong>Type:</strong> ${result.fusionType}<br><br>
-          <strong>What AI saw:</strong><br>
+          ✨ <strong>Dog Companion Added!</strong> (${seconds}s)<br><br>
+          <strong>What AI created:</strong><br>
           <small>${result.imageAnalysis}</small><br><br>
-          <em>Try again for a completely different fusion!</em>
+          <em>Capture a new photo to try again!</em>
         `;
         
       } catch (err) {
-        console.error('Fusion error:', err);
+        console.error('Dogify error:', err);
         statusEl.innerHTML = `🚨 <strong>Error:</strong> ${err.message}<br><small>Try capturing a new photo</small>`;
       } finally {
         dogifyBtn.disabled = false;
