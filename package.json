@@ -4,7 +4,8 @@
   "private": true,
   "dependencies": {
     "@netlify/neon": "^0.1.0",
-    "@supabase/supabase-js": "^2.38.0"
+    "@supabase/supabase-js": "^2.38.0",
+    "sharp": "^0.32.6"
   },
   "devDependencies": {
     "netlify-cli": "^15.0.0"
