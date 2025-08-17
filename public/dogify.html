@@ -113,11 +113,11 @@
     dogifyBtn.addEventListener('click', async () => {
       try {
         dogifyBtn.disabled = true;
-        statusEl.textContent = 'Fetching dog image...';
+        statusEl.textContent = 'Processing...';
         
         const dogImageData = await fetchImageAsDataURL(specialDogURL);
+        console.log('Dog image fetched, size:', dogImageData.length);
         
-        statusEl.textContent = 'Dogifying your photo...';
         const response = await fetch('/.netlify/functions/dogify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -127,6 +127,17 @@
           })
         });
 
+        if (!response.ok) {
+          const text = await response.text();
+          console.error('Server response:', text);
+          try {
+            const error = JSON.parse(text);
+            throw new Error(error.error || `Server error: ${response.status}`);
+          } catch (e) {
+            throw new Error(`Invalid response: ${text.substring(0, 100)}...`);
+          }
+        }
+
         const result = await response.json();
         if (!result.ok) throw new Error(result.error);
 
@@ -134,6 +145,7 @@
         dogifiedImgEl.style.display = 'block';
         statusEl.textContent = 'Done! ✨';
       } catch (err) {
+        console.error('Dogify error:', err);
         statusEl.textContent = `Error: ${err.message}`;
       } finally {
         dogifyBtn.disabled = false;
