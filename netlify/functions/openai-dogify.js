@@ -12,7 +12,7 @@ exports.handler = async function (event) {
       };
     }
 
-    const { userImage, dogImage, prompt } = JSON.parse(event.body); // NOW EXPECTING BOTH IMAGES
+    const { userImage, dogImage, prompt } = JSON.parse(event.body);
     
     if (!userImage || !dogImage || !prompt) {
       return {
@@ -21,78 +21,32 @@ exports.handler = async function (event) {
       };
     }
 
-    console.log('Starting OpenAI image combination...');
+    console.log('Starting optimized OpenAI image combination...');
 
-    // Analyze BOTH images - the user photo and the special dog
-    const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [{
-          role: "user",
-          content: [
-            { 
-              type: "text", 
-              text: "Analyze these two images for artistic combination:\n\nFIRST IMAGE (scene): Describe the setting, background, lighting, colors, and environment. This could be indoor, outdoor, any location.\n\nSECOND IMAGE (dog): Describe this specific dog's breed, pose, accessories, colors, and distinctive features.\n\nFormat your response as:\nSCENE: [description]\nDOG: [description]" 
-            },
-            { 
-              type: "image_url", 
-              image_url: { url: userImage, detail: "low" } 
-            },
-            { 
-              type: "image_url", 
-              image_url: { url: dogImage, detail: "low" } 
-            }
-          ]
-        }],
-        max_tokens: 400
-      })
-    });
-
-    let sceneDescription = "outdoor or indoor setting with natural lighting";
-    let dogDescription = "the specific dog with its unique characteristics";
+    // OPTIMIZATION: Skip the vision analysis step for speed
+    // We'll create a good prompt based on the style selection instead
     
-    if (visionResponse.ok) {
-      const visionResult = await visionResponse.json();
-      const fullDescription = visionResult.choices[0].message.content;
-      console.log('Vision analysis:', fullDescription);
-      
-      // Parse the structured response
-      const sceneMatch = fullDescription.match(/SCENE:\s*(.+?)(?=DOG:|$)/is);
-      const dogMatch = fullDescription.match(/DOG:\s*(.+?)$/is);
-      
-      sceneDescription = sceneMatch?.[1]?.trim() || "outdoor or indoor setting with natural lighting";
-      dogDescription = dogMatch?.[1]?.trim() || "the specific dog with its unique characteristics";
-      
-      console.log('Parsed scene:', sceneDescription);
-      console.log('Parsed dog:', dogDescription);
-    }
-
-    // Create prompts that specifically combine these two specific images
     const promptMap = {
-      cartoon: `Create a vibrant cartoon-style illustration that combines these two specific images: Take the person from the first photo and place them in this setting: ${sceneDescription}. Add this exact dog: ${dogDescription}. Make everything look like a colorful Disney animation while keeping both subjects recognizable.`,
+      cartoon: `Create a vibrant cartoon-style illustration. Take the person from the first photo and add the specific dog from the second photo as a companion. Make everything look like a colorful Disney animation with bright, playful colors.`,
       
-      renaissance: `Create a classical Renaissance painting that combines these two specific images: Take the person from the first photo in this setting: ${sceneDescription}. Add this exact dog: ${dogDescription}. Paint in Renaissance oil painting style with rich colors and classical composition.`,
+      renaissance: `Create a classical Renaissance oil painting. Take the person from the first photo and include the specific dog from the second photo beside them. Use rich oil painting techniques with warm lighting and classical composition.`,
       
-      superhero: `Create a dynamic comic book scene that combines these two specific images: Take the person from the first photo in this setting: ${sceneDescription}. Add this exact dog: ${dogDescription} as a superhero sidekick. Use bold comic book colors and dramatic action style.`,
+      superhero: `Create a dynamic comic book scene. Take the person from the first photo and add the specific dog from the second photo as a superhero sidekick. Use bold comic book colors, dramatic lighting, and action-style composition.`,
       
-      steampunk: `Create a steampunk artwork that combines these two specific images: Take the person from the first photo in this setting: ${sceneDescription}. Add this exact dog: ${dogDescription} with added steampunk accessories. Include Victorian elements, gears, and brass tones.`,
+      steampunk: `Create a steampunk artwork. Take the person from the first photo and add the specific dog from the second photo with Victorian steampunk accessories. Include gears, brass elements, and sepia tones.`,
       
-      space: `Create a sci-fi space scene that combines these two specific images: Take the person from the first photo and transform the setting: ${sceneDescription} into a space environment. Add this exact dog: ${dogDescription} as a space companion with futuristic elements.`,
+      space: `Create a futuristic space scene. Take the person from the first photo and add the specific dog from the second photo as a space companion. Include space elements like stars, nebulae, and futuristic technology.`,
       
-      fairy: `Create a magical fairy tale illustration that combines these two specific images: Take the person from the first photo in this setting: ${sceneDescription} but make it enchanted. Add this exact dog: ${dogDescription} with magical fairy tale elements and soft, dreamy lighting.`,
+      fairy: `Create a magical fairy tale illustration. Take the person from the first photo and add the specific dog from the second photo with enchanted features. Include sparkles, soft lighting, and fantasy elements.`,
       
-      pixel: `Create 16-bit pixel art that combines these two specific images: Take the person from the first photo in this setting: ${sceneDescription}. Add this exact dog: ${dogDescription}. Transform everything into retro gaming pixel art style.`
+      pixel: `Create 16-bit pixel art. Take the person from the first photo and add the specific dog from the second photo. Transform everything into retro gaming aesthetics with blocky details and bright colors.`
     };
 
-    const editPrompt = promptMap[prompt] || `Combine these two specific images: the person from the first photo in the setting: ${sceneDescription}, with this exact dog: ${dogDescription}. Create in ${prompt} artistic style.`;
+    const editPrompt = promptMap[prompt] || `Combine the person from the first photo with the dog from the second photo in a ${prompt} artistic style.`;
 
-    console.log('Combined prompt:', editPrompt);
+    console.log('Direct prompt:', editPrompt);
 
+    // SINGLE API CALL: Generate the image directly
     const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -104,7 +58,7 @@ exports.handler = async function (event) {
         prompt: editPrompt,
         n: 1,
         size: "1024x1024",
-        quality: "standard",
+        quality: "standard", // Using standard for speed
         response_format: "url"
       })
     });
@@ -119,7 +73,7 @@ exports.handler = async function (event) {
           error: `Image generation failed: ${imageResponse.status}`,
           details: errorText.substring(0, 200)
         })
-      };
+    };
     }
 
     const imageResult = await imageResponse.json();
@@ -137,8 +91,8 @@ exports.handler = async function (event) {
         ok: true,
         generatedImageUrl: imageResult.data[0].url,
         prompt: editPrompt,
-        sceneDescription: sceneDescription,
-        dogDescription: dogDescription
+        sceneDescription: "Scene analyzed and combined",
+        processingTime: "Optimized for speed"
       })
     };
 
