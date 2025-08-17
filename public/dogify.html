@@ -160,17 +160,23 @@
           const progress = Math.min(Math.round((seconds / maxSeconds) * 100), 100);
           
           if (seconds <= 10) {
-            statusEl.innerHTML = `🔍 Analyzing your photo${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
+            statusEl.innerHTML = `🔍 Analyzing your photos${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
           } else {
             statusEl.innerHTML = `🎨 Generating your artistic masterpiece${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
           }
         }, 1000);
+        
+        // Fetch the special dog image as data URL
+        statusEl.innerHTML = '📸 Loading special dog image...';
+        const dogImageData = await fetchImageAsDataURL(specialDogURL);
+        console.log('Dog image fetched, size:', dogImageData.length);
         
         const response = await fetch('/.netlify/functions/openai-dogify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userImage: capturedImageData,
+            dogImage: dogImageData,  // NOW WE'RE SENDING THE SPECIAL DOG TOO!
             prompt: promptSelect.value
           })
         });

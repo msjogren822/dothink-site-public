@@ -12,21 +12,18 @@ exports.handler = async function (event) {
       };
     }
 
-    const { userImage, prompt } = JSON.parse(event.body);
+    const { userImage, dogImage, prompt } = JSON.parse(event.body); // NOW EXPECTING BOTH IMAGES
     
-    if (!userImage || !prompt) {
+    if (!userImage || !dogImage || !prompt) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ ok: false, error: 'Missing userImage or prompt' })
+        body: JSON.stringify({ ok: false, error: 'Missing userImage, dogImage, or prompt' })
       };
     }
 
-    console.log('Starting OpenAI image editing...');
+    console.log('Starting OpenAI image combination...');
 
-    // NEW APPROACH: Use DALL-E image editing instead of description + generation
-    // This directly modifies your photo rather than creating from description
-    
-    // First, let's try to get a scene description (not person description)
+    // Analyze BOTH images - the user photo and the special dog
     const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -40,48 +37,62 @@ exports.handler = async function (event) {
           content: [
             { 
               type: "text", 
-              text: "Describe only the setting, background, lighting, colors, and objects in this image. Do not describe any people. Focus on the environment, furniture, walls, lighting conditions, and overall scene composition." 
+              text: "Analyze these two images for artistic combination:\n\nFIRST IMAGE (scene): Describe the setting, background, lighting, colors, and environment. This could be indoor, outdoor, any location.\n\nSECOND IMAGE (dog): Describe this specific dog's breed, pose, accessories, colors, and distinctive features.\n\nFormat your response as:\nSCENE: [description]\nDOG: [description]" 
             },
             { 
               type: "image_url", 
-              image_url: { 
-                url: userImage,
-                detail: "low"
-              } 
+              image_url: { url: userImage, detail: "low" } 
+            },
+            { 
+              type: "image_url", 
+              image_url: { url: dogImage, detail: "low" } 
             }
           ]
         }],
-        max_tokens: 200
+        max_tokens: 400
       })
     });
 
-    let sceneDescription = "indoor setting with neutral background";
+    let sceneDescription = "outdoor or indoor setting with natural lighting";
+    let dogDescription = "the specific dog with its unique characteristics";
+    
     if (visionResponse.ok) {
       const visionResult = await visionResponse.json();
-      sceneDescription = visionResult.choices[0].message.content;
+      const fullDescription = visionResult.choices[0].message.content;
+      console.log('Vision analysis:', fullDescription);
+      
+      // Parse the structured response
+      const sceneMatch = fullDescription.match(/SCENE:\s*(.+?)(?=DOG:|$)/is);
+      const dogMatch = fullDescription.match(/DOG:\s*(.+?)$/is);
+      
+      sceneDescription = sceneMatch?.[1]?.trim() || "outdoor or indoor setting with natural lighting";
+      dogDescription = dogMatch?.[1]?.trim() || "the specific dog with its unique characteristics";
+      
+      console.log('Parsed scene:', sceneDescription);
+      console.log('Parsed dog:', dogDescription);
     }
 
-    // Create prompts that specifically mention adding a dog with sunglasses to the existing photo
+    // Create prompts that specifically combine these two specific images
     const promptMap = {
-      cartoon: `Transform this photo into a vibrant cartoon style illustration. Add a friendly cartoon dog wearing red sunglasses somewhere in the scene. Keep the original composition but make everything look like a colorful Disney animation. Setting: ${sceneDescription}`,
+      cartoon: `Create a vibrant cartoon-style illustration that combines these two specific images: Take the person from the first photo and place them in this setting: ${sceneDescription}. Add this exact dog: ${dogDescription}. Make everything look like a colorful Disney animation while keeping both subjects recognizable.`,
       
-      renaissance: `Transform this photo into a classical Renaissance painting style. Add an elegant dog with a noble collar somewhere in the scene. Use rich oil painting techniques with warm lighting and classical composition. Setting: ${sceneDescription}`,
+      renaissance: `Create a classical Renaissance painting that combines these two specific images: Take the person from the first photo in this setting: ${sceneDescription}. Add this exact dog: ${dogDescription}. Paint in Renaissance oil painting style with rich colors and classical composition.`,
       
-      superhero: `Transform this photo into a dynamic comic book scene. Add a heroic dog wearing a small cape somewhere in the scene. Use bold comic book colors, dramatic lighting, and action-style composition. Setting: ${sceneDescription}`,
+      superhero: `Create a dynamic comic book scene that combines these two specific images: Take the person from the first photo in this setting: ${sceneDescription}. Add this exact dog: ${dogDescription} as a superhero sidekick. Use bold comic book colors and dramatic action style.`,
       
-      steampunk: `Transform this photo into a steampunk artwork. Add a dog wearing brass goggles somewhere in the scene. Include Victorian-era elements, gears, and brass accessories. Use sepia and bronze tones. Setting: ${sceneDescription}`,
+      steampunk: `Create a steampunk artwork that combines these two specific images: Take the person from the first photo in this setting: ${sceneDescription}. Add this exact dog: ${dogDescription} with added steampunk accessories. Include Victorian elements, gears, and brass tones.`,
       
-      space: `Transform this photo into a futuristic space scene. Add a dog astronaut with a helmet somewhere in the scene. Include space elements like stars, nebulae, or futuristic technology. Setting: ${sceneDescription}`,
+      space: `Create a sci-fi space scene that combines these two specific images: Take the person from the first photo and transform the setting: ${sceneDescription} into a space environment. Add this exact dog: ${dogDescription} as a space companion with futuristic elements.`,
       
-      fairy: `Transform this photo into a magical fairy tale illustration. Add an enchanted dog with subtle magical features somewhere in the scene. Include sparkles, soft lighting, and fantasy elements. Setting: ${sceneDescription}`,
+      fairy: `Create a magical fairy tale illustration that combines these two specific images: Take the person from the first photo in this setting: ${sceneDescription} but make it enchanted. Add this exact dog: ${dogDescription} with magical fairy tale elements and soft, dreamy lighting.`,
       
-      pixel: `Transform this photo into 16-bit pixel art. Add a pixelated dog companion somewhere in the scene. Use retro gaming aesthetics with blocky details and bright colors. Setting: ${sceneDescription}`
+      pixel: `Create 16-bit pixel art that combines these two specific images: Take the person from the first photo in this setting: ${sceneDescription}. Add this exact dog: ${dogDescription}. Transform everything into retro gaming pixel art style.`
     };
 
-    const editPrompt = promptMap[prompt] || `Add a friendly dog wearing sunglasses to this photo in a ${prompt} artistic style. Setting: ${sceneDescription}`;
+    const editPrompt = promptMap[prompt] || `Combine these two specific images: the person from the first photo in the setting: ${sceneDescription}, with this exact dog: ${dogDescription}. Create in ${prompt} artistic style.`;
 
-    // Use DALL-E image editing/variation instead of generation from scratch
-    // Note: This requires converting the image to the right format for editing
+    console.log('Combined prompt:', editPrompt);
+
     const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -126,7 +137,8 @@ exports.handler = async function (event) {
         ok: true,
         generatedImageUrl: imageResult.data[0].url,
         prompt: editPrompt,
-        sceneDescription: sceneDescription
+        sceneDescription: sceneDescription,
+        dogDescription: dogDescription
       })
     };
 
