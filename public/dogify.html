@@ -151,7 +151,7 @@
         dogifyBtn.disabled = true;
         statusEl.textContent = 'Analyzing your photo...';
         
-        const response = await fetch('/.netlify/functions/ai-dogify', {
+        const response = await fetch('/.netlify/functions/openai-dogify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -169,14 +169,13 @@
         const result = await response.json();
         if (!result.ok) throw new Error(result.error);
 
-        // For now, display the creative description
-        statusEl.innerHTML = `✨ AI Creative Vision:<br><br>${result.generatedDescription}<br><br><em>Style: ${promptSelect.options[promptSelect.selectedIndex].text}</em>`;
-        
-        // Hide the dogified image element since we're showing text
-        dogifiedImgEl.style.display = 'none';
+        // Display the generated image
+        dogifiedImgEl.src = result.generatedImage;
+        dogifiedImgEl.style.display = 'block';
+        statusEl.innerHTML = `✨ AI Magic Complete!<br><br>Style: ${promptSelect.options[promptSelect.selectedIndex].text}`;
         
       } catch (err) {
-        console.error('AI Dogify error:', err);
+        console.error('OpenAI Dogify error:', err);
         statusEl.textContent = `Error: ${err.message}`;
       } finally {
         dogifyBtn.disabled = false;
