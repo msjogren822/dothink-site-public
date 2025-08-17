@@ -1,85 +1,80 @@
 // netlify/functions/ai-dogify.js
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
 exports.handler = async function (event) {
   try {
     if (event.httpMethod !== 'POST') {
-      return { 
-        statusCode: 405, 
-        body: JSON.stringify({ ok: false, error: 'Method not allowed' }) 
-      };
+      return { statusCode: 405, body: JSON.stringify({ ok: false, error: 'Method not allowed' }) };
     }
 
     const { userImage, dogImage, prompt } = JSON.parse(event.body);
     
-    if (!userImage || !dogImage || !prompt) {
+    if (!userImage || !prompt) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ 
-          ok: false, 
-          error: 'Missing required fields: userImage, dogImage, or prompt' 
-        })
+        body: JSON.stringify({ ok: false, error: 'Missing userImage or prompt' })
       };
     }
 
-    // Map prompt values to full descriptions
+    // Initialize the Google AI client
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'imagen-4' });
+
+    // Map prompt values to creative descriptions
     const promptMap = {
-      cartoon: "Transform this photo into a playful cartoon dog adventure scene with bright colors and whimsical style",
-      renaissance: "Create a Renaissance-style pet portrait with classical painting techniques, rich colors, and ornate details",
-      superhero: "Turn this into a superhero sidekick scene with dramatic lighting, action poses, and comic book style",
-      steampunk: "Create a steampunk masterpiece with brass gears, Victorian elements, and mechanical details",
-      space: "Send this dog on a space exploration with cosmic backgrounds, planets, and futuristic elements",
-      fairy: "Transform into a magical fairy tale scene with enchanted forests, sparkles, and mystical creatures",
-      pixel: "Convert to pixel art style with 8-bit aesthetics, blocky details, and retro gaming vibes"
+      cartoon: "Transform this person into a playful cartoon dog adventure scene with bright colors, whimsical style, and the person as a cartoon character alongside a cute dog",
+      renaissance: "Create a Renaissance-style portrait featuring this person with an elegant dog companion, using classical painting techniques, rich colors, and ornate details",
+      superhero: "Transform this person into a superhero scene with a heroic dog sidekick, dramatic lighting, action poses, and comic book style",
+      steampunk: "Create a steampunk masterpiece featuring this person with a Victorian-era dog companion, brass gears, mechanical details, and steampunk aesthetics",
+      space: "Send this person on a space exploration adventure with a dog astronaut companion, cosmic backgrounds, planets, and futuristic elements",
+      fairy: "Transform this person into a magical fairy tale scene with an enchanted dog companion, sparkles, mystical creatures, and fantasy elements",
+      pixel: "Convert this person into pixel art style with a retro gaming dog companion, 8-bit aesthetics, blocky details, and retro gaming vibes"
     };
 
-    const fullPrompt = promptMap[prompt] || prompt;
+    const fullPrompt = promptMap[prompt] || `Transform this person into a creative ${prompt} style scene with a dog companion`;
 
-    const payload = {
-      contents: [{
-        parts: [{
-          text: `Please analyze these two images and create a creative description for: ${fullPrompt}. Describe how you would combine or transform these images to match this style.`
-        }, {
-          inline_data: {
-            mime_type: "image/png",
-            data: userImage.split(',')[1] // Remove data:image/png;base64, prefix
-          }
-        }, {
-          inline_data: {
-            mime_type: "image/png", 
-            data: dogImage.split(',')[1] // Remove data:image/png;base64, prefix
-          }
-        }]
-      }]
-    };
+    // First, analyze the user image to get a description
+    const visionModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const visionResult = await visionModel.generateContent([
+      "Describe this person's appearance, pose, and setting for image generation (focus on visual details):",
+      {
+        inlineData: {
+          data: userImage.split(',')[1],
+          mimeType: 'image/png'
+        }
+      }
+    ]);
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_AI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
+    const personDescription = visionResult.response.text();
+    const enhancedPrompt = `${fullPrompt}. Person details: ${personDescription}`;
+
+    // Generate the new image using Imagen 4
+    const result = await model.generate({
+      prompt: enhancedPrompt,
+      responseModalities: ['IMAGE'],
+      // You might need to adjust these parameters based on the actual Imagen 4 API
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Google AI API error:', errorText);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ 
-          ok: false, 
-          error: `Google AI API error: ${response.status}`,
-          details: errorText
-        })
-      };
+    // Extract the generated image
+    let generatedImageData;
+    if (result.image && result.image[0]) {
+      if (result.image[0].imageUri) {
+        // If it returns a URI, fetch the image and convert to base64
+        const imageResponse = await fetch(result.image[0].imageUri);
+        const imageBuffer = await imageResponse.buffer();
+        generatedImageData = `data:image/png;base64,${imageBuffer.toString('base64')}`;
+      } else if (result.image[0].base64) {
+        // If it returns base64 directly
+        generatedImageData = `data:image/png;base64,${result.image[0].base64}`;
+      }
     }
 
-    const result = await response.json();
-    
-    if (!result.candidates || !result.candidates[0]) {
+    if (!generatedImageData) {
       return {
         statusCode: 500,
         body: JSON.stringify({ 
           ok: false, 
-          error: 'No response from Google AI',
+          error: 'No image generated',
           debug: result
         })
       };
@@ -89,22 +84,20 @@ exports.handler = async function (event) {
       statusCode: 200,
       body: JSON.stringify({
         ok: true,
-        aiResponse: result.candidates[0].content.parts[0].text,
-        prompt: fullPrompt,
-        debug: {
-          userImageSize: userImage.length,
-          dogImageSize: dogImage.length
-        }
+        generatedImage: generatedImageData,
+        prompt: enhancedPrompt,
+        personDescription
       })
     };
 
   } catch (err) {
-    console.error('AI function error:', err);
+    console.error('Imagen function error:', err);
     return {
       statusCode: 500,
       body: JSON.stringify({ 
         ok: false, 
-        error: err.message 
+        error: err.message,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
       })
     };
   }

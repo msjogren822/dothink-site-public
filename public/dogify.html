@@ -145,23 +145,17 @@
       });
     }
 
-    // Send the captured photo and dog image to your Netlify function
+    // Update the dogify button event listener
     dogifyBtn.addEventListener('click', async () => {
       try {
         dogifyBtn.disabled = true;
-        statusEl.textContent = 'Fetching dog image...';
-        
-        const dogImageData = await fetchImageAsDataURL(specialDogURL);
-        console.log('Dog image fetched, size:', dogImageData.length);
-        
-        statusEl.textContent = 'Sending to Google AI Studio...';
+        statusEl.textContent = 'Analyzing your photo...';
         
         const response = await fetch('/.netlify/functions/ai-dogify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userImage: capturedImageData,
-            dogImage: dogImageData,
             prompt: promptSelect.value
           })
         });
@@ -175,8 +169,10 @@
         const result = await response.json();
         if (!result.ok) throw new Error(result.error);
 
-        // Display the AI response as text (since Gemini analyzes but doesn't generate images)
-        statusEl.innerHTML = `✨ AI Creative Description:<br><br>${result.aiResponse}`;
+        // Display the generated image
+        dogifiedImgEl.src = result.generatedImage;
+        dogifiedImgEl.style.display = 'block';
+        statusEl.innerHTML = `✨ AI Magic Complete!<br><br>Style: ${promptSelect.options[promptSelect.selectedIndex].text}`;
         
       } catch (err) {
         console.error('AI Dogify error:', err);
