@@ -25,13 +25,17 @@
       background: #0051b3;
     }
     #status {
-      margin-top: 1rem;
-      white-space: pre-wrap;
+      margin: 1rem 0;
+      padding: 0.5rem;
+      border-radius: 4px;
+      background: #f5f5f5;
     }
     video, canvas, img {
       max-width: 100%;
-      border-radius: 4px;
-      margin-top: 1rem;
+      height: auto;
+      margin: 1rem 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
   </style>
 </head>
@@ -70,71 +74,67 @@
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
         video.style.display = 'block';
-        captureBtn.style.display = 'inline-block';
-        statusEl.textContent = '';
+        captureBtn.style.display = 'block';
+        startCameraBtn.style.display = 'none';
       } catch (err) {
-        console.error(err);
-        statusEl.textContent = 'Could not access camera: ' + err.message;
+        statusEl.textContent = `Camera error: ${err.message}`;
       }
     });
 
     // Capture a frame from the webcam
     captureBtn.addEventListener('click', () => {
-      const context = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      capturedImageData = canvas.toDataURL('image/png');
-      video.style.display = 'none';
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      capturedImageData = canvas.toDataURL('image/png', 0.8);
       canvas.style.display = 'block';
-      captureBtn.style.display = 'none';
-      dogifyBtn.style.display = 'inline-block';
+      dogifyBtn.style.display = 'block';
       dogifyBtn.disabled = false;
+      video.style.display = 'none';
+      captureBtn.style.display = 'none';
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
     });
 
     // Fetch an image and convert it to a data URL
     async function fetchImageAsDataURL(url) {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      return new Promise((resolve) => {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
     }
 
     // Send the captured photo and dog image to your Netlify function
     dogifyBtn.addEventListener('click', async () => {
-      if (!capturedImageData) {
-        statusEl.textContent = 'Please capture an image first.';
-        return;
-      }
-      statusEl.textContent = '🐶 Dogifying your photo...';
-      dogifyBtn.disabled = true;
-      dogifiedImgEl.style.display = 'none';
-
       try {
-        const dogDataUrl = await fetchImageAsDataURL(specialDogURL);
-
+        dogifyBtn.disabled = true;
+        statusEl.textContent = 'Fetching dog image...';
+        
+        const dogImageData = await fetchImageAsDataURL(specialDogURL);
+        
+        statusEl.textContent = 'Dogifying your photo...';
         const response = await fetch('/.netlify/functions/dogify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userImage: capturedImageData, dogImage: dogDataUrl })
+          body: JSON.stringify({
+            userImage: capturedImageData,
+            dogImage: dogImageData
+          })
         });
 
         const result = await response.json();
-        if (!response.ok || !result.ok) {
-          throw new Error(result.error || 'Unexpected error');
-        }
+        if (!result.ok) throw new Error(result.error);
 
-        // The function should respond with a Data URL for the merged image
         dogifiedImgEl.src = result.mergedImage;
         dogifiedImgEl.style.display = 'block';
-        statusEl.textContent = '✅ Dogification complete!';
-
+        statusEl.textContent = 'Done! ✨';
       } catch (err) {
-        console.error(err);
-        statusEl.textContent = '🚨 Error: ' + err.message;
+        statusEl.textContent = `Error: ${err.message}`;
       } finally {
         dogifyBtn.disabled = false;
       }
