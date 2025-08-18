@@ -21,36 +21,10 @@ exports.handler = async function (event) {
       };
     }
 
-    console.log('Venice.ai: Analyzing selfie and placing dog...');
+    console.log('Venice.ai: Creating composite image...');
 
-    // Step 1: Test Venice.ai chat endpoint first with correct model names
+    // Step 1: Analyze both images with Venice.ai vision
     const visionResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: "llama-3.2-11b-vision-instruct", // Venice.ai vision model
-        messages: [{
-          role: "user",
-          content: [
-            { 
-              type: "text", 
-              text: "Describe this selfie in detail including the person's appearance, pose, clothing, and the background setting. Include all visual details for recreating this scene with an additional dog." 
-            },
-            { 
-              type: "image_url", 
-              image_url: { url: userImage } 
-            }
-          ]
-        }],
-        max_tokens: 300
-      })
-    });
-
-    // Step 2: Analyze the dog image
-    const dogVisionResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
@@ -63,7 +37,11 @@ exports.handler = async function (event) {
           content: [
             { 
               type: "text", 
-              text: "Describe this dog in detail - breed, size, colors, pose, any accessories or distinctive features." 
+              text: "I need to combine these two images. First image: Describe the person, their pose, clothing, and the background/setting in detail. Second image: Describe this specific dog - breed, size, colors, pose, any accessories. I want to create a new image with this exact person and this exact dog together in the same scene." 
+            },
+            { 
+              type: "image_url", 
+              image_url: { url: userImage } 
             },
             { 
               type: "image_url", 
@@ -71,37 +49,27 @@ exports.handler = async function (event) {
             }
           ]
         }],
-        max_tokens: 200
+        max_tokens: 400
       })
     });
 
-    let selfieDescription = "a person in a selfie with background setting";
-    let dogDescription = "a small dog";
+    let combinedAnalysis = "a person with a dog in a scene";
     
     if (visionResponse.ok) {
       const visionResult = await visionResponse.json();
-      selfieDescription = visionResult.choices[0].message.content;
-      console.log('Venice selfie analysis:', selfieDescription);
+      combinedAnalysis = visionResult.choices[0].message.content;
+      console.log('Venice combined analysis:', combinedAnalysis);
     } else {
       const errorText = await visionResponse.text();
       console.error('Venice vision error:', errorText);
     }
-    
-    if (dogVisionResponse.ok) {
-      const dogResult = await dogVisionResponse.json();
-      dogDescription = dogResult.choices[0].message.content;
-      console.log('Venice dog analysis:', dogDescription);
-    } else {
-      const errorText = await dogVisionResponse.text();
-      console.error('Venice dog vision error:', errorText);
-    }
 
-    // Step 3: Create a prompt that preserves the person and adds the dog
-    const placementPrompt = `Recreate this exact selfie scene: ${selfieDescription}. Keep the person exactly as they appear in the original. Add this dog as a companion: ${dogDescription}. Place the dog naturally in the scene so both the person and dog are clearly visible and it looks like they're together. Maintain the original composition and lighting.`;
+    // Step 2: Create a very specific prompt for image combination
+    const combinationPrompt = `Create a photorealistic image based on this description: ${combinedAnalysis}. The person and dog should be in the same scene together, both clearly visible and naturally positioned. Make it look like a real photo where both subjects are actually present together.`;
     
-    console.log('Venice placement prompt:', placementPrompt);
+    console.log('Venice combination prompt:', combinationPrompt);
 
-    // Step 4: Generate image using Venice.ai image generation
+    // Step 3: Generate using Venice.ai's correct API format
     const imageResponse = await fetch('https://api.venice.ai/api/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -109,11 +77,18 @@ exports.handler = async function (event) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: "flux-1.1-pro", // Venice.ai image generation model
-        prompt: placementPrompt,
+        model: "hidream", // Using the model from your API docs
+        prompt: combinationPrompt,
         n: 1,
         size: "1024x1024",
-        response_format: "url"
+        quality: "auto",
+        style: "natural", // Natural style for realistic photos
+        background: "auto",
+        moderation: "auto",
+        output_format: "png",
+        output_compression: 100,
+        response_format: "url", // Changed from b64_json to url for easier handling
+        user: "dogify_user"
       })
     });
 
@@ -131,11 +106,20 @@ exports.handler = async function (event) {
     }
 
     const imageResult = await imageResponse.json();
+    console.log('Venice image result structure:', imageResult);
     
-    if (!imageResult.data || !imageResult.data[0]) {
+    // Handle different response formats
+    let imageUrl;
+    if (imageResult.data && imageResult.data[0] && imageResult.data[0].url) {
+      imageUrl = imageResult.data[0].url;
+    } else if (imageResult.url) {
+      imageUrl = imageResult.url;
+    } else if (imageResult.images && imageResult.images[0]) {
+      imageUrl = imageResult.images[0];
+    } else {
       return {
         statusCode: 500,
-        body: JSON.stringify({ ok: false, error: 'No image generated by Venice', debug: imageResult })
+        body: JSON.stringify({ ok: false, error: 'No image URL found in Venice response', debug: imageResult })
       };
     }
 
@@ -143,11 +127,10 @@ exports.handler = async function (event) {
       statusCode: 200,
       body: JSON.stringify({
         ok: true,
-        generatedImageUrl: imageResult.data[0].url,
-        selfieDescription: selfieDescription,
-        dogDescription: dogDescription,
-        placementPrompt: placementPrompt,
-        model: "venice.ai"
+        generatedImageUrl: imageUrl,
+        combinedAnalysis: combinedAnalysis,
+        combinationPrompt: combinationPrompt,
+        model: "venice.ai-hidream"
       })
     };
 
