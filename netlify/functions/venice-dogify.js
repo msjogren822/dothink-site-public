@@ -49,7 +49,7 @@ exports.handler = async function (event) {
       })
     });
 
-    let sceneAnalysis = "indoor scene with natural lighting";
+    let sceneAnalysis = ""; // Remove the hardcoded indoor assumption
     
     if (visionResponse.ok) {
       const visionResult = await visionResponse.json();
@@ -58,6 +58,20 @@ exports.handler = async function (event) {
     } else {
       const errorText = await visionResponse.text();
       console.error('Venice vision error:', errorText);
+      // Better fallback that doesn't assume anything about the location
+      sceneAnalysis = "a scene with various lighting and environmental elements";
+    }
+
+    // Only proceed if we actually got a scene analysis
+    if (!sceneAnalysis || sceneAnalysis.length < 10) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ 
+          ok: false, 
+          error: 'Could not analyze the captured image properly',
+          details: 'Vision analysis failed or returned insufficient data'
+        })
+      };
     }
 
     // STEP 1 TEST: More precise reproduction prompt
