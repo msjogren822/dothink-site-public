@@ -24,6 +24,19 @@
     button:hover {
       background: #0051b3;
     }
+    select {
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+    }
+    .model-selector {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+    }
     #status {
       margin: 1rem 0;
       padding: 0.5rem;
@@ -41,7 +54,19 @@
 </head>
 <body>
   <h1>Dogify Your Photo</h1>
-  <p>Capture your photo and let AI add a special dog companion to your scene!</p>
+  <p>Capture your selfie and let AI add a special dog companion to your scene!</p>
+
+  <div class="model-selector">
+    <label for="ai-model"><strong>Choose AI Model:</strong></label><br>
+    <select id="ai-model">
+      <option value="openai">OpenAI (preserves background only)</option>
+      <option value="venice">Venice.ai (preserves people + background)</option>
+    </select>
+    <p><small>
+      <strong>OpenAI:</strong> Great for background scenes, removes people for privacy<br>
+      <strong>Venice.ai:</strong> Preserves people in selfies, better for personal photos
+    </small></p>
+  </div>
 
   <button id="start-camera">Start Camera</button>
   <video id="video" autoplay playsinline style="display: none;"></video>
@@ -61,6 +86,7 @@
     const dogifyBtn = document.getElementById('dogify-btn');
     const statusEl = document.getElementById('status');
     const dogifiedImgEl = document.getElementById('dogified-image');
+    const aiModelSelect = document.getElementById('ai-model');
 
     // Update this path to wherever you host your special dog image
     const specialDogURL = '/assets/images/special_dog.png';
@@ -115,6 +141,9 @@
       try {
         dogifyBtn.disabled = true;
         
+        const selectedModel = aiModelSelect.value;
+        const functionName = selectedModel === 'venice' ? 'venice-dogify' : 'openai-dogify';
+        
         let seconds = 0;
         const maxSeconds = 25;
         
@@ -125,21 +154,22 @@
           const progress = Math.min(Math.round((seconds / maxSeconds) * 100), 100);
           
           if (seconds <= 8) {
-            statusEl.innerHTML = `🔍 Analyzing your scene${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
+            statusEl.innerHTML = `🔍 Analyzing your ${selectedModel === 'venice' ? 'selfie' : 'scene'}${dots}<br><small>Using ${selectedModel.toUpperCase()} | ${seconds}s elapsed</small>`;
           } else {
-            statusEl.innerHTML = `🐕 Adding your dog companion${dots}<br><small>${seconds}s elapsed | ${progress}% complete</small>`;
+            statusEl.innerHTML = `🐕 Adding your dog companion${dots}<br><small>Using ${selectedModel.toUpperCase()} | ${seconds}s elapsed</small>`;
           }
         }, 1000);
         
         // Fetch the special dog image
         const dogImageData = await fetchImageAsDataURL(specialDogURL);
         
-        const response = await fetch('/.netlify/functions/openai-dogify', {
+        const response = await fetch(`/.netlify/functions/${functionName}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userImage: capturedImageData,
-            dogImage: dogImageData
+            dogImage: dogImageData,
+            model: selectedModel
           })
         });
 
@@ -160,14 +190,15 @@
         
         statusEl.innerHTML = `
           ✨ <strong>Dog Companion Added!</strong> (${seconds}s)<br><br>
+          <strong>Model:</strong> ${selectedModel.toUpperCase()}<br>
           <strong>What AI created:</strong><br>
-          <small>${result.imageAnalysis}</small><br><br>
-          <em>Capture a new photo to try again!</em>
+          <small>${result.sceneDescription || result.imageAnalysis}</small><br><br>
+          <em>Try switching models or capture a new photo!</em>
         `;
         
       } catch (err) {
         console.error('Dogify error:', err);
-        statusEl.innerHTML = `🚨 <strong>Error:</strong> ${err.message}<br><small>Try capturing a new photo</small>`;
+        statusEl.innerHTML = `🚨 <strong>Error:</strong> ${err.message}<br><small>Try switching models or capturing a new photo</small>`;
       } finally {
         dogifyBtn.disabled = false;
       }
