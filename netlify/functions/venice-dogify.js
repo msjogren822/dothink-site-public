@@ -14,21 +14,22 @@ exports.handler = async function (event) {
 
     const { userImage, dogImage } = JSON.parse(event.body);
     
-    if (!userImage) {
+    if (!userImage || !dogImage) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ ok: false, error: 'Missing userImage' })
+        body: JSON.stringify({ ok: false, error: 'Missing userImage or dogImage' })
       };
     }
 
-    console.log('Venice.ai: Fast vision analysis and image generation...');
+    console.log('Venice.ai: Analyzing scene and adding happy puppy...');
 
     // Use the correct vision-capable models
     const visionModels = ["mistral-31-24b", "qwen-2.5-vl"];
     let sceneAnalysis = "";
+    let dogAnalysis = "";
     let workingModel = "";
 
-    // Try vision models until one works
+    // Step 1: Analyze the captured scene
     for (const visionModel of visionModels) {
       console.log(`Trying vision model: ${visionModel}`);
       
@@ -45,7 +46,7 @@ exports.handler = async function (event) {
             content: [
               { 
                 type: "text", 
-                text: "Describe this image concisely for reproduction: lighting, setting, main objects, colors. Keep under 800 characters." 
+                text: "Describe this scene concisely: lighting, setting, main objects, colors. Keep under 400 characters." 
               },
               { 
                 type: "image_url", 
@@ -53,7 +54,7 @@ exports.handler = async function (event) {
               }
             ]
           }],
-          max_tokens: 300
+          max_tokens: 200
         })
       });
 
@@ -62,7 +63,7 @@ exports.handler = async function (event) {
         sceneAnalysis = visionResult.choices?.[0]?.message?.content || "";
         if (sceneAnalysis && sceneAnalysis.length > 10) {
           workingModel = visionModel;
-          console.log(`SUCCESS with ${visionModel}: ${sceneAnalysis.length} chars`);
+          console.log(`SUCCESS with ${visionModel} for scene: ${sceneAnalysis.length} chars`);
           break;
         }
       } else {
@@ -72,36 +73,90 @@ exports.handler = async function (event) {
       }
     }
 
+    // Step 2: Analyze the dog image using the same working model
+    if (workingModel) {
+      console.log(`Analyzing dog with ${workingModel}`);
+      
+      const dogVisionResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: workingModel,
+          messages: [{
+            role: "user",
+            content: [
+              { 
+                type: "text", 
+                text: "Describe this dog concisely: breed, size, color, distinctive features. Keep under 200 characters." 
+              },
+              { 
+                type: "image_url", 
+                image_url: { url: dogImage } 
+              }
+            ]
+          }],
+          max_tokens: 100
+        })
+      });
+
+      if (dogVisionResponse.ok) {
+        const dogResult = await dogVisionResponse.json();
+        dogAnalysis = dogResult.choices?.[0]?.message?.content || "a small puppy";
+        console.log(`Dog analysis: ${dogAnalysis}`);
+      } else {
+        const errorText = await dogVisionResponse.text();
+        console.error('Dog vision failed:', errorText);
+        dogAnalysis = "a small, happy puppy";
+      }
+    }
+
     if (!sceneAnalysis || sceneAnalysis.length < 10) {
       return {
         statusCode: 500,
         body: JSON.stringify({ 
           ok: false, 
-          error: 'Both mistral-31-24b and qwen-2.5-vl vision models failed',
-          details: 'Could not get scene description from vision-capable models'
+          error: 'Could not analyze the captured scene',
+          details: 'Scene vision analysis failed'
         })
       };
     }
     
-    console.log(`Scene analysis (${sceneAnalysis.length} chars):`, sceneAnalysis);
+    console.log(`Scene: ${sceneAnalysis}`);
+    console.log(`Dog: ${dogAnalysis}`);
 
-    // Create a concise prompt that's definitely under 1500 chars
-    const reproductionPrompt = `Recreate this scene exactly: ${sceneAnalysis}. Photorealistic, accurate details.`;
+    // Step 3: Create playful combination prompts
+    const creativePrompts = [
+      `Recreate this scene: ${sceneAnalysis}. Add this spritely, happy puppy: ${dogAnalysis}. The puppy is energetic and joyful.`,
+      
+      `Create this setting: ${sceneAnalysis}. Include this happy puppy: ${dogAnalysis}. The puppy is spritely and playful.`,
+      
+      `Scene: ${sceneAnalysis}. Add this bouncy, cheerful puppy: ${dogAnalysis}. Show the puppy's happy, energetic nature.`,
+      
+      `Recreate: ${sceneAnalysis}. Add this joyful puppy: ${dogAnalysis}. The puppy is spritely, happy, and full of energy.`,
+
+      `Setting: ${sceneAnalysis}. Include this lively puppy: ${dogAnalysis}. Capture the puppy's spritely, happy personality.`
+    ];
+
+    // Pick a random creative approach
+    const combinationPrompt = creativePrompts[Math.floor(Math.random() * creativePrompts.length)];
     
-    console.log(`Final prompt (${reproductionPrompt.length} chars):`, reproductionPrompt);
+    console.log(`Combination prompt (${combinationPrompt.length} chars):`, combinationPrompt);
 
-    if (reproductionPrompt.length > 1400) {
+    if (combinationPrompt.length > 1400) {
       return {
         statusCode: 500,
         body: JSON.stringify({ 
           ok: false, 
-          error: 'Prompt still too long after truncation',
-          details: `Prompt length: ${reproductionPrompt.length}`
+          error: 'Combination prompt too long',
+          details: `Prompt length: ${combinationPrompt.length}`
         })
       };
     }
 
-    // Generate image
+    // Step 4: Generate the combined image
     const imageResponse = await fetch('https://api.venice.ai/api/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -110,7 +165,7 @@ exports.handler = async function (event) {
       },
       body: JSON.stringify({
         model: "venice-sd35",
-        prompt: reproductionPrompt,
+        prompt: combinationPrompt,
         n: 1,
         size: "1024x1024",
         quality: "auto",
@@ -160,10 +215,11 @@ exports.handler = async function (event) {
         ok: true,
         generatedImageUrl: imageUrl,
         sceneAnalysis: sceneAnalysis,
-        reproductionPrompt: reproductionPrompt,
+        dogAnalysis: dogAnalysis,
+        combinationPrompt: combinationPrompt,
         visionModel: workingModel,
         imageModel: "venice-sd35",
-        testPhase: "Using correct vision-capable models"
+        testPhase: "Adding spritely, happy puppy to scene"
       })
     };
 
