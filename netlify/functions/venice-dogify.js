@@ -21,55 +21,69 @@ exports.handler = async function (event) {
       };
     }
 
-    console.log('Venice.ai: STEP 1 - Testing background reproduction with venice-sd35...');
+    console.log('Venice.ai: Testing different vision models...');
 
-    // STEP 1: ONLY focus on reproducing the captured background/scene
-    const visionResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: "llama-3.2-11b-vision-instruct",
-        messages: [{
-          role: "user",
-          content: [
-            { 
-              type: "text", 
-              text: "Describe this image in extreme detail for accurate reproduction. Focus on: exact lighting conditions, specific colors, textures, objects, furniture placement, wall colors, floor materials, background elements, shadows, perspective. Be precise and factual, not artistic." 
-            },
-            { 
-              type: "image_url", 
-              image_url: { url: userImage } 
-            }
-          ]
-        }],
-        max_tokens: 500
-      })
-    });
+    // Try different vision models - let's test a few to see which works better
+    const visionModels = [
+      "llama-3.2-90b-vision-instruct", // Larger model might be more accurate
+      "gpt-4o", // If Venice supports OpenAI models
+      "claude-3-5-sonnet-20241022", // If Venice supports Anthropic models
+      "llama-3.2-11b-vision-instruct" // Fallback to original
+    ];
 
-    let sceneAnalysis = ""; // Remove the hardcoded indoor assumption
-    
-    if (visionResponse.ok) {
-      const visionResult = await visionResponse.json();
-      sceneAnalysis = visionResult.choices[0].message.content;
-      console.log('Venice scene analysis:', sceneAnalysis);
-    } else {
-      const errorText = await visionResponse.text();
-      console.error('Venice vision error:', errorText);
-      // Better fallback that doesn't assume anything about the location
-      sceneAnalysis = "a scene with various lighting and environmental elements";
+    let sceneAnalysis = "";
+    let workingModel = "";
+
+    // Try each vision model until one works
+    for (const model of visionModels) {
+      console.log(`Trying vision model: ${model}`);
+      
+      const visionResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [{
+            role: "user",
+            content: [
+              { 
+                type: "text", 
+                text: "Describe this image in extreme detail for accurate reproduction. Focus on: exact lighting conditions, specific colors, textures, objects, furniture placement, wall colors, floor materials, background elements, shadows, perspective. Be precise and factual, not artistic." 
+              },
+              { 
+                type: "image_url", 
+                image_url: { url: userImage } 
+              }
+            ]
+          }],
+          max_tokens: 500
+        })
+      });
+
+      if (visionResponse.ok) {
+        const visionResult = await visionResponse.json();
+        sceneAnalysis = visionResult.choices[0].message.content;
+        workingModel = model;
+        console.log(`SUCCESS with ${model}:`, sceneAnalysis);
+        break; // Stop trying other models
+      } else {
+        const errorText = await visionResponse.text();
+        console.error(`Failed with ${model}:`, errorText);
+        continue; // Try next model
+      }
     }
 
-    // Only proceed if we actually got a scene analysis
+    // If no vision model worked
     if (!sceneAnalysis || sceneAnalysis.length < 10) {
       return {
         statusCode: 500,
         body: JSON.stringify({ 
           ok: false, 
-          error: 'Could not analyze the captured image properly',
-          details: 'Vision analysis failed or returned insufficient data'
+          error: 'All vision models failed to analyze the captured image',
+          details: 'Could not get accurate scene description from any available vision model'
         })
       };
     }
@@ -87,12 +101,12 @@ exports.handler = async function (event) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: "venice-sd35", // Changed to Venice's homegrown model
+        model: "venice-sd35",
         prompt: reproductionPrompt,
         n: 1,
         size: "1024x1024",
         quality: "auto",
-        style: "natural", // Keep natural style for realism
+        style: "natural",
         background: "auto",
         moderation: "auto",
         output_format: "png",
@@ -116,7 +130,6 @@ exports.handler = async function (event) {
     }
 
     const imageResult = await imageResponse.json();
-    console.log('Venice image result structure:', imageResult);
     
     // Handle different response formats
     let imageUrl;
@@ -138,11 +151,11 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         ok: true,
         generatedImageUrl: imageUrl,
-        sceneAnalysis: sceneAnalysis, // This will show what the AI "saw"
+        sceneAnalysis: sceneAnalysis,
         reproductionPrompt: reproductionPrompt,
         model: "venice-sd35",
-        testPhase: "Background reproduction test with venice-sd35",
-        visionDebug: sceneAnalysis // Extra field to make it clear
+        visionModel: workingModel, // Show which vision model actually worked
+        testPhase: "Testing different vision models for better accuracy"
       })
     };
 
