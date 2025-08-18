@@ -21,7 +21,7 @@ exports.handler = async function (event) {
       };
     }
 
-    console.log('Venice.ai: STEP 1 - Testing background reproduction...');
+    console.log('Venice.ai: STEP 1 - Testing background reproduction with venice-sd35...');
 
     // STEP 1: ONLY focus on reproducing the captured background/scene
     const visionResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
@@ -37,7 +37,7 @@ exports.handler = async function (event) {
           content: [
             { 
               type: "text", 
-              text: "Describe this image in extreme detail for perfect reproduction. Include: lighting, colors, textures, objects, furniture, walls, background elements, shadows, perspective, composition. Be very specific about every visual element so it can be recreated exactly." 
+              text: "Describe this image in extreme detail for accurate reproduction. Focus on: exact lighting conditions, specific colors, textures, objects, furniture placement, wall colors, floor materials, background elements, shadows, perspective. Be precise and factual, not artistic." 
             },
             { 
               type: "image_url", 
@@ -60,12 +60,12 @@ exports.handler = async function (event) {
       console.error('Venice vision error:', errorText);
     }
 
-    // STEP 1 TEST: Just try to recreate the exact same scene
-    const reproductionPrompt = `Recreate this exact scene with perfect accuracy: ${sceneAnalysis}. Match every detail - lighting, colors, objects, composition, perspective. Make it look identical to the original.`;
+    // STEP 1 TEST: More precise reproduction prompt
+    const reproductionPrompt = `Photorealistic reproduction of this exact scene: ${sceneAnalysis}. Maintain precise accuracy in lighting, colors, object placement, and composition. No artistic interpretation, just faithful reproduction.`;
     
     console.log('Venice reproduction prompt:', reproductionPrompt);
 
-    // Generate using Venice.ai
+    // Generate using Venice.ai with venice-sd35 model
     const imageResponse = await fetch('https://api.venice.ai/api/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -73,12 +73,12 @@ exports.handler = async function (event) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: "hidream",
+        model: "venice-sd35", // Changed to Venice's homegrown model
         prompt: reproductionPrompt,
         n: 1,
         size: "1024x1024",
         quality: "auto",
-        style: "natural",
+        style: "natural", // Keep natural style for realism
         background: "auto",
         moderation: "auto",
         output_format: "png",
@@ -126,8 +126,8 @@ exports.handler = async function (event) {
         generatedImageUrl: imageUrl,
         sceneAnalysis: sceneAnalysis,
         reproductionPrompt: reproductionPrompt,
-        model: "venice.ai-hidream-step1",
-        testPhase: "Background reproduction only"
+        model: "venice-sd35",
+        testPhase: "Background reproduction test with venice-sd35"
       })
     };
 
