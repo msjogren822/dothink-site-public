@@ -21,104 +21,73 @@ exports.handler = async function (event) {
       };
     }
 
-    console.log('Venice.ai: Analyzing and regenerating scene...');
+    console.log('Venice.ai: Fast vision analysis and image generation...');
 
-    // Try the working vision models
-    const visionModels = ["venice-uncensored", "mistral-31-24b"];
-    let sceneAnalysis = "";
-    let workingModel = "";
+    // Use just one vision model (the most reliable one) to avoid timeout
+    const visionModel = "venice-uncensored"; // Start with this one
+    
+    console.log(`Using vision model: ${visionModel}`);
+    
+    const visionResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: visionModel,
+        messages: [{
+          role: "user",
+          content: [
+            { 
+              type: "text", 
+              text: "Describe this image concisely for reproduction: lighting, setting, main objects, colors. Keep under 800 characters." 
+            },
+            { 
+              type: "image_url", 
+              image_url: { url: userImage } 
+            }
+          ]
+        }],
+        max_tokens: 300 // Reduced for faster response
+      })
+    });
 
-    for (const model of visionModels) {
-      console.log(`Trying vision model: ${model}`);
-      
-      const visionResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: [{
-            role: "user",
-            content: [
-              { 
-                type: "text", 
-                text: "Describe this image in extreme detail for accurate reproduction. Focus on: exact lighting conditions, specific colors, textures, objects, furniture placement, wall colors, floor materials, background elements, shadows, perspective. Be precise and factual." 
-              },
-              { 
-                type: "image_url", 
-                image_url: { url: userImage } 
-              }
-            ]
-          }],
-          max_tokens: 500
-        })
-      });
-
-      const responseText = await visionResponse.text();
-      console.log(`${model} response status:`, visionResponse.status);
-
-      if (visionResponse.ok) {
-        try {
-          const visionResult = JSON.parse(responseText);
-          sceneAnalysis = visionResult.choices?.[0]?.message?.content || "";
-          if (sceneAnalysis && sceneAnalysis.length > 10) {
-            workingModel = model;
-            console.log(`SUCCESS with ${model}: Analysis length ${sceneAnalysis.length} chars`);
-            break; // Stop trying other models
-          }
-        } catch (parseError) {
-          console.error(`Parse error with ${model}:`, parseError);
-          continue;
-        }
-      } else {
-        console.error(`Failed with ${model}:`, responseText);
-        continue; // Try next model
-      }
-    }
-
-    // If no vision model worked
-    if (!sceneAnalysis || sceneAnalysis.length < 10) {
+    if (!visionResponse.ok) {
+      const errorText = await visionResponse.text();
+      console.error('Venice vision error:', errorText);
       return {
         statusCode: 500,
         body: JSON.stringify({ 
           ok: false, 
-          error: 'Both venice-uncensored and mistral-31-24b vision models failed',
-          details: 'Could not get accurate scene description from available vision models'
+          error: `Venice vision failed: ${visionResponse.status}`,
+          details: errorText.substring(0, 200)
         })
       };
     }
 
-    console.log(`Using vision model: ${workingModel}`);
-    console.log('Scene analysis:', sceneAnalysis.substring(0, 200) + '...');
+    const visionResult = await visionResponse.json();
+    const sceneAnalysis = visionResult.choices?.[0]?.message?.content || "indoor scene";
+    
+    console.log(`Scene analysis (${sceneAnalysis.length} chars):`, sceneAnalysis);
 
-    // Now generate the image based on the scene analysis - TRUNCATE for Venice.ai limit
-    const maxPromptLength = 1400; // Leave some buffer under 1500 limit
-    let truncatedAnalysis = sceneAnalysis;
+    // Create a concise prompt that's definitely under 1500 chars
+    const reproductionPrompt = `Recreate this scene exactly: ${sceneAnalysis}. Photorealistic, accurate details.`;
     
-    if (sceneAnalysis.length > maxPromptLength - 100) { // Reserve space for our instruction text
-      truncatedAnalysis = sceneAnalysis.substring(0, maxPromptLength - 100) + "...";
-      console.log(`Truncated analysis from ${sceneAnalysis.length} to ${truncatedAnalysis.length} chars`);
-    }
-    
-    const reproductionPrompt = `Recreate this scene with photorealistic accuracy: ${truncatedAnalysis}`;
-    
-    // Make sure final prompt is under limit
-    if (reproductionPrompt.length > maxPromptLength) {
-      const finalPrompt = reproductionPrompt.substring(0, maxPromptLength);
-      console.log(`Final prompt truncated to ${maxPromptLength} chars`);
-    } else {
-      console.log(`Final prompt length: ${reproductionPrompt.length} chars (under limit)`);
-    }
-    
-    const finalPrompt = reproductionPrompt.length > maxPromptLength 
-      ? reproductionPrompt.substring(0, maxPromptLength)
-      : reproductionPrompt;
-    
-    console.log('Sending to image generation with truncated prompt...');
+    console.log(`Final prompt (${reproductionPrompt.length} chars):`, reproductionPrompt);
 
-    // Generate using Venice.ai with venice-sd35 model
+    if (reproductionPrompt.length > 1400) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ 
+          ok: false, 
+          error: 'Prompt still too long after truncation',
+          details: `Prompt length: ${reproductionPrompt.length}`
+        })
+      };
+    }
+
+    // Generate image
     const imageResponse = await fetch('https://api.venice.ai/api/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -127,17 +96,12 @@ exports.handler = async function (event) {
       },
       body: JSON.stringify({
         model: "venice-sd35",
-        prompt: finalPrompt, // Use the truncated prompt
+        prompt: reproductionPrompt,
         n: 1,
         size: "1024x1024",
         quality: "auto",
         style: "natural",
-        background: "auto",
-        moderation: "auto",
-        output_format: "png",
-        output_compression: 100,
-        response_format: "url",
-        user: "dogify_user"
+        response_format: "url"
       })
     });
 
@@ -155,7 +119,6 @@ exports.handler = async function (event) {
     }
 
     const imageResult = await imageResponse.json();
-    console.log('Image generation result keys:', Object.keys(imageResult));
     
     // Handle different response formats
     let imageUrl;
@@ -166,9 +129,14 @@ exports.handler = async function (event) {
     } else if (imageResult.images && imageResult.images[0]) {
       imageUrl = imageResult.images[0];
     } else {
+      console.error('Venice response structure:', imageResult);
       return {
         statusCode: 500,
-        body: JSON.stringify({ ok: false, error: 'No image URL found in Venice response', debug: imageResult })
+        body: JSON.stringify({ 
+          ok: false, 
+          error: 'No image URL found in Venice response', 
+          debug: Object.keys(imageResult)
+        })
       };
     }
 
@@ -177,16 +145,11 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         ok: true,
         generatedImageUrl: imageUrl,
-        sceneAnalysis: sceneAnalysis, // Full analysis for display
-        reproductionPrompt: finalPrompt, // Truncated prompt that was actually used
-        visionModel: workingModel,
+        sceneAnalysis: sceneAnalysis,
+        reproductionPrompt: reproductionPrompt,
+        visionModel: visionModel,
         imageModel: "venice-sd35",
-        testPhase: `Vision analysis by ${workingModel} → Image generation by venice-sd35`,
-        promptInfo: {
-          originalLength: sceneAnalysis.length,
-          truncatedLength: finalPrompt.length,
-          wastruncated: sceneAnalysis.length > maxPromptLength - 100
-        }
+        testPhase: "Optimized for speed"
       })
     };
 
@@ -196,8 +159,7 @@ exports.handler = async function (event) {
       statusCode: 500,
       body: JSON.stringify({ 
         ok: false, 
-        error: err.message,
-        stack: err.stack
+        error: err.message
       })
     };
   }
