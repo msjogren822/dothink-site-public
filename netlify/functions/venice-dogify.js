@@ -14,16 +14,16 @@ exports.handler = async function (event) {
 
     const { userImage, dogImage } = JSON.parse(event.body);
     
-    if (!userImage || !dogImage) {
+    if (!userImage) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ ok: false, error: 'Missing userImage or dogImage' })
+        body: JSON.stringify({ ok: false, error: 'Missing userImage' })
       };
     }
 
-    console.log('Venice.ai: Creating composite image...');
+    console.log('Venice.ai: STEP 1 - Testing background reproduction...');
 
-    // Step 1: Analyze both images with Venice.ai vision
+    // STEP 1: ONLY focus on reproducing the captured background/scene
     const visionResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -37,39 +37,35 @@ exports.handler = async function (event) {
           content: [
             { 
               type: "text", 
-              text: "I need to combine these two images. First image: Describe the person, their pose, clothing, and the background/setting in detail. Second image: Describe this specific dog - breed, size, colors, pose, any accessories. I want to create a new image with this exact person and this exact dog together in the same scene." 
+              text: "Describe this image in extreme detail for perfect reproduction. Include: lighting, colors, textures, objects, furniture, walls, background elements, shadows, perspective, composition. Be very specific about every visual element so it can be recreated exactly." 
             },
             { 
               type: "image_url", 
               image_url: { url: userImage } 
-            },
-            { 
-              type: "image_url", 
-              image_url: { url: dogImage } 
             }
           ]
         }],
-        max_tokens: 400
+        max_tokens: 500
       })
     });
 
-    let combinedAnalysis = "a person with a dog in a scene";
+    let sceneAnalysis = "indoor scene with natural lighting";
     
     if (visionResponse.ok) {
       const visionResult = await visionResponse.json();
-      combinedAnalysis = visionResult.choices[0].message.content;
-      console.log('Venice combined analysis:', combinedAnalysis);
+      sceneAnalysis = visionResult.choices[0].message.content;
+      console.log('Venice scene analysis:', sceneAnalysis);
     } else {
       const errorText = await visionResponse.text();
       console.error('Venice vision error:', errorText);
     }
 
-    // Step 2: Create a very specific prompt for image combination
-    const combinationPrompt = `Create a photorealistic image based on this description: ${combinedAnalysis}. The person and dog should be in the same scene together, both clearly visible and naturally positioned. Make it look like a real photo where both subjects are actually present together.`;
+    // STEP 1 TEST: Just try to recreate the exact same scene
+    const reproductionPrompt = `Recreate this exact scene with perfect accuracy: ${sceneAnalysis}. Match every detail - lighting, colors, objects, composition, perspective. Make it look identical to the original.`;
     
-    console.log('Venice combination prompt:', combinationPrompt);
+    console.log('Venice reproduction prompt:', reproductionPrompt);
 
-    // Step 3: Generate using Venice.ai's correct API format
+    // Generate using Venice.ai
     const imageResponse = await fetch('https://api.venice.ai/api/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -77,17 +73,17 @@ exports.handler = async function (event) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: "hidream", // Using the model from your API docs
-        prompt: combinationPrompt,
+        model: "hidream",
+        prompt: reproductionPrompt,
         n: 1,
         size: "1024x1024",
         quality: "auto",
-        style: "natural", // Natural style for realistic photos
+        style: "natural",
         background: "auto",
         moderation: "auto",
         output_format: "png",
         output_compression: 100,
-        response_format: "url", // Changed from b64_json to url for easier handling
+        response_format: "url",
         user: "dogify_user"
       })
     });
@@ -128,9 +124,10 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         ok: true,
         generatedImageUrl: imageUrl,
-        combinedAnalysis: combinedAnalysis,
-        combinationPrompt: combinationPrompt,
-        model: "venice.ai-hidream"
+        sceneAnalysis: sceneAnalysis,
+        reproductionPrompt: reproductionPrompt,
+        model: "venice.ai-hidream-step1",
+        testPhase: "Background reproduction only"
       })
     };
 
