@@ -127,31 +127,18 @@ exports.handler = async function (event) {
     console.log(`Scene: ${sceneAnalysis}`);
     console.log(`Dog: ${dogAnalysis}`);
 
-    // Step 3: Create playful combination prompts
-    const creativePrompts = [
-      `Recreate this scene: ${sceneAnalysis}. Add this spritely, happy puppy: ${dogAnalysis}. The puppy is energetic and joyful.`,
-      
-      `Create this setting: ${sceneAnalysis}. Include this happy puppy: ${dogAnalysis}. The puppy is spritely and playful.`,
-      
-      `Scene: ${sceneAnalysis}. Add this bouncy, cheerful puppy: ${dogAnalysis}. Show the puppy's happy, energetic nature.`,
-      
-      `Recreate: ${sceneAnalysis}. Add this joyful puppy: ${dogAnalysis}. The puppy is spritely, happy, and full of energy.`,
-
-      `Setting: ${sceneAnalysis}. Include this lively puppy: ${dogAnalysis}. Capture the puppy's spritely, happy personality.`
-    ];
-
-    // Pick a random creative approach
-    const combinationPrompt = creativePrompts[Math.floor(Math.random() * creativePrompts.length)];
+    // Step 3: Create simple placement prompt (like OpenAI version)
+    const placementPrompt = `Recreate this scene: ${sceneAnalysis}. Add this spritely, happy puppy: ${dogAnalysis}. Place the puppy naturally in the environment so it looks like it belongs there.`;
     
-    console.log(`Combination prompt (${combinationPrompt.length} chars):`, combinationPrompt);
+    console.log(`Placement prompt (${placementPrompt.length} chars):`, placementPrompt);
 
-    if (combinationPrompt.length > 1400) {
+    if (placementPrompt.length > 1400) {
       return {
         statusCode: 500,
         body: JSON.stringify({ 
           ok: false, 
-          error: 'Combination prompt too long',
-          details: `Prompt length: ${combinationPrompt.length}`
+          error: 'Placement prompt too long',
+          details: `Prompt length: ${placementPrompt.length}`
         })
       };
     }
@@ -165,7 +152,7 @@ exports.handler = async function (event) {
       },
       body: JSON.stringify({
         model: "venice-sd35",
-        prompt: combinationPrompt,
+        prompt: placementPrompt, // Use single prompt like OpenAI
         n: 1,
         size: "1024x1024",
         quality: "auto",
@@ -216,10 +203,10 @@ exports.handler = async function (event) {
         generatedImageUrl: imageUrl,
         sceneAnalysis: sceneAnalysis,
         dogAnalysis: dogAnalysis,
-        combinationPrompt: combinationPrompt,
+        placementPrompt: placementPrompt, // Changed from combinationPrompt
         visionModel: workingModel,
         imageModel: "venice-sd35",
-        testPhase: "Adding spritely, happy puppy to scene"
+        testPhase: "Simple puppy placement like OpenAI"
       })
     };
 
