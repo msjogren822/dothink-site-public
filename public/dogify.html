@@ -189,11 +189,17 @@
         dogifiedImgEl.style.display = 'block';
         
         statusEl.innerHTML = `
-          ✨ <strong>Dog Companion Added!</strong> (${seconds}s)<br><br>
-          <strong>Model:</strong> ${selectedModel.toUpperCase()}<br>
-          <strong>What AI created:</strong><br>
-          <small>${result.sceneDescription || result.imageAnalysis}</small><br><br>
-          <em>Try switching models or capture a new photo!</em>
+          ✨ <strong>Background Test Complete!</strong> (${seconds}s)<br><br>
+          <strong>Model:</strong> ${result.model}<br><br>
+          <strong>What AI saw in your image:</strong><br>
+          <div style="background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin: 10px 0; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;">
+            ${result.sceneAnalysis}
+          </div>
+          <strong>Generation prompt used:</strong><br>
+          <div style="background: #f0f8ff; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin: 10px 0; font-family: monospace; font-size: 12px;">
+            ${result.reproductionPrompt}
+          </div>
+          <em>Does the "What AI saw" match your actual photo?</em>
         `;
         
       } catch (err) {

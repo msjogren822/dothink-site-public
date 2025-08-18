@@ -138,10 +138,11 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         ok: true,
         generatedImageUrl: imageUrl,
-        sceneAnalysis: sceneAnalysis,
+        sceneAnalysis: sceneAnalysis, // This will show what the AI "saw"
         reproductionPrompt: reproductionPrompt,
         model: "venice-sd35",
-        testPhase: "Background reproduction test with venice-sd35"
+        testPhase: "Background reproduction test with venice-sd35",
+        visionDebug: sceneAnalysis // Extra field to make it clear
       })
     };
 
