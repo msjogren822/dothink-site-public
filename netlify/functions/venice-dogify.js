@@ -23,51 +23,65 @@ exports.handler = async function (event) {
 
     console.log('Venice.ai: Fast vision analysis and image generation...');
 
-    // Use just one vision model (the most reliable one) to avoid timeout
-    const visionModel = "venice-uncensored"; // Start with this one
-    
-    console.log(`Using vision model: ${visionModel}`);
-    
-    const visionResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: visionModel,
-        messages: [{
-          role: "user",
-          content: [
-            { 
-              type: "text", 
-              text: "Describe this image concisely for reproduction: lighting, setting, main objects, colors. Keep under 800 characters." 
-            },
-            { 
-              type: "image_url", 
-              image_url: { url: userImage } 
-            }
-          ]
-        }],
-        max_tokens: 300 // Reduced for faster response
-      })
-    });
+    // Use the correct vision-capable models
+    const visionModels = ["mistral-31-24b", "qwen-2.5-vl"];
+    let sceneAnalysis = "";
+    let workingModel = "";
 
-    if (!visionResponse.ok) {
-      const errorText = await visionResponse.text();
-      console.error('Venice vision error:', errorText);
+    // Try vision models until one works
+    for (const visionModel of visionModels) {
+      console.log(`Trying vision model: ${visionModel}`);
+      
+      const visionResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: visionModel,
+          messages: [{
+            role: "user",
+            content: [
+              { 
+                type: "text", 
+                text: "Describe this image concisely for reproduction: lighting, setting, main objects, colors. Keep under 800 characters." 
+              },
+              { 
+                type: "image_url", 
+                image_url: { url: userImage } 
+              }
+            ]
+          }],
+          max_tokens: 300
+        })
+      });
+
+      if (visionResponse.ok) {
+        const visionResult = await visionResponse.json();
+        sceneAnalysis = visionResult.choices?.[0]?.message?.content || "";
+        if (sceneAnalysis && sceneAnalysis.length > 10) {
+          workingModel = visionModel;
+          console.log(`SUCCESS with ${visionModel}: ${sceneAnalysis.length} chars`);
+          break;
+        }
+      } else {
+        const errorText = await visionResponse.text();
+        console.error(`Failed with ${visionModel}:`, errorText);
+        continue;
+      }
+    }
+
+    if (!sceneAnalysis || sceneAnalysis.length < 10) {
       return {
         statusCode: 500,
         body: JSON.stringify({ 
           ok: false, 
-          error: `Venice vision failed: ${visionResponse.status}`,
-          details: errorText.substring(0, 200)
+          error: 'Both mistral-31-24b and qwen-2.5-vl vision models failed',
+          details: 'Could not get scene description from vision-capable models'
         })
       };
     }
-
-    const visionResult = await visionResponse.json();
-    const sceneAnalysis = visionResult.choices?.[0]?.message?.content || "indoor scene";
     
     console.log(`Scene analysis (${sceneAnalysis.length} chars):`, sceneAnalysis);
 
@@ -147,9 +161,9 @@ exports.handler = async function (event) {
         generatedImageUrl: imageUrl,
         sceneAnalysis: sceneAnalysis,
         reproductionPrompt: reproductionPrompt,
-        visionModel: visionModel,
+        visionModel: workingModel,
         imageModel: "venice-sd35",
-        testPhase: "Optimized for speed"
+        testPhase: "Using correct vision-capable models"
       })
     };
 
