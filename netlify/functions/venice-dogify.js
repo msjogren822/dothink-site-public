@@ -93,10 +93,30 @@ exports.handler = async function (event) {
     console.log(`Using vision model: ${workingModel}`);
     console.log('Scene analysis:', sceneAnalysis.substring(0, 200) + '...');
 
-    // Now generate the image based on the scene analysis
-    const reproductionPrompt = `Recreate this scene with photorealistic accuracy: ${sceneAnalysis}. Maintain all details, lighting, colors, and composition exactly as described.`;
+    // Now generate the image based on the scene analysis - TRUNCATE for Venice.ai limit
+    const maxPromptLength = 1400; // Leave some buffer under 1500 limit
+    let truncatedAnalysis = sceneAnalysis;
     
-    console.log('Sending to image generation...');
+    if (sceneAnalysis.length > maxPromptLength - 100) { // Reserve space for our instruction text
+      truncatedAnalysis = sceneAnalysis.substring(0, maxPromptLength - 100) + "...";
+      console.log(`Truncated analysis from ${sceneAnalysis.length} to ${truncatedAnalysis.length} chars`);
+    }
+    
+    const reproductionPrompt = `Recreate this scene with photorealistic accuracy: ${truncatedAnalysis}`;
+    
+    // Make sure final prompt is under limit
+    if (reproductionPrompt.length > maxPromptLength) {
+      const finalPrompt = reproductionPrompt.substring(0, maxPromptLength);
+      console.log(`Final prompt truncated to ${maxPromptLength} chars`);
+    } else {
+      console.log(`Final prompt length: ${reproductionPrompt.length} chars (under limit)`);
+    }
+    
+    const finalPrompt = reproductionPrompt.length > maxPromptLength 
+      ? reproductionPrompt.substring(0, maxPromptLength)
+      : reproductionPrompt;
+    
+    console.log('Sending to image generation with truncated prompt...');
 
     // Generate using Venice.ai with venice-sd35 model
     const imageResponse = await fetch('https://api.venice.ai/api/v1/images/generations', {
@@ -107,7 +127,7 @@ exports.handler = async function (event) {
       },
       body: JSON.stringify({
         model: "venice-sd35",
-        prompt: reproductionPrompt,
+        prompt: finalPrompt, // Use the truncated prompt
         n: 1,
         size: "1024x1024",
         quality: "auto",
@@ -157,11 +177,16 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         ok: true,
         generatedImageUrl: imageUrl,
-        sceneAnalysis: sceneAnalysis,
-        reproductionPrompt: reproductionPrompt,
+        sceneAnalysis: sceneAnalysis, // Full analysis for display
+        reproductionPrompt: finalPrompt, // Truncated prompt that was actually used
         visionModel: workingModel,
         imageModel: "venice-sd35",
-        testPhase: `Vision analysis by ${workingModel} → Image generation by venice-sd35`
+        testPhase: `Vision analysis by ${workingModel} → Image generation by venice-sd35`,
+        promptInfo: {
+          originalLength: sceneAnalysis.length,
+          truncatedLength: finalPrompt.length,
+          wastruncated: sceneAnalysis.length > maxPromptLength - 100
+        }
       })
     };
 
