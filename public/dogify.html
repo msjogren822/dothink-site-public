@@ -13,16 +13,48 @@
       line-height: 1.5;
     }
     button {
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
+      padding: 0.75rem 1.5rem;
+      font-size: 1.1rem;
       cursor: pointer;
       background: #0070f3;
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      min-height: 50px;
+      font-weight: 600;
     }
     button:hover {
       background: #0051b3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,112,243,0.3);
+    }
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(0,112,243,0.3);
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .button-active {
+      background: #28a745 !important;
+      animation: pulse 0.6s;
+    }
+    .button-capture {
+      background: #ff6b35 !important;
+      animation: glow 1s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 5px #ff6b35; }
+      50% { box-shadow: 0 0 20px #ff6b35, 0 0 30px #ff6b35; }
     }
     select {
       padding: 0.5rem;
@@ -53,8 +85,8 @@
   </style>
 </head>
 <body>
-  <h1>Dogify Your Photo</h1>
-  <p>Capture your selfie and let AI add a special dog companion to your scene!</p>
+  <h1>$dog-ify Your Photo</h1>
+  <p>Capture your selfie and let AI add $dog to your scene!</p>
 
   <div class="model-selector">
     <label for="ai-model"><strong>Choose AI Model:</strong></label><br>
@@ -68,12 +100,12 @@
     </small></p>
   </div>
 
-  <button id="start-camera">Start Camera</button>
+  <button id="start-camera">📷 Start Camera</button>
   <video id="video" autoplay playsinline style="display: none;"></video>
-  <button id="capture-btn" style="display: none;">Capture Photo</button>
+  <button id="capture-btn" style="display: none;">📸 Capture Photo</button>
   <canvas id="canvas" style="display: none;"></canvas>
 
-  <button id="dogify-btn" disabled style="display: none;">Add My Dog Companion!</button>
+  <button id="dogify-btn" disabled style="display: none;">🐕 Add $dog!</button>
 
   <div id="status"></div>
   <img id="dogified-image" alt="AI Generated Image" style="display: none;" />
@@ -94,34 +126,59 @@
     let stream = null;
     let capturedImageData = '';
 
-    // Start the webcam
+    // Start the webcam with lively feedback
     startCameraBtn.addEventListener('click', async () => {
       try {
+        // Immediate visual feedback
+        startCameraBtn.classList.add('button-active');
+        startCameraBtn.innerHTML = '🔄 Starting Camera...';
+        startCameraBtn.disabled = true;
+        
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
         video.style.display = 'block';
+        
+        // Show capture button with glow effect
         captureBtn.style.display = 'block';
+        captureBtn.classList.add('button-capture');
         startCameraBtn.style.display = 'none';
+        
+        statusEl.innerHTML = '📹 <strong>Camera ready!</strong> Position yourself and tap the glowing button to capture.';
+        
       } catch (err) {
-        statusEl.textContent = `Camera error: ${err.message}`;
+        startCameraBtn.classList.remove('button-active');
+        startCameraBtn.innerHTML = '📷 Start Camera';
+        startCameraBtn.disabled = false;
+        statusEl.innerHTML = `🚨 Camera error: ${err.message}`;
       }
     });
 
-    // Capture a frame from the webcam
+    // Capture a frame with immediate feedback
     captureBtn.addEventListener('click', () => {
+      // Immediate visual feedback
+      captureBtn.classList.remove('button-capture');
+      captureBtn.classList.add('button-active');
+      captureBtn.innerHTML = '✨ Captured!';
+      captureBtn.disabled = true;
+      
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       canvas.getContext('2d').drawImage(video, 0, 0);
       capturedImageData = canvas.toDataURL('image/png', 0.8);
+      
       canvas.style.display = 'block';
       dogifyBtn.style.display = 'block';
       dogifyBtn.disabled = false;
+      dogifyBtn.classList.add('button-capture'); // Make it glow too
+      
       video.style.display = 'none';
       captureBtn.style.display = 'none';
       
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
+      
+      statusEl.innerHTML = '📸 <strong>Photo captured!</strong> Now tap the glowing button to add your dog companion!';
     });
 
     // Fetch an image and convert it to a data URL
@@ -139,6 +196,10 @@
     // Add dog companion
     dogifyBtn.addEventListener('click', async () => {
       try {
+        // Immediate feedback
+        dogifyBtn.classList.remove('button-capture');
+        dogifyBtn.classList.add('button-active');
+        dogifyBtn.innerHTML = '🚀 Processing...';
         dogifyBtn.disabled = true;
         
         const selectedModel = aiModelSelect.value;
@@ -151,12 +212,11 @@
         const counterInterval = setInterval(() => {
           seconds++;
           const dots = '.'.repeat((seconds % 4));
-          const progress = Math.min(Math.round((seconds / maxSeconds) * 100), 100);
           
           if (seconds <= 8) {
             statusEl.innerHTML = `🔍 Analyzing your ${selectedModel === 'venice' ? 'selfie' : 'scene'}${dots}<br><small>Using ${selectedModel.toUpperCase()} | ${seconds}s elapsed</small>`;
           } else {
-            statusEl.innerHTML = `🐕 Adding your dog companion${dots}<br><small>Using ${selectedModel.toUpperCase()} | ${seconds}s elapsed</small>`;
+            statusEl.innerHTML = `🐕 Adding $dog ${dots}<br><small>Using ${selectedModel.toUpperCase()} | ${seconds}s elapsed</small>`;
           }
         }, 1000);
         
@@ -188,25 +248,34 @@
         dogifiedImgEl.src = result.generatedImageUrl;
         dogifiedImgEl.style.display = 'block';
         
+        // Success feedback
+        dogifyBtn.innerHTML = '✅ Success!';
+        dogifyBtn.style.background = '#28a745';
+        
         statusEl.innerHTML = `
-          ✨ <strong>Background Test Complete!</strong> (${seconds}s)<br><br>
-          <strong>Model:</strong> ${result.model}<br><br>
-          <strong>What AI saw in your image:</strong><br>
+          ✨ <strong>$dog Added!</strong> (${seconds}s)<br><br>
+          <strong>Model:</strong> ${result.visionModel || result.model}<br><br>
+          <strong>What AI saw:</strong><br>
           <div style="background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin: 10px 0; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;">
-            ${result.sceneAnalysis}
+            ${result.sceneAnalysis || result.imageAnalysis}
           </div>
-          <strong>Generation prompt used:</strong><br>
+          <strong>Placement prompt:</strong><br>
           <div style="background: #f0f8ff; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin: 10px 0; font-family: monospace; font-size: 12px;">
-            ${result.reproductionPrompt}
+            ${result.placementPrompt || result.reproductionPrompt}
           </div>
-          <em>Does the "What AI saw" match your actual photo?</em>
+          <em>Refresh to try again!</em>
         `;
         
       } catch (err) {
-        console.error('Dogify error:', err);
-        statusEl.innerHTML = `🚨 <strong>Error:</strong> ${err.message}<br><small>Try switching models or capturing a new photo</small>`;
+        console.error('$dogify error:', err);
+        statusEl.innerHTML = `🚨 <strong>Error:</strong> ${err.message}<br><small>Try switching models or refresh to capture a new photo</small>`;
+        dogifyBtn.innerHTML = '❌ Failed';
+        dogifyBtn.style.background = '#dc3545';
       } finally {
-        dogifyBtn.disabled = false;
+        setTimeout(() => {
+          dogifyBtn.disabled = false;
+          dogifyBtn.classList.remove('button-active');
+        }, 2000);
       }
     });
   </script>

@@ -154,7 +154,7 @@ exports.handler = async function (event) {
         model: "venice-sd35",
         prompt: placementPrompt, // Use single prompt like OpenAI
         n: 1,
-        size: "1024x1024",
+        size: "800x800", // Reduced from 1024x1024
         quality: "auto",
         style: "natural",
         response_format: "url"

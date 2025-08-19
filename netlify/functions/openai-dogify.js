@@ -106,7 +106,7 @@ exports.handler = async function (event) {
         model: "dall-e-3",
         prompt: placementPrompt,
         n: 1,
-        size: "1024x1024",
+        size: "800x800", // Reduced from 1024x1024
         quality: "standard",
         response_format: "url"
       })
