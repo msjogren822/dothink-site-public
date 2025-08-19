@@ -75,19 +75,46 @@ exports.handler = async function (event) {
       })
     });
 
-    let sceneDescription = "indoor setting with natural lighting";
-    let dogDescription = "a small dog";
+    let sceneDescription = "";
+    let dogDescription = "";
     
     if (visionResponse.ok) {
       const visionResult = await visionResponse.json();
       sceneDescription = visionResult.choices[0].message.content;
       console.log('Scene:', sceneDescription);
+    } else {
+      const errorText = await visionResponse.text();
+      console.error('OpenAI scene vision error:', errorText);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ 
+          ok: false, 
+          error: 'Could not analyze the captured scene',
+          details: 'OpenAI scene vision analysis failed'
+        })
+      };
     }
     
     if (dogVisionResponse.ok) {
       const dogResult = await dogVisionResponse.json();
       dogDescription = dogResult.choices[0].message.content;
       console.log('Dog:', dogDescription);
+    } else {
+      const errorText = await dogVisionResponse.text();
+      console.error('OpenAI dog vision error:', errorText);
+      dogDescription = "a small dog with distinctive features"; // Generic fallback for dog only
+    }
+
+    // Validate we got proper scene analysis
+    if (!sceneDescription || sceneDescription.length < 10) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ 
+          ok: false, 
+          error: 'Scene analysis too brief or failed',
+          details: 'Could not get sufficient scene description'
+        })
+      };
     }
 
     // Step 3: Simple, direct prompt to place the dog in the scene
@@ -106,7 +133,7 @@ exports.handler = async function (event) {
         model: "dall-e-3",
         prompt: placementPrompt,
         n: 1,
-        size: "1024x1024", // OpenAI only supports these specific sizes
+        size: "1024x1024",
         quality: "standard",
         response_format: "url"
       })
@@ -141,7 +168,8 @@ exports.handler = async function (event) {
         generatedImageUrl: imageResult.data[0].url,
         sceneDescription: sceneDescription,
         dogDescription: dogDescription,
-        placementPrompt: placementPrompt
+        placementPrompt: placementPrompt,
+        model: "openai-dalle3"
       })
     };
 
