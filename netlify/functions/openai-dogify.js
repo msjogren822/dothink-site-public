@@ -21,9 +21,14 @@ exports.handler = async function (event) {
       };
     }
 
-    console.log('Analyzing scene and placing dog...');
+    console.log('OpenAI: Analyzing scene and adding happy puppy...');
 
-    // Step 1: Get AI to describe the captured scene
+    let sceneAnalysis = "";
+    let dogAnalysis = "";
+
+    // Step 1: Analyze the captured scene (similar to Venice structure)
+    console.log('Analyzing scene with gpt-4o');
+    
     const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -37,7 +42,7 @@ exports.handler = async function (event) {
           content: [
             { 
               type: "text", 
-              text: "Describe this scene in detail for recreating it with an additional dog present. Include lighting, setting, furniture, colors, and atmosphere." 
+              text: "Describe this scene concisely: lighting, setting, main objects, colors. Keep under 400 characters." 
             },
             { 
               type: "image_url", 
@@ -49,80 +54,77 @@ exports.handler = async function (event) {
       })
     });
 
-    // Step 2: Get AI to describe the specific dog
-    const dogVisionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [{
-          role: "user",
-          content: [
-            { 
-              type: "text", 
-              text: "Describe this dog in detail - breed, size, colors, pose, any accessories or distinctive features." 
-            },
-            { 
-              type: "image_url", 
-              image_url: { url: dogImage, detail: "low" } 
-            }
-          ]
-        }],
-        max_tokens: 150
-      })
-    });
-
-    let sceneDescription = "";
-    let dogDescription = "";
-    
     if (visionResponse.ok) {
       const visionResult = await visionResponse.json();
-      sceneDescription = visionResult.choices[0].message.content;
-      console.log('Scene:', sceneDescription);
+      sceneAnalysis = visionResult.choices?.[0]?.message?.content || "";
+      if (sceneAnalysis && sceneAnalysis.length > 10) {
+        console.log(`SUCCESS with gpt-4o for scene: ${sceneAnalysis.length} chars`);
+      }
     } else {
       const errorText = await visionResponse.text();
-      console.error('OpenAI scene vision error:', errorText);
+      console.error('Failed with gpt-4o:', errorText);
+    }
+
+    // Step 2: Analyze the dog image (similar to Venice structure)
+    if (sceneAnalysis) {
+      console.log('Analyzing dog with gpt-4o');
+      
+      const dogVisionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [{
+            role: "user",
+            content: [
+              { 
+                type: "text", 
+                text: "Describe this dog concisely: breed, size, color, distinctive features. Keep under 200 characters." 
+              },
+              { 
+                type: "image_url", 
+                image_url: { url: dogImage, detail: "low" } 
+              }
+            ]
+          }],
+          max_tokens: 100
+        })
+      });
+
+      if (dogVisionResponse.ok) {
+        const dogResult = await dogVisionResponse.json();
+        dogAnalysis = dogResult.choices?.[0]?.message?.content || "a small puppy";
+        console.log(`Dog analysis: ${dogAnalysis}`);
+      } else {
+        const errorText = await dogVisionResponse.text();
+        console.error('Dog vision failed:', errorText);
+        dogAnalysis = "a small, happy puppy";
+      }
+    }
+
+    if (!sceneAnalysis || sceneAnalysis.length < 10) {
       return {
         statusCode: 500,
         body: JSON.stringify({ 
           ok: false, 
           error: 'Could not analyze the captured scene',
-          details: 'OpenAI scene vision analysis failed'
+          details: 'Scene vision analysis failed'
         })
       };
     }
     
-    if (dogVisionResponse.ok) {
-      const dogResult = await dogVisionResponse.json();
-      dogDescription = dogResult.choices[0].message.content;
-      console.log('Dog:', dogDescription);
-    } else {
-      const errorText = await dogVisionResponse.text();
-      console.error('OpenAI dog vision error:', errorText);
-      dogDescription = "a small dog with distinctive features"; // Generic fallback for dog only
-    }
+    console.log(`Scene: ${sceneAnalysis}`);
+    console.log(`Dog: ${dogAnalysis}`);
 
-    // Validate we got proper scene analysis
-    if (!sceneDescription || sceneDescription.length < 10) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ 
-          ok: false, 
-          error: 'Scene analysis too brief or failed',
-          details: 'Could not get sufficient scene description'
-        })
-      };
-    }
-
-    // Step 3: Simple, direct prompt to place the dog in the scene
-    const placementPrompt = `Recreate this scene: ${sceneDescription}. Add this dog to the scene: ${dogDescription}. Place the dog naturally in the environment so it looks like it belongs there.`;
+    // Step 3: Create simple placement prompt (exactly like Venice version)
+    const placementPrompt = `Recreate this scene: ${sceneAnalysis}. Add this spritely, happy puppy: ${dogAnalysis}. Place the puppy naturally in the environment so it looks like it belongs there.`;
     
-    console.log('Placement prompt:', placementPrompt);
+    console.log(`Placement prompt (${placementPrompt.length} chars):`, placementPrompt);
 
-    // Step 4: Generate the image
+    // Step 4: Generate the combined image
     const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -141,12 +143,12 @@ exports.handler = async function (event) {
 
     if (!imageResponse.ok) {
       const errorText = await imageResponse.text();
-      console.error('DALL-E API error:', errorText);
+      console.error('OpenAI image generation error:', errorText);
       return {
         statusCode: 500,
         body: JSON.stringify({ 
           ok: false, 
-          error: `Image generation failed: ${imageResponse.status}`,
+          error: `OpenAI image generation failed: ${imageResponse.status}`,
           details: errorText.substring(0, 200)
         })
       };
@@ -157,7 +159,10 @@ exports.handler = async function (event) {
     if (!imageResult.data || !imageResult.data[0]) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ ok: false, error: 'No image generated' })
+        body: JSON.stringify({ 
+          ok: false, 
+          error: 'No image URL found in OpenAI response'
+        })
       };
     }
 
@@ -166,10 +171,12 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         ok: true,
         generatedImageUrl: imageResult.data[0].url,
-        sceneDescription: sceneDescription,
-        dogDescription: dogDescription,
+        sceneAnalysis: sceneAnalysis,
+        dogAnalysis: dogAnalysis,
         placementPrompt: placementPrompt,
-        model: "openai-dalle3"
+        visionModel: "gpt-4o",
+        imageModel: "dall-e-3",
+        testPhase: "Simple puppy placement like Venice"
       })
     };
 
