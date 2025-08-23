@@ -24,13 +24,11 @@
 
   <!-- Dogify buttons (same layout) -->
   <div class="camera-container" id="dogify-container" style="display: none;">
-    <button id="dogify-left" class="side-button" disabled>🐕<div style="text-align: center;">ADD</div>
-    </button>
+    <button id="dogify-left" class="side-button" disabled>🐕</button>
     
-    <div style="width: 300px; height: 20px;"></div> <!-- Spacer to maintain alignment -->
+    <div style="width: min(90vw, 500px); height: 20px;"></div> <!-- Spacer to maintain alignment -->
     
-    <button id="dogify-right" class="side-button" disabled>🐕<div style="text-align: center;">ADD</div>
-    </button>
+    <button id="dogify-right" class="side-button" disabled>🐕</button>
   </div>
 
   <div id="status"></div>
@@ -125,15 +123,23 @@
       
       canvas.style.display = 'block';
       video.style.display = 'none';
-      captureLeftBtn.style.display = 'none';
-      captureRightBtn.style.display = 'none';
       
-      // Show dogify buttons container
-      dogifyContainer.style.display = 'flex';
-      dogifyLeftBtn.disabled = false;
-      dogifyRightBtn.disabled = false;
-      dogifyLeftBtn.classList.add('button-capture');
-      dogifyRightBtn.classList.add('button-capture');
+      // Smoothly transition capture buttons to dogify buttons
+      captureLeftBtn.innerHTML = '🐕';
+      captureRightBtn.innerHTML = '🐕';
+      captureLeftBtn.classList.remove('button-active');
+      captureRightBtn.classList.remove('button-active');
+      captureLeftBtn.classList.add('button-capture');
+      captureRightBtn.classList.add('button-capture');
+      
+      // Transfer functionality to dogify
+      captureLeftBtn.removeEventListener('click', capturePhoto);
+      captureRightBtn.removeEventListener('click', capturePhoto);
+      captureLeftBtn.addEventListener('click', dogifyPhoto);
+      captureRightBtn.addEventListener('click', dogifyPhoto);
+      
+      // Hide dogify container since we're reusing capture buttons
+      dogifyContainer.style.display = 'none';
       
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
@@ -161,12 +167,12 @@
     // Dogify function for both buttons
     async function dogifyPhoto() {
       try {
-        dogifyLeftBtn.classList.remove('button-capture');
-        dogifyRightBtn.classList.remove('button-capture');
-        dogifyLeftBtn.classList.add('button-active');
-        dogifyRightBtn.classList.add('button-active');
-        dogifyLeftBtn.disabled = true;
-        dogifyRightBtn.disabled = true;
+        captureLeftBtn.classList.remove('button-capture');
+        captureRightBtn.classList.remove('button-capture');
+        captureLeftBtn.classList.add('button-active');
+        captureRightBtn.classList.add('button-active');
+        captureLeftBtn.disabled = true;
+        captureRightBtn.disabled = true;
         
         const functionName = 'venice-dogify';
         
@@ -208,8 +214,8 @@
         dogifiedImgEl.src = result.generatedImageUrl;
         dogifiedImgEl.style.display = 'block';
         
-        dogifyLeftBtn.style.background = '#28a745';
-        dogifyRightBtn.style.background = '#28a745';
+        captureLeftBtn.style.background = '#28a745';
+        captureRightBtn.style.background = '#28a745';
         
         // Populate technical details
         sceneAnalysisEl.textContent = result.sceneAnalysis || result.imageAnalysis || 'No analysis available';
@@ -224,14 +230,14 @@
       } catch (err) {
         console.error('$dogify error:', err);
         statusEl.innerHTML = `🚨 <strong>Error:</strong> ${err.message}<br><small>Try refreshing to capture a new photo</small>`;
-        dogifyLeftBtn.style.background = '#dc3545';
-        dogifyRightBtn.style.background = '#dc3545';
+        captureLeftBtn.style.background = '#dc3545';
+        captureRightBtn.style.background = '#dc3545';
       }
     }
 
-    // Add dogify listeners to both buttons
-    dogifyLeftBtn.addEventListener('click', dogifyPhoto);
-    dogifyRightBtn.addEventListener('click', dogifyPhoto);
+    // Add dogify listeners to both buttons (removed since we're adding them dynamically)
+    // dogifyLeftBtn.addEventListener('click', dogifyPhoto);
+    // dogifyRightBtn.addEventListener('click', dogifyPhoto);
   </script>
 
   <div class="powered-by">

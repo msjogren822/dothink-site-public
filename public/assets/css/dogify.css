@@ -32,6 +32,8 @@ body {
   background: #0070f3;
   box-shadow: 0 4px 12px rgba(0,112,243,0.3);
   flex-shrink: 0;
+  text-align: center;
+  line-height: 1;
 }
 
 .side-button:hover {
@@ -72,13 +74,23 @@ body {
 }
 
 #video, #canvas {
-  max-width: 300px;
-  max-height: 400px;
+  max-width: min(90vw, 500px);
+  max-height: min(80vh, 600px);
   width: 100%;
   height: auto;
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
   flex-shrink: 0;
+}
+
+#dogified-image {
+  max-width: min(90vw, 500px);
+  max-height: min(80vh, 600px);
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  margin: 1rem 0;
 }
 
 .regular-button {
