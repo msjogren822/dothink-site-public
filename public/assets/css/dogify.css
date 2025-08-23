@@ -6,58 +6,6 @@ body {
   line-height: 1.5;
 }
 
-button {
-  padding: 0.75rem 1.5rem;
-  font-size: 1.1rem;
-  cursor: pointer;
-  background: #0070f3;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  min-height: 50px;
-  font-weight: 600;
-}
-
-button:hover {
-  background: #0051b3;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,112,243,0.3);
-}
-
-button:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(0,112,243,0.3);
-}
-
-button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.button-active {
-  background: #28a745 !important;
-  animation: pulse 0.6s;
-}
-
-.button-capture {
-  background: #ff6b35 !important;
-  animation: glow 1s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-@keyframes glow {
-  0%, 100% { box-shadow: 0 0 5px #ff6b35; }
-  50% { box-shadow: 0 0 20px #ff6b35, 0 0 30px #ff6b35; }
-}
-
 .camera-container {
   position: relative;
   display: flex;
@@ -83,6 +31,7 @@ button:disabled {
   font-weight: 600;
   background: #0070f3;
   box-shadow: 0 4px 12px rgba(0,112,243,0.3);
+  flex-shrink: 0;
 }
 
 .side-button:hover {
@@ -129,6 +78,7 @@ button:disabled {
   height: auto;
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  flex-shrink: 0;
 }
 
 .regular-button {
@@ -173,6 +123,89 @@ button:disabled {
   animation: glow 1s infinite;
 }
 
+.accordion {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  margin: 1rem 0;
+  overflow: hidden;
+}
+
+.accordion-header {
+  padding: 1rem;
+  background: #f1f3f4;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #333;
+  transition: background 0.2s ease;
+}
+
+.accordion-header:hover {
+  background: #e8eaed;
+}
+
+.accordion-toggle {
+  font-size: 0.8rem;
+  transition: transform 0.2s ease;
+}
+
+.accordion-toggle.expanded {
+  transform: rotate(90deg);
+}
+
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.accordion-content.expanded {
+  max-height: 500px;
+}
+
+.accordion-section {
+  padding: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.accordion-section:first-child {
+  border-top: none;
+}
+
+.accordion-section h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.accordion-section .content-box {
+  background: #fff;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #333;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px currentColor; }
+  50% { box-shadow: 0 0 20px currentColor, 0 0 30px currentColor; }
+}
+
 .powered-by {
   display: flex;
   align-items: center;
@@ -193,8 +226,8 @@ button:disabled {
 }
 
 .venice-logo {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   opacity: 0.8;
   transition: opacity 0.2s ease;
   flex-shrink: 0;

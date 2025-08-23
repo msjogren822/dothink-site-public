@@ -12,6 +12,7 @@
 
   <button id="start-camera" class="regular-button">📷 Start Camera</button>
 
+  <!-- Camera view with side buttons -->
   <div class="camera-container">
     <button id="capture-left" class="side-button" style="display: none;">
       📸
@@ -27,15 +28,16 @@
     </button>
   </div>
 
-  <div class="camera-container">
-    <button id="dogify-left" class="side-button" disabled style="display: none;">
+  <!-- Dogify buttons (same layout) -->
+  <div class="camera-container" id="dogify-container" style="display: none;">
+    <button id="dogify-left" class="side-button" disabled>
       🐕
       <div class="vertical-text">ADD $DOG</div>
     </button>
     
-    <div style="width: 300px; height: 20px;"></div> <!-- Spacer for alignment -->
+    <div style="width: 300px; height: 20px;"></div> <!-- Spacer to maintain alignment -->
     
-    <button id="dogify-right" class="side-button" disabled style="display: none;">
+    <button id="dogify-right" class="side-button" disabled>
       🐕
       <div class="vertical-text">ADD $DOG</div>
     </button>
@@ -43,6 +45,24 @@
 
   <div id="status"></div>
   <img id="dogified-image" alt="AI Generated Image" style="display: none;" />
+
+  <!-- Technical Details Accordion -->
+  <div id="tech-details" class="accordion" style="display: none;">
+    <div class="accordion-header" onclick="toggleAccordion()">
+      <span class="accordion-toggle">▶</span>
+      <span>Technical Details</span>
+    </div>
+    <div class="accordion-content">
+      <div class="accordion-section">
+        <h4>What AI Saw:</h4>
+        <div class="content-box" id="scene-analysis"></div>
+      </div>
+      <div class="accordion-section">
+        <h4>Generation Prompt Used:</h4>
+        <div class="content-box" id="generation-prompt"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
     const startCameraBtn = document.getElementById('start-camera');
@@ -52,13 +72,26 @@
     const captureRightBtn = document.getElementById('capture-right');
     const dogifyLeftBtn = document.getElementById('dogify-left');
     const dogifyRightBtn = document.getElementById('dogify-right');
+    const dogifyContainer = document.getElementById('dogify-container');
     const statusEl = document.getElementById('status');
     const dogifiedImgEl = document.getElementById('dogified-image');
+    const techDetails = document.getElementById('tech-details');
+    const sceneAnalysisEl = document.getElementById('scene-analysis');
+    const generationPromptEl = document.getElementById('generation-prompt');
 
     const specialDogURL = '/assets/images/special_dog.png';
 
     let stream = null;
     let capturedImageData = '';
+
+    // Accordion toggle function
+    function toggleAccordion() {
+      const content = document.querySelector('.accordion-content');
+      const toggle = document.querySelector('.accordion-toggle');
+      
+      content.classList.toggle('expanded');
+      toggle.classList.toggle('expanded');
+    }
 
     // Start the webcam
     startCameraBtn.addEventListener('click', async () => {
@@ -105,9 +138,8 @@
       captureLeftBtn.style.display = 'none';
       captureRightBtn.style.display = 'none';
       
-      // Show dogify buttons
-      dogifyLeftBtn.style.display = 'flex';
-      dogifyRightBtn.style.display = 'flex';
+      // Show dogify buttons container
+      dogifyContainer.style.display = 'flex';
       dogifyLeftBtn.disabled = false;
       dogifyRightBtn.disabled = false;
       dogifyLeftBtn.classList.add('button-capture');
@@ -189,14 +221,14 @@
         dogifyLeftBtn.style.background = '#28a745';
         dogifyRightBtn.style.background = '#28a745';
         
+        // Populate technical details
+        sceneAnalysisEl.textContent = result.sceneAnalysis || result.imageAnalysis || 'No analysis available';
+        generationPromptEl.textContent = result.placementPrompt || result.reproductionPrompt || 'No prompt available';
+        techDetails.style.display = 'block';
+        
         statusEl.innerHTML = `
-          ✨ <strong>$dog Added!</strong> (${seconds}s)<br><br>
-          <strong>Model:</strong> ${result.visionModel || result.model}<br><br>
-          <strong>What AI saw:</strong><br>
-          <div style="background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin: 10px 0; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;">
-            ${result.sceneAnalysis || result.imageAnalysis}
-          </div>
-          <em>Refresh to try again!</em>
+          ✨ <strong>$dog Added!</strong> (${seconds}s)<br>
+          <small>Using ${result.visionModel || result.model} | Refresh to try again</small>
         `;
         
       } catch (err) {
