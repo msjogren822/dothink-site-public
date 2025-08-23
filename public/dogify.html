@@ -8,9 +8,15 @@
 </head>
 <body>
   <h1>$dog-ify Your Photo</h1>
-  <p>Capture your selfie and let AI add $dog to your scene!</p>
+  <p>Capture a photo and let AI add $dog to your scene!</p>
 
-  <button id="start-camera" class="regular-button">📷 Start Camera</button>
+  <div class="camera-start-section">
+    <div class="start-label">Start Camera:</div>
+    <div class="camera-options">
+      <button id="start-camera-front" class="camera-option-button">🤳<br><small>Front</small></button>
+      <button id="start-camera-back" class="camera-option-button">📷<br><small>Back</small></button>
+    </div>
+  </div>
 
   <!-- Camera view with side buttons -->
   <div class="camera-container">
@@ -38,11 +44,11 @@
   <div id="tech-details" class="accordion" style="display: none;">
     <div class="accordion-header" onclick="toggleAccordion()">
       <span class="accordion-toggle">▶</span>
-      <span>Technical Details</span>
+      <span>Prompt Details</span>
     </div>
     <div class="accordion-content">
       <div class="accordion-section">
-        <h4>What AI Saw:</h4>
+        <h4>What the AI Saw:</h4>
         <div class="content-box" id="scene-analysis"></div>
       </div>
       <div class="accordion-section">
@@ -53,7 +59,8 @@
   </div>
 
   <script>
-    const startCameraBtn = document.getElementById('start-camera');
+    const startCameraFrontBtn = document.getElementById('start-camera-front');
+    const startCameraBackBtn = document.getElementById('start-camera-back');
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const captureLeftBtn = document.getElementById('capture-left');
@@ -81,14 +88,24 @@
       toggle.classList.toggle('expanded');
     }
 
-    // Start the webcam
-    startCameraBtn.addEventListener('click', async () => {
+    // Start the webcam with specified facing mode
+    async function startCamera(facingMode = 'user') {
       try {
-        startCameraBtn.classList.add('button-active');
-        startCameraBtn.innerHTML = '🔄 Starting Camera...';
-        startCameraBtn.disabled = true;
+        const activeBtn = facingMode === 'user' ? startCameraFrontBtn : startCameraBackBtn;
+        const otherBtn = facingMode === 'user' ? startCameraBackBtn : startCameraFrontBtn;
         
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        activeBtn.classList.add('button-active');
+        activeBtn.innerHTML = facingMode === 'user' ? '🔄<br><small>Starting...</small>' : '🔄<br><small>Starting...</small>';
+        activeBtn.disabled = true;
+        otherBtn.disabled = true;
+        
+        const constraints = {
+          video: {
+            facingMode: facingMode
+          }
+        };
+        
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
         video.style.display = 'block';
         
@@ -97,17 +114,29 @@
         captureRightBtn.style.display = 'flex';
         captureLeftBtn.classList.add('button-capture');
         captureRightBtn.classList.add('button-capture');
-        startCameraBtn.style.display = 'none';
         
-        statusEl.innerHTML = '📹 <strong>Camera ready!</strong> Tap either capture button when ready.';
+        // Hide camera start buttons
+        startCameraFrontBtn.style.display = 'none';
+        startCameraBackBtn.style.display = 'none';
+        
+        const cameraType = facingMode === 'user' ? 'Front' : 'Back';
+        statusEl.innerHTML = `📹 <strong>${cameraType} camera ready!</strong> Tap either capture button when ready.`;
         
       } catch (err) {
-        startCameraBtn.classList.remove('button-active');
-        startCameraBtn.innerHTML = '📷 Start Camera';
-        startCameraBtn.disabled = false;
+        const activeBtn = facingMode === 'user' ? startCameraFrontBtn : startCameraBackBtn;
+        const otherBtn = facingMode === 'user' ? startCameraBackBtn : startCameraFrontBtn;
+        
+        activeBtn.classList.remove('button-active');
+        activeBtn.innerHTML = facingMode === 'user' ? '🤳<br><small>Front</small>' : '📷<br><small>Back</small>';
+        activeBtn.disabled = false;
+        otherBtn.disabled = false;
         statusEl.innerHTML = `🚨 Camera error: ${err.message}`;
       }
-    });
+    }
+
+    // Add event listeners for both camera buttons
+    startCameraFrontBtn.addEventListener('click', () => startCamera('user'));
+    startCameraBackBtn.addEventListener('click', () => startCamera('environment'));
 
     // Capture function for both buttons
     function capturePhoto() {
@@ -241,8 +270,8 @@
   </script>
 
   <div class="powered-by">
-    <span class="powered-by-text">Powered by</span>
-    <img src="/assets/images/venice-logo-lockup-black.svg" alt="Venice.ai" class="venice-logo" />
+    <span class="powered-by-text">Powered by <a href="https://venice.ai/chat?ref=aHYnVr" target="_blank">Venice.ai</a></span>
+    <a href="https://venice.ai/chat?ref=aHYnVr" target="_blank"><img src="/assets/images/venice-logo-lockup-black.svg" alt="Venice.ai" class="venice-logo" /></a>
   </div>
 </body>
 </html>
