@@ -10,17 +10,36 @@
   <h1>$dog-ify Your Photo</h1>
   <p>Capture your selfie and let AI add $dog to your scene!</p>
 
-  <div class="powered-by">
-    <span class="powered-by-text">Powered by</span>
-    <img src="/assets/images/venice-logo-lockup-black.svg" alt="Venice.ai" class="venice-logo" />
+  <button id="start-camera" class="regular-button">📷 Start Camera</button>
+
+  <div class="camera-container">
+    <button id="capture-left" class="side-button" style="display: none;">
+      📸
+      <div class="vertical-text">CAPTURE</div>
+    </button>
+    
+    <video id="video" autoplay playsinline style="display: none;"></video>
+    <canvas id="canvas" style="display: none;"></canvas>
+    
+    <button id="capture-right" class="side-button" style="display: none;">
+      📸
+      <div class="vertical-text">CAPTURE</div>
+    </button>
   </div>
 
-  <button id="start-camera">📷 Start Camera</button>
-  <video id="video" autoplay playsinline style="display: none;"></video>
-  <button id="capture-btn" style="display: none;">📸 Capture Photo</button>
-  <canvas id="canvas" style="display: none;"></canvas>
-
-  <button id="dogify-btn" disabled style="display: none;">🐕 Add $dog!</button>
+  <div class="camera-container">
+    <button id="dogify-left" class="side-button" disabled style="display: none;">
+      🐕
+      <div class="vertical-text">ADD $DOG</div>
+    </button>
+    
+    <div style="width: 300px; height: 20px;"></div> <!-- Spacer for alignment -->
+    
+    <button id="dogify-right" class="side-button" disabled style="display: none;">
+      🐕
+      <div class="vertical-text">ADD $DOG</div>
+    </button>
+  </div>
 
   <div id="status"></div>
   <img id="dogified-image" alt="AI Generated Image" style="display: none;" />
@@ -29,21 +48,21 @@
     const startCameraBtn = document.getElementById('start-camera');
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    const captureBtn = document.getElementById('capture-btn');
-    const dogifyBtn = document.getElementById('dogify-btn');
+    const captureLeftBtn = document.getElementById('capture-left');
+    const captureRightBtn = document.getElementById('capture-right');
+    const dogifyLeftBtn = document.getElementById('dogify-left');
+    const dogifyRightBtn = document.getElementById('dogify-right');
     const statusEl = document.getElementById('status');
     const dogifiedImgEl = document.getElementById('dogified-image');
 
-    // Update this path to wherever you host your special dog image
     const specialDogURL = '/assets/images/special_dog.png';
 
     let stream = null;
     let capturedImageData = '';
 
-    // Start the webcam with lively feedback
+    // Start the webcam
     startCameraBtn.addEventListener('click', async () => {
       try {
-        // Immediate visual feedback
         startCameraBtn.classList.add('button-active');
         startCameraBtn.innerHTML = '🔄 Starting Camera...';
         startCameraBtn.disabled = true;
@@ -52,12 +71,14 @@
         video.srcObject = stream;
         video.style.display = 'block';
         
-        // Show capture button with glow effect
-        captureBtn.style.display = 'block';
-        captureBtn.classList.add('button-capture');
+        // Show side capture buttons with glow effect
+        captureLeftBtn.style.display = 'flex';
+        captureRightBtn.style.display = 'flex';
+        captureLeftBtn.classList.add('button-capture');
+        captureRightBtn.classList.add('button-capture');
         startCameraBtn.style.display = 'none';
         
-        statusEl.innerHTML = '📹 <strong>Camera ready!</strong> Position yourself and tap the glowing button to capture.';
+        statusEl.innerHTML = '📹 <strong>Camera ready!</strong> Tap either capture button when ready.';
         
       } catch (err) {
         startCameraBtn.classList.remove('button-active');
@@ -67,13 +88,12 @@
       }
     });
 
-    // Capture a frame with immediate feedback
-    captureBtn.addEventListener('click', () => {
-      // Immediate visual feedback
-      captureBtn.classList.remove('button-capture');
-      captureBtn.classList.add('button-active');
-      captureBtn.innerHTML = '✨ Captured!';
-      captureBtn.disabled = true;
+    // Capture function for both buttons
+    function capturePhoto() {
+      captureLeftBtn.classList.remove('button-capture');
+      captureRightBtn.classList.remove('button-capture');
+      captureLeftBtn.classList.add('button-active');
+      captureRightBtn.classList.add('button-active');
       
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -81,19 +101,28 @@
       capturedImageData = canvas.toDataURL('image/png', 0.8);
       
       canvas.style.display = 'block';
-      dogifyBtn.style.display = 'block';
-      dogifyBtn.disabled = false;
-      dogifyBtn.classList.add('button-capture'); // Make it glow too
-      
       video.style.display = 'none';
-      captureBtn.style.display = 'none';
+      captureLeftBtn.style.display = 'none';
+      captureRightBtn.style.display = 'none';
+      
+      // Show dogify buttons
+      dogifyLeftBtn.style.display = 'flex';
+      dogifyRightBtn.style.display = 'flex';
+      dogifyLeftBtn.disabled = false;
+      dogifyRightBtn.disabled = false;
+      dogifyLeftBtn.classList.add('button-capture');
+      dogifyRightBtn.classList.add('button-capture');
       
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
       
-      statusEl.innerHTML = '📸 <strong>Photo captured!</strong> Now tap the glowing button to add $dog!';
-    });
+      statusEl.innerHTML = '📸 <strong>Photo captured!</strong> Now tap either button to add $dog!';
+    }
+
+    // Add capture listeners to both buttons
+    captureLeftBtn.addEventListener('click', capturePhoto);
+    captureRightBtn.addEventListener('click', capturePhoto);
 
     // Fetch an image and convert it to a data URL
     async function fetchImageAsDataURL(url) {
@@ -107,22 +136,19 @@
       });
     }
 
-    // Add dog companion - now defaults to Venice
-    dogifyBtn.addEventListener('click', async () => {
+    // Dogify function for both buttons
+    async function dogifyPhoto() {
       try {
-        // Immediate feedback
-        dogifyBtn.classList.remove('button-capture');
-        dogifyBtn.classList.add('button-active');
-        dogifyBtn.innerHTML = '🚀 Processing...';
-        dogifyBtn.disabled = true;
+        dogifyLeftBtn.classList.remove('button-capture');
+        dogifyRightBtn.classList.remove('button-capture');
+        dogifyLeftBtn.classList.add('button-active');
+        dogifyRightBtn.classList.add('button-active');
+        dogifyLeftBtn.disabled = true;
+        dogifyRightBtn.disabled = true;
         
-        // Always use Venice.ai now
         const functionName = 'venice-dogify';
         
         let seconds = 0;
-        const maxSeconds = 25;
-        
-        // Start the counter
         const counterInterval = setInterval(() => {
           seconds++;
           const dots = '.'.repeat((seconds % 4));
@@ -134,7 +160,6 @@
           }
         }, 1000);
         
-        // Fetch the special dog image
         const dogImageData = await fetchImageAsDataURL(specialDogURL);
         
         const response = await fetch(`/.netlify/functions/${functionName}`, {
@@ -158,13 +183,11 @@
         const result = await response.json();
         if (!result.ok) throw new Error(result.error);
 
-        // Display the result
         dogifiedImgEl.src = result.generatedImageUrl;
         dogifiedImgEl.style.display = 'block';
         
-        // Success feedback
-        dogifyBtn.innerHTML = '✅ Success!';
-        dogifyBtn.style.background = '#28a745';
+        dogifyLeftBtn.style.background = '#28a745';
+        dogifyRightBtn.style.background = '#28a745';
         
         statusEl.innerHTML = `
           ✨ <strong>$dog Added!</strong> (${seconds}s)<br><br>
@@ -173,25 +196,25 @@
           <div style="background: #fff; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin: 10px 0; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;">
             ${result.sceneAnalysis || result.imageAnalysis}
           </div>
-          <strong>Placement prompt:</strong><br>
-          <div style="background: #f0f8ff; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin: 10px 0; font-family: monospace; font-size: 12px;">
-            ${result.placementPrompt || result.reproductionPrompt}
-          </div>
           <em>Refresh to try again!</em>
         `;
         
       } catch (err) {
         console.error('$dogify error:', err);
         statusEl.innerHTML = `🚨 <strong>Error:</strong> ${err.message}<br><small>Try refreshing to capture a new photo</small>`;
-        dogifyBtn.innerHTML = '❌ Failed';
-        dogifyBtn.style.background = '#dc3545';
-      } finally {
-        setTimeout(() => {
-          dogifyBtn.disabled = false;
-          dogifyBtn.classList.remove('button-active');
-        }, 2000);
+        dogifyLeftBtn.style.background = '#dc3545';
+        dogifyRightBtn.style.background = '#dc3545';
       }
-    });
+    }
+
+    // Add dogify listeners to both buttons
+    dogifyLeftBtn.addEventListener('click', dogifyPhoto);
+    dogifyRightBtn.addEventListener('click', dogifyPhoto);
   </script>
+
+  <div class="powered-by">
+    <span class="powered-by-text">Powered by</span>
+    <img src="/assets/images/venice-logo-lockup-black.svg" alt="Venice.ai" class="venice-logo" />
+  </div>
 </body>
 </html>
