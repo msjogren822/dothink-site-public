@@ -56,18 +56,28 @@
       0%, 100% { box-shadow: 0 0 5px #ff6b35; }
       50% { box-shadow: 0 0 20px #ff6b35, 0 0 30px #ff6b35; }
     }
-    select {
-      padding: 0.5rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      margin: 0.5rem 0;
-    }
-    .model-selector {
+    .powered-by {
       background: #f8f9fa;
-      padding: 1rem;
+      padding: 1.5rem;
       border-radius: 8px;
-      margin: 1rem 0;
+      margin: 1.5rem 0;
+      text-align: center;
+      border: 1px solid #e9ecef;
+    }
+    .powered-by-text {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 0.75rem;
+      font-weight: 500;
+    }
+    .venice-logo {
+      max-width: 200px;
+      height: auto;
+      opacity: 0.8;
+      transition: opacity 0.2s ease;
+    }
+    .venice-logo:hover {
+      opacity: 1;
     }
     #status {
       margin: 1rem 0;
@@ -88,16 +98,9 @@
   <h1>$dog-ify Your Photo</h1>
   <p>Capture your selfie and let AI add $dog to your scene!</p>
 
-  <div class="model-selector">
-    <label for="ai-model"><strong>Choose AI Model:</strong></label><br>
-    <select id="ai-model">
-      <option value="openai">OpenAI (preserves background only)</option>
-      <option value="venice">Venice.ai (preserves people + background)</option>
-    </select>
-    <p><small>
-      <strong>OpenAI:</strong> Great for background scenes, removes people for privacy<br>
-      <strong>Venice.ai:</strong> Preserves people in selfies, better for personal photos
-    </small></p>
+  <div class="powered-by">
+    <div class="powered-by-text">Powered by</div>
+    <img src="/assets/images/venice-logo-lockup-black.svg" alt="Venice.ai" class="venice-logo" />
   </div>
 
   <button id="start-camera">📷 Start Camera</button>
@@ -118,7 +121,6 @@
     const dogifyBtn = document.getElementById('dogify-btn');
     const statusEl = document.getElementById('status');
     const dogifiedImgEl = document.getElementById('dogified-image');
-    const aiModelSelect = document.getElementById('ai-model');
 
     // Update this path to wherever you host your special dog image
     const specialDogURL = '/assets/images/special_dog.png';
@@ -193,7 +195,7 @@
       });
     }
 
-    // Add dog companion
+    // Add dog companion - now defaults to Venice
     dogifyBtn.addEventListener('click', async () => {
       try {
         // Immediate feedback
@@ -202,8 +204,8 @@
         dogifyBtn.innerHTML = '🚀 Processing...';
         dogifyBtn.disabled = true;
         
-        const selectedModel = aiModelSelect.value;
-        const functionName = selectedModel === 'venice' ? 'venice-dogify' : 'openai-dogify';
+        // Always use Venice.ai now
+        const functionName = 'venice-dogify';
         
         let seconds = 0;
         const maxSeconds = 25;
@@ -214,9 +216,9 @@
           const dots = '.'.repeat((seconds % 4));
           
           if (seconds <= 8) {
-            statusEl.innerHTML = `🔍 Analyzing your ${selectedModel === 'venice' ? 'selfie' : 'scene'}${dots}<br><small>Using ${selectedModel.toUpperCase()} | ${seconds}s elapsed</small>`;
+            statusEl.innerHTML = `🔍 Analyzing your selfie${dots}<br><small>Using Venice.ai | ${seconds}s elapsed</small>`;
           } else {
-            statusEl.innerHTML = `🐕 Adding $dog ${dots}<br><small>Using ${selectedModel.toUpperCase()} | ${seconds}s elapsed</small>`;
+            statusEl.innerHTML = `🐕 Adding $dog ${dots}<br><small>Using Venice.ai | ${seconds}s elapsed</small>`;
           }
         }, 1000);
         
@@ -229,7 +231,7 @@
           body: JSON.stringify({
             userImage: capturedImageData,
             dogImage: dogImageData,
-            model: selectedModel
+            model: 'venice'
           })
         });
 
@@ -268,7 +270,7 @@
         
       } catch (err) {
         console.error('$dogify error:', err);
-        statusEl.innerHTML = `🚨 <strong>Error:</strong> ${err.message}<br><small>Try switching models or refresh to capture a new photo</small>`;
+        statusEl.innerHTML = `🚨 <strong>Error:</strong> ${err.message}<br><small>Try refreshing to capture a new photo</small>`;
         dogifyBtn.innerHTML = '❌ Failed';
         dogifyBtn.style.background = '#dc3545';
       } finally {
