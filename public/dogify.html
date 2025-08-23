@@ -4,102 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dogify Your Photo</title>
-  <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      padding: 2rem;
-      max-width: 800px;
-      margin: 0 auto;
-      line-height: 1.5;
-    }
-    button {
-      padding: 0.75rem 1.5rem;
-      font-size: 1.1rem;
-      cursor: pointer;
-      background: #0070f3;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-      min-height: 50px;
-      font-weight: 600;
-    }
-    button:hover {
-      background: #0051b3;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,112,243,0.3);
-    }
-    button:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 6px rgba(0,112,243,0.3);
-    }
-    button:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-    .button-active {
-      background: #28a745 !important;
-      animation: pulse 0.6s;
-    }
-    .button-capture {
-      background: #ff6b35 !important;
-      animation: glow 1s infinite;
-    }
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-    @keyframes glow {
-      0%, 100% { box-shadow: 0 0 5px #ff6b35; }
-      50% { box-shadow: 0 0 20px #ff6b35, 0 0 30px #ff6b35; }
-    }
-    .powered-by {
-      background: #f8f9fa;
-      padding: 1.5rem;
-      border-radius: 8px;
-      margin: 1.5rem 0;
-      text-align: center;
-      border: 1px solid #e9ecef;
-    }
-    .powered-by-text {
-      font-size: 0.9rem;
-      color: #666;
-      margin-bottom: 0.75rem;
-      font-weight: 500;
-    }
-    .venice-logo {
-      max-width: 200px;
-      height: auto;
-      opacity: 0.8;
-      transition: opacity 0.2s ease;
-    }
-    .venice-logo:hover {
-      opacity: 1;
-    }
-    #status {
-      margin: 1rem 0;
-      padding: 0.5rem;
-      border-radius: 4px;
-      background: #f5f5f5;
-    }
-    video, canvas, img {
-      max-width: 100%;
-      height: auto;
-      margin: 1rem 0;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-  </style>
+  <link rel="stylesheet" href="/assets/css/dogify.css">
 </head>
 <body>
   <h1>$dog-ify Your Photo</h1>
   <p>Capture your selfie and let AI add $dog to your scene!</p>
 
   <div class="powered-by">
-    <div class="powered-by-text">Powered by</div>
+    <span class="powered-by-text">Powered by</span>
     <img src="/assets/images/venice-logo-lockup-black.svg" alt="Venice.ai" class="venice-logo" />
   </div>
 
