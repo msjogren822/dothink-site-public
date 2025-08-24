@@ -68,8 +68,8 @@ export async function handler(event, context) {
     }
 
     // Step 2: Environment variables
-    const supabaseUrl = process.env.SUPABASE_DATABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
     console.log('Step 2: Environment vars:', { hasUrl: !!supabaseUrl, hasKey: !!supabaseKey });
 
     if (!supabaseUrl || !supabaseKey) {
