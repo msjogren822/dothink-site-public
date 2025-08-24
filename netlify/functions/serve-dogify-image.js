@@ -133,19 +133,41 @@ export async function handler(event, context) {
     if (Buffer.isBuffer(data.image_data)) {
       // Already a buffer - use directly
       imageBuffer = data.image_data;
+      console.log('Using Buffer directly');
     } else if (typeof data.image_data === 'string') {
-      // It's a string - need to convert back to buffer
-      try {
-        // Try to parse as base64 first
+      // Check if it's the old JSON-serialized Buffer format
+      if (data.image_data.startsWith('\\x7b') || data.image_data.includes('"type":"Buffer"')) {
+        console.log('Detected old JSON-serialized Buffer format');
+        try {
+          // Try to parse the JSON-serialized Buffer
+          let parsedData;
+          if (data.image_data.startsWith('\\x')) {
+            // It's hex-encoded, need to decode first
+            const hexString = data.image_data.replace(/\\x/g, '');
+            const jsonString = Buffer.from(hexString, 'hex').toString();
+            parsedData = JSON.parse(jsonString);
+          } else {
+            parsedData = JSON.parse(data.image_data);
+          }
+          
+          if (parsedData.type === 'Buffer' && Array.isArray(parsedData.data)) {
+            imageBuffer = Buffer.from(parsedData.data);
+            console.log('Successfully parsed old Buffer format, length:', imageBuffer.length);
+          } else {
+            throw new Error('Not a valid Buffer JSON');
+          }
+        } catch (parseError) {
+          console.log('Failed to parse old format:', parseError.message);
+          return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ error: 'Cannot parse stored image data' })
+          };
+        }
+      } else {
+        // Assume it's base64
         imageBuffer = Buffer.from(data.image_data, 'base64');
-        console.log('Converted string to buffer:', imageBuffer.length, 'bytes');
-      } catch (e) {
-        console.error('Failed to convert string to buffer:', e);
-        return {
-          statusCode: 500,
-          headers,
-          body: JSON.stringify({ error: 'Image data format error' })
-        };
+        console.log('Converted base64 string to buffer, length:', imageBuffer.length);
       }
     } else {
       console.error('Unknown image data type:', typeof data.image_data);
