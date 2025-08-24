@@ -65,12 +65,7 @@
   
   <!-- Share bar - only shows after image is generated -->
   <div id="share-container" style="display: none;">
-    <div class='a2a_kit a2a_kit_size_24 a2a_default_style' data-a2a-url='https://www.dothink.in/dogify.html' data-a2a-title='$DOGify your image!' id="share-bar">
-      <a class='a2a_button_facebook'></a>
-      <a class='a2a_button_twitter'></a>
-      <a class='a2a_button_linkedin'></a>
-      <a class='a2a_dd' href='https://www.addtoany.com/share'></a>
-    </div>
+    <!-- AddToAny widget will be dynamically created here -->
   </div>
 
   <!-- Technical Details Accordion -->
@@ -325,18 +320,30 @@
         
         // Show and update share bar with final image URL
         const shareContainer = document.getElementById('share-container');
-        const shareBar = document.getElementById('share-bar');
         
-        // Update share bar with final image URL and additional metadata
-        console.log('Setting share image URL:', finalImageUrl);
+        // Completely recreate the AddToAny widget with final URLs (like your PHP example)
+        const finalTitle = '$DOGify your image!';
+        const finalDescription = 'Check out my AI-generated photo with a cute dog added! Create your own at dothink.in';
+        const finalUrl = window.location.href;
         
-        shareBar.setAttribute('data-a2a-url', window.location.href);
-        shareBar.setAttribute('data-a2a-title', '$DOGify your image!');
-        shareBar.setAttribute('data-a2a-image', finalImageUrl);
-        shareBar.setAttribute('data-a2a-description', 'Check out my AI-generated photo with a cute dog added! Create your own at dothink.in');
+        // Clear and rebuild the share container with static HTML like your working example
+        shareContainer.innerHTML = `
+          <div class='a2a_kit a2a_kit_size_24 a2a_default_style' 
+               data-a2a-url='${finalUrl}' 
+               data-a2a-title='${finalTitle}' 
+               data-a2a-image='${finalImageUrl}'
+               data-a2a-description='${finalDescription}'>
+            <a class='a2a_button_facebook'></a>
+            <a class='a2a_button_twitter'></a>
+            <a class='a2a_button_linkedin'></a>
+            <a class='a2a_dd' href='https://www.addtoany.com/share'></a>
+          </div>
+        `;
         
         // Add CSS class based on whether image was saved
         shareContainer.className = finalImageUrl !== result.generatedImageUrl ? 'saved-url' : 'temp-url';
+        
+        console.log('Created new AddToAny widget with image URL:', finalImageUrl);
         
         // Also try setting meta tags for better social media sharing
         const existingOgImage = document.querySelector('meta[property="og:image"]');
@@ -352,7 +359,7 @@
         // Show the share container
         shareContainer.style.display = 'block';
         
-        // Reinitialize AddToAny with a slight delay to ensure DOM is updated
+        // Initialize AddToAny on the new widget
         setTimeout(() => {
           if (window.a2a && window.a2a.init_all) {
             window.a2a.init_all('page');
