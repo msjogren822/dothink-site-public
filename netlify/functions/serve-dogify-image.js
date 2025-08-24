@@ -53,17 +53,39 @@ export async function handler(event, context) {
     }
 
     // Get image from Supabase
+    console.log(`Fetching image with ID: ${imageId}`);
     const { data, error } = await supabase
       .from('dogify_images')
-      .select('image_data, image_format, created_at')
+      .select('image_data, image_format, created_at, image_size')
       .eq('id', imageId)
       .single();
 
+    console.log('Supabase query result:', {
+      hasData: !!data,
+      error: error?.message,
+      dataSize: data?.image_data?.length,
+      format: data?.image_format
+    });
+
     if (error || !data) {
+      console.error('Image not found:', error);
       return {
         statusCode: 404,
         headers,
-        body: JSON.stringify({ error: 'Image not found' })
+        body: JSON.stringify({ 
+          error: 'Image not found',
+          details: error?.message,
+          imageId: imageId
+        })
+      };
+    }
+
+    if (!data.image_data) {
+      console.error('Image data is null or empty');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: 'Image data is corrupted or missing' })
       };
     }
 
@@ -80,6 +102,8 @@ export async function handler(event, context) {
 
     // Determine content type
     const contentType = data.image_format === 'png' ? 'image/png' : 'image/jpeg';
+    
+    console.log(`Serving image: ${data.image_data.length} bytes, type: ${contentType}`);
 
     // Return the image
     return {

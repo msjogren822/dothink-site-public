@@ -93,9 +93,30 @@ export async function handler(event, context) {
       }
 
       console.log(`Original image: ${Math.round(imageBuffer.length / 1024)}KB, type: ${contentType}`);
+      console.log('Image buffer type:', typeof imageBuffer, 'Is Buffer:', Buffer.isBuffer(imageBuffer));
 
       // Frontend should compress images, but add a backstop here
       let thumbnailBuffer = imageBuffer;
+      
+      // Ensure we have a proper Buffer (not a base64 string)
+      if (!Buffer.isBuffer(thumbnailBuffer)) {
+        console.log('Converting to Buffer...');
+        if (typeof thumbnailBuffer === 'string') {
+          // If it's a string, assume it's base64
+          thumbnailBuffer = Buffer.from(thumbnailBuffer, 'base64');
+        } else {
+          console.error('Unknown image data type:', typeof thumbnailBuffer);
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({ 
+              ok: false, 
+              error: 'Invalid image data format',
+              details: 'Expected Buffer or base64 string'
+            })
+          };
+        }
+      }
       
       // If still too large, reject (frontend compression should handle this)
       const maxSize = 1.5 * 1024 * 1024; // 1.5MB max (generous limit)
@@ -111,7 +132,7 @@ export async function handler(event, context) {
         };
       }
       
-      console.log(`Using image: ${Math.round(thumbnailBuffer.length / 1024)}KB`);
+      console.log(`Final buffer: ${Math.round(thumbnailBuffer.length / 1024)}KB, isBuffer: ${Buffer.isBuffer(thumbnailBuffer)}`);
 
       // Save to Supabase with timeout protection
       const savePromise = supabase
