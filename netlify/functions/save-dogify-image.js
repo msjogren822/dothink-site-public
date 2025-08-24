@@ -94,26 +94,22 @@ export async function handler(event, context) {
 
       console.log(`Original image: ${Math.round(imageBuffer.length / 1024)}KB, type: ${contentType}`);
 
-      // Don't truncate images as it corrupts them! 
-      // Instead, reject if too large or use the original
-      let thumbnailBuffer;
+      // Frontend should compress images, but add a backstop here
+      let thumbnailBuffer = imageBuffer;
       
-      // Check size first - if over 1MB, reject immediately
-      const maxSize = 1 * 1024 * 1024; // 1MB max
-      if (imageBuffer.length > maxSize) {
+      // If still too large, reject (frontend compression should handle this)
+      const maxSize = 1.5 * 1024 * 1024; // 1.5MB max (generous limit)
+      if (thumbnailBuffer.length > maxSize) {
         return {
           statusCode: 413,
           headers,
           body: JSON.stringify({ 
             ok: false, 
-            error: 'Image too large for storage', 
-            details: `Image size ${Math.round(imageBuffer.length / 1024)}KB exceeds 1MB limit. Please try with a smaller image.` 
+            error: 'Image too large after compression', 
+            details: `Image size ${Math.round(thumbnailBuffer.length / 1024)}KB exceeds 1.5MB limit. Please try again - the app will compress images automatically.` 
           })
         };
       }
-      
-      // Use the original image buffer (don't corrupt by truncating)
-      thumbnailBuffer = imageBuffer;
       
       console.log(`Using image: ${Math.round(thumbnailBuffer.length / 1024)}KB`);
 

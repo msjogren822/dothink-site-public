@@ -304,14 +304,65 @@
         const shouldSave = saveToggle && saveToggle.checked;
         
         if (shouldSave && result.saveToSupabase) {
-          statusEl.innerHTML = `🔄 <strong>Saving image...</strong><br><small>Creating shareable link with proper meta tags</small>`;
+          statusEl.innerHTML = `🔄 <strong>Saving image...</strong><br><small>Compressing for faster sharing</small>`;
           
           try {
+            // Compress the image before sending to reduce size
+            let imageDataToSave = result.generatedImageUrl;
+            
+            // If it's a data URL, try to compress it
+            if (result.generatedImageUrl.startsWith('data:image/')) {
+              try {
+                // Create canvas to compress image
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                
+                await new Promise((resolve, reject) => {
+                  img.onload = resolve;
+                  img.onerror = reject;
+                  img.src = result.generatedImageUrl;
+                });
+                
+                // Create canvas with smaller size for compression
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Reduce size to 512x512 max for storage efficiency
+                const maxSize = 512;
+                let { width, height } = img;
+                
+                if (width > maxSize || height > maxSize) {
+                  if (width > height) {
+                    height = (height * maxSize) / width;
+                    width = maxSize;
+                  } else {
+                    width = (width * maxSize) / height;
+                    height = maxSize;
+                  }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Draw and compress
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Convert to JPEG with 70% quality for smaller file size
+                imageDataToSave = canvas.toDataURL('image/jpeg', 0.7);
+                
+                console.log('Compressed image from', Math.round(result.generatedImageUrl.length / 1024), 'KB to', Math.round(imageDataToSave.length / 1024), 'KB');
+                
+              } catch (compressionError) {
+                console.log('Image compression failed, using original:', compressionError.message);
+                // Use original if compression fails
+              }
+            }
+            
             const saveResponse = await fetch('/.netlify/functions/save-dogify-image', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                imageData: result.generatedImageUrl,
+                imageData: imageDataToSave,
                 sceneAnalysis: result.sceneAnalysis || result.imageAnalysis,
                 generationPrompt: result.placementPrompt || result.reproductionPrompt,
                 modelUsed: result.visionModel || result.model,
