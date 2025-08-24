@@ -5,12 +5,12 @@ The main landing page is here. It's kind of a general "me" page.
 https://www.dothink.in/
 
 ## Project
-- [$DOGify: your image experiment for X people](https://www.dothink.in/public/dogify.html)  
+- [$DOGify: your image experiment for X people](https://www.dothink.in/dogify.html)  
   `public/dogify.html`
 
 ## Recent Experiments
-- [Neon DB connectivity](https://www.dothink.in/public/neon-test.html)  
+- [Neon DB connectivity](https://www.dothink.in/neon-test.html)  
   `public/neon-test.html`
-- [Supabase DB connectivity](https://www.dothink.in/public/supatest.html)  
+- [Supabase DB connectivity](https://www.dothink.in/supatest.html)  
   `public/supatest.html`
 
