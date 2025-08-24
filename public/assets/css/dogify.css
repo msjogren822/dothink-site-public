@@ -160,6 +160,24 @@ body {
   margin: 1rem 0;
 }
 
+#share-container {
+  text-align: center;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+#share-container::before {
+  content: "Share your $dogified photo:";
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
 .regular-button {
   padding: 0.75rem 1.5rem;
   font-size: 1.1rem;

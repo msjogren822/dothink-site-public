@@ -39,11 +39,17 @@
   </div>
 
   <div id="status"></div>
-  <div class='a2a_kit a2a_kit_size_24 a2a_default_style' data-a2a-url='https://www.dothink.in/dogify.html' data-a2a-title='$DOGify your image!'>
-    <a class='a2a_button_facebook'></a>
-    <a class='a2a_button_twitter'></a>
-    <a class='a2a_button_linkedin'></a><a class='a2a_dd' href='https://www.addtoany.com/share'></a></div>
   <img id="dogified-image" alt="AI Generated Image" style="display: none;" />
+  
+  <!-- Share bar - only shows after image is generated -->
+  <div id="share-container" style="display: none;">
+    <div class='a2a_kit a2a_kit_size_24 a2a_default_style' data-a2a-url='https://www.dothink.in/dogify.html' data-a2a-title='$DOGify your image!' id="share-bar">
+      <a class='a2a_button_facebook'></a>
+      <a class='a2a_button_twitter'></a>
+      <a class='a2a_button_linkedin'></a>
+      <a class='a2a_dd' href='https://www.addtoany.com/share'></a>
+    </div>
+  </div>
 
   <!-- Technical Details Accordion -->
   <div id="tech-details" class="accordion" style="display: none;">
@@ -250,6 +256,22 @@
         
         captureLeftBtn.style.background = '#28a745';
         captureRightBtn.style.background = '#28a745';
+        
+        // Show and update share bar with generated image
+        const shareContainer = document.getElementById('share-container');
+        const shareBar = document.getElementById('share-bar');
+        
+        // Update share bar with generated image URL
+        shareBar.setAttribute('data-a2a-image', result.generatedImageUrl);
+        shareBar.setAttribute('data-a2a-description', 'Check out my AI-generated photo with a cute dog added!');
+        
+        // Show the share container
+        shareContainer.style.display = 'block';
+        
+        // Reinitialize AddToAny to pick up the new image data
+        if (window.a2a && window.a2a.init_all) {
+          window.a2a.init_all();
+        }
         
         // Populate technical details
         sceneAnalysisEl.textContent = result.sceneAnalysis || result.imageAnalysis || 'No analysis available';
