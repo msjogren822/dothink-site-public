@@ -13,6 +13,26 @@ export async function handler(event, context) {
   }
 
   try {
+    // Special debug mode to list recent UUIDs
+    if (event.queryStringParameters?.debug === 'list') {
+      const supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_ANON_KEY
+      );
+      
+      const { data, error } = await supabase
+        .from('dogify_images')
+        .select('id, created_at, image_format, image_size')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      return {
+        statusCode: 200,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recent_images: data }, null, 2)
+      };
+    }
+    
     // Step 1: Basic parameter validation
     const imageId = event.queryStringParameters?.id;
     console.log('Step 1: Raw parameters:', event.queryStringParameters);
