@@ -206,7 +206,8 @@ exports.handler = async function (event) {
         placementPrompt: placementPrompt, // Changed from combinationPrompt
         visionModel: workingModel,
         imageModel: "venice-sd35",
-        testPhase: "Simple puppy placement like OpenAI"
+        testPhase: "Simple puppy placement like OpenAI",
+        saveToSupabase: true // Flag to indicate we should save this
       })
     };
 

@@ -265,27 +265,59 @@
         captureLeftBtn.style.background = '#28a745';
         captureRightBtn.style.background = '#28a745';
         
-        // Show and update share bar with generated image
+        // Save image to Supabase for stable sharing URL
+        let finalImageUrl = result.generatedImageUrl;
+        
+        if (result.saveToSupabase) {
+          statusEl.innerHTML = `🔄 <strong>Saving image...</strong><br><small>Creating shareable link</small>`;
+          
+          try {
+            const saveResponse = await fetch('/.netlify/functions/save-dogify-image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                imageData: result.generatedImageUrl,
+                sceneAnalysis: result.sceneAnalysis || result.imageAnalysis,
+                generationPrompt: result.placementPrompt || result.reproductionPrompt,
+                modelUsed: result.visionModel || result.model,
+                generationTimeSeconds: seconds,
+                userSession: Date.now().toString() // Simple session ID
+              })
+            });
+            
+            if (saveResponse.ok) {
+              const saveResult = await saveResponse.json();
+              if (saveResult.ok) {
+                finalImageUrl = saveResult.imageUrl;
+                console.log('Image saved to Supabase:', saveResult.imageId);
+              }
+            }
+          } catch (saveErr) {
+            console.warn('Failed to save to Supabase:', saveErr);
+            // Continue with original URL if save fails
+          }
+        }
+        
+        // Show and update share bar with final image URL
         const shareContainer = document.getElementById('share-container');
         const shareBar = document.getElementById('share-bar');
         
-        // Update share bar with generated image URL and additional metadata
-        const imageUrl = result.generatedImageUrl;
-        console.log('Setting share image URL:', imageUrl);
+        // Update share bar with final image URL and additional metadata
+        console.log('Setting share image URL:', finalImageUrl);
         
         shareBar.setAttribute('data-a2a-url', window.location.href);
         shareBar.setAttribute('data-a2a-title', '$DOGify your image!');
-        shareBar.setAttribute('data-a2a-image', imageUrl);
+        shareBar.setAttribute('data-a2a-image', finalImageUrl);
         shareBar.setAttribute('data-a2a-description', 'Check out my AI-generated photo with a cute dog added! Create your own at dothink.in');
         
         // Also try setting meta tags for better social media sharing
         const existingOgImage = document.querySelector('meta[property="og:image"]');
         if (existingOgImage) {
-          existingOgImage.setAttribute('content', imageUrl);
+          existingOgImage.setAttribute('content', finalImageUrl);
         } else {
           const ogImage = document.createElement('meta');
           ogImage.setAttribute('property', 'og:image');
-          ogImage.setAttribute('content', imageUrl);
+          ogImage.setAttribute('content', finalImageUrl);
           document.head.appendChild(ogImage);
         }
         
