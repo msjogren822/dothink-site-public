@@ -107,6 +107,85 @@
     let stream = null;
     let capturedImageData = '';
 
+    // Copy share URL function
+    function copyShareUrl() {
+      const shareUrlInput = document.getElementById('share-url');
+      shareUrlInput.select();
+      shareUrlInput.setSelectionRange(0, 99999); // For mobile devices
+      navigator.clipboard.writeText(shareUrlInput.value).then(() => {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '✅ Copied!';
+        button.style.background = '#28a745';
+        setTimeout(() => {
+          button.innerHTML = originalText;
+          button.style.background = '#0070f3';
+        }, 2000);
+      }).catch(() => {
+        // Fallback for older browsers
+        document.execCommand('copy');
+        alert('Share URL copied to clipboard!');
+      });
+    }
+
+    // Check if this is a shared image URL
+    function checkForSharedImage() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sharedImageId = urlParams.get('shared');
+      
+      if (sharedImageId) {
+        // This is a shared image - load it and update meta tags
+        const imageUrl = `/.netlify/functions/serve-dogify-image?id=${sharedImageId}`;
+        
+        // Update page meta tags for social media crawlers
+        document.title = 'Check out my $DOGified photo!';
+        document.querySelector('meta[property="og:title"]').content = 'Check out my $DOGified photo!';
+        document.querySelector('meta[property="og:description"]').content = 'I used AI to add a cute dog to my photo! Create your own at dothink.in';
+        document.querySelector('meta[property="og:image"]').content = imageUrl;
+        document.querySelector('meta[name="twitter:title"]').content = 'Check out my $DOGified photo!';
+        document.querySelector('meta[name="twitter:description"]').content = 'I used AI to add a cute dog to my photo! Create your own at dothink.in';
+        
+        // Show the shared image
+        const dogifiedImgEl = document.getElementById('dogified-image');
+        dogifiedImgEl.src = imageUrl;
+        dogifiedImgEl.style.display = 'block';
+        
+        // Hide camera controls and show a message
+        document.querySelector('.camera-start-section').style.display = 'none';
+        document.querySelector('.save-toggle-section').style.display = 'none';
+        document.getElementById('status').innerHTML = '🎉 <strong>Shared $DOGified Photo</strong><br><small><a href="dogify.html">Create your own →</a></small>';
+        
+        // Show sharing options for this shared image
+        const shareContainer = document.getElementById('share-container');
+        shareContainer.innerHTML = `
+          <div style="text-align: center; margin: 1rem 0;">
+            <div style="font-weight: 600; margin-bottom: 0.5rem;">Share this $dogified photo:</div>
+            <div class='a2a_kit a2a_kit_size_24 a2a_default_style' 
+                 data-a2a-url='${window.location.href}' 
+                 data-a2a-title='Check out my $DOGified photo!' 
+                 data-a2a-image='${imageUrl}'
+                 data-a2a-description='I used AI to add a cute dog to my photo! Create your own at dothink.in'>
+              <a class='a2a_button_facebook'></a>
+              <a class='a2a_button_twitter'></a>
+              <a class='a2a_button_linkedin'></a>
+              <a class='a2a_dd' href='https://www.addtoany.com/share'></a>
+            </div>
+          </div>
+        `;
+        shareContainer.style.display = 'block';
+        
+        // Initialize AddToAny
+        setTimeout(() => {
+          if (window.a2a && window.a2a.init_all) {
+            window.a2a.init_all('page');
+          }
+        }, 100);
+      }
+    }
+
+    // Check for shared image on page load
+    checkForSharedImage();
+
     // Accordion toggle function
     function toggleAccordion() {
       const content = document.querySelector('.accordion-content');
@@ -321,40 +400,50 @@
         // Show and update share bar with final image URL
         const shareContainer = document.getElementById('share-container');
         
-        // Completely recreate the AddToAny widget with final URLs (like your PHP example)
-        const finalTitle = '$DOGify your image!';
-        const finalDescription = 'Check out my AI-generated photo with a cute dog added! Create your own at dothink.in';
-        const finalUrl = window.location.href;
+        // For proper social media sharing, we need the URLs in static HTML
+        // So instead of trying to update this page, we'll create a shareable URL
+        let shareableUrl = window.location.href;
+        let shareMessage = '';
         
-        // Clear and rebuild the share container with static HTML like your working example
+        if (finalImageUrl !== result.generatedImageUrl) {
+          // Image was saved to Supabase - create a shareable URL with the image ID
+          const imageId = finalImageUrl.split('id=')[1];
+          if (imageId) {
+            shareableUrl = `${window.location.origin}/dogify.html?shared=${imageId}`;
+            shareMessage = '✅ Shareable link created with embedded image';
+          }
+        } else {
+          shareMessage = '⚠️ Using temporary image URL (may not work on social media)';
+        }
+        
+        // Create share section with copy link functionality
         shareContainer.innerHTML = `
-          <div class='a2a_kit a2a_kit_size_24 a2a_default_style' 
-               data-a2a-url='${finalUrl}' 
-               data-a2a-title='${finalTitle}' 
-               data-a2a-image='${finalImageUrl}'
-               data-a2a-description='${finalDescription}'>
-            <a class='a2a_button_facebook'></a>
-            <a class='a2a_button_twitter'></a>
-            <a class='a2a_button_linkedin'></a>
-            <a class='a2a_dd' href='https://www.addtoany.com/share'></a>
+          <div style="text-align: center; margin: 1rem 0;">
+            <div style="font-weight: 600; margin-bottom: 0.5rem;">Share your $dogified photo:</div>
+            <div style="margin: 0.5rem 0; padding: 0.5rem; background: #f0f0f0; border-radius: 4px;">
+              <input type="text" id="share-url" value="${shareableUrl}" readonly 
+                     style="width: 80%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem;">
+              <button onclick="copyShareUrl()" style="padding: 0.5rem 1rem; margin-left: 0.5rem; background: #0070f3; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                📋 Copy Link
+              </button>
+            </div>
+            <div style="font-size: 0.8rem; color: #666; margin-bottom: 1rem;">${shareMessage}</div>
+            <div class='a2a_kit a2a_kit_size_24 a2a_default_style' 
+                 data-a2a-url='${shareableUrl}' 
+                 data-a2a-title='Check out my $DOGified photo!' 
+                 data-a2a-description='I used AI to add a cute dog to my photo! Create your own at dothink.in'>
+              <a class='a2a_button_facebook'></a>
+              <a class='a2a_button_twitter'></a>
+              <a class='a2a_button_linkedin'></a>
+              <a class='a2a_dd' href='https://www.addtoany.com/share'></a>
+            </div>
           </div>
         `;
         
         // Add CSS class based on whether image was saved
         shareContainer.className = finalImageUrl !== result.generatedImageUrl ? 'saved-url' : 'temp-url';
         
-        console.log('Created new AddToAny widget with image URL:', finalImageUrl);
-        
-        // Also try setting meta tags for better social media sharing
-        const existingOgImage = document.querySelector('meta[property="og:image"]');
-        if (existingOgImage) {
-          existingOgImage.setAttribute('content', finalImageUrl);
-        } else {
-          const ogImage = document.createElement('meta');
-          ogImage.setAttribute('property', 'og:image');
-          ogImage.setAttribute('content', finalImageUrl);
-          document.head.appendChild(ogImage);
-        }
+        console.log('Created share section with URL:', shareableUrl);
         
         // Show the share container
         shareContainer.style.display = 'block';
