@@ -1,16 +1,11 @@
 // netlify/functions/save-dogify-image.js
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+// Check if Supabase is configured using the correct environment variable names
+const supabaseUrl = process.env.SUPABASE_DATABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-exports.handler = async function(event, context) {
+export async function handler(event, context) {
   // Enable CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -22,7 +17,26 @@ exports.handler = async function(event, context) {
     return { statusCode: 200, headers, body: '' };
   }
 
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Missing Supabase environment variables:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseKey,
+      allEnvVars: Object.keys(process.env).filter(key => key.includes('SUPABASE'))
+    });
+    return {
+      statusCode: 503,
+      headers,
+      body: JSON.stringify({ 
+        ok: false, 
+        error: 'Image saving service not configured',
+        details: 'Supabase environment variables missing'
+      })
+    };
+  }
+
   try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     if (event.httpMethod === 'POST') {
       // Save a new dogified image
       const { 
@@ -42,14 +56,14 @@ exports.handler = async function(event, context) {
         };
       }
 
-      // Convert data URL to buffer and resize to 600x600
-      const sharp = require('sharp');
-      
       let imageBuffer;
+      let contentType = 'image/jpeg';
+
       if (imageData.startsWith('data:image/')) {
         // Handle data URL
         const base64Data = imageData.split(',')[1];
         imageBuffer = Buffer.from(base64Data, 'base64');
+        contentType = imageData.substring(5, imageData.indexOf(';'));
       } else if (imageData.startsWith('http')) {
         // Handle URL - fetch and convert
         const response = await fetch(imageData);
@@ -57,31 +71,23 @@ exports.handler = async function(event, context) {
           throw new Error(`Failed to fetch image: ${response.status}`);
         }
         imageBuffer = Buffer.from(await response.arrayBuffer());
+        contentType = response.headers.get('content-type') || 'image/jpeg';
       } else {
         throw new Error('Unsupported image format');
       }
 
-      // Resize to 600x600 and optimize
-      const processedImage = await sharp(imageBuffer)
-        .resize(600, 600, {
-          fit: 'inside',
-          withoutEnlargement: false,
-          background: { r: 255, g: 255, b: 255, alpha: 1 }
-        })
-        .jpeg({ quality: 85, progressive: true })
-        .toBuffer();
-
-      const metadata = await sharp(processedImage).metadata();
+      // For now, store the original image without resizing to avoid Sharp dependency issues
+      // TODO: Add Sharp processing later when dependencies are properly configured
 
       // Save to Supabase
       const { data, error } = await supabase
         .from('dogify_images')
         .insert({
-          image_data: processedImage,
-          image_format: 'jpeg',
-          image_size: processedImage.length,
-          width: metadata.width,
-          height: metadata.height,
+          image_data: imageBuffer,
+          image_format: contentType.includes('png') ? 'png' : 'jpeg',
+          image_size: imageBuffer.length,
+          width: 1024, // Default, will be updated when Sharp is available
+          height: 1024,
           scene_analysis: sceneAnalysis,
           generation_prompt: generationPrompt,
           model_used: modelUsed,
@@ -112,8 +118,8 @@ exports.handler = async function(event, context) {
           ok: true,
           imageId: data.id,
           imageUrl: imageUrl,
-          size: processedImage.length,
-          dimensions: { width: metadata.width, height: metadata.height }
+          size: imageBuffer.length,
+          dimensions: { width: 1024, height: 1024 } // Default dimensions
         })
       };
 

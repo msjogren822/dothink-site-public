@@ -23,7 +23,7 @@
   <div class="save-toggle-section">
     <div class="toggle-container">
       <label class="toggle-label" for="save-toggle">
-        <input type="checkbox" id="save-toggle" class="toggle-input" checked>
+        <input type="checkbox" id="save-toggle" class="toggle-input">
         <span class="toggle-slider"></span>
         <span class="toggle-text">Save the generated image for easier sharing</span>
       </label>
@@ -306,6 +306,13 @@
               if (saveResult.ok) {
                 finalImageUrl = saveResult.imageUrl;
                 console.log('Image saved to Supabase:', saveResult.imageId);
+              }
+            } else {
+              const errorResult = await saveResponse.json().catch(() => ({}));
+              if (saveResponse.status === 503) {
+                console.warn('Image saving service not configured - using Venice URL directly');
+              } else {
+                console.warn('Failed to save to Supabase:', errorResult);
               }
             }
           } catch (saveErr) {
