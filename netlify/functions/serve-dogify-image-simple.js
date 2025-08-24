@@ -15,13 +15,35 @@ export async function handler(event, context) {
   try {
     // Step 1: Basic parameter validation
     const imageId = event.queryStringParameters?.id;
-    console.log('Step 1: Image ID:', imageId);
+    console.log('Step 1: Raw parameters:', event.queryStringParameters);
+    console.log('Step 1: Extracted Image ID:', imageId);
     
-    if (!imageId) {
+    // Clean the image ID in case it has extra data
+    let cleanImageId = imageId;
+    if (imageId && imageId.includes(',')) {
+      cleanImageId = imageId.split(',')[0].trim();
+      console.log('Step 1: Cleaned ID (removed comma-separated data):', cleanImageId);
+    }
+    
+    if (!cleanImageId) {
       return {
         statusCode: 400,
         headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Missing image ID' })
+      };
+    }
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(cleanImageId)) {
+      return {
+        statusCode: 400,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          error: 'Invalid image ID format',
+          receivedId: imageId,
+          cleanedId: cleanImageId
+        })
       };
     }
 
@@ -47,11 +69,11 @@ export async function handler(event, context) {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Step 4: Query database
-    console.log('Step 4: Querying database for ID:', imageId);
+    console.log('Step 4: Querying database for ID:', cleanImageId);
     const { data, error } = await supabase
       .from('dogify_images')
       .select('image_data, image_format, created_at')
-      .eq('id', imageId)
+      .eq('id', cleanImageId)
       .single();
 
     console.log('Step 4 result:', { 

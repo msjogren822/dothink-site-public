@@ -3,12 +3,18 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 export default async (request, context) => {
   const url = new URL(request.url);
-  const pathSegments = url.pathname.split('/');
-  const imageId = pathSegments[pathSegments.length - 1]; // Get the last segment
+  const pathSegments = url.pathname.split('/').filter(segment => segment.length > 0);
+  const imageId = pathSegments[pathSegments.length - 1]; // Get the last non-empty segment
+  
+  console.log('Share page request:', {
+    pathname: url.pathname,
+    segments: pathSegments,
+    extractedId: imageId
+  });
 
   // Validate UUID format
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  if (!uuidRegex.test(imageId)) {
+  if (!imageId || !uuidRegex.test(imageId)) {
     return new Response(`
 <!DOCTYPE html>
 <html><head><title>Invalid Image ID</title></head>
