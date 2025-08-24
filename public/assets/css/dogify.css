@@ -151,8 +151,8 @@ body {
 }
 
 #dogified-image {
-  max-width: min(90vw, 500px);
-  max-height: min(80vh, 600px);
+  max-width: min(95vw, 1024px);
+  max-height: min(85vh, 1024px);
   width: auto;
   height: auto;
   border-radius: 12px;
