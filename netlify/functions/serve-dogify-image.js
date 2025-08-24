@@ -143,10 +143,23 @@ export async function handler(event, context) {
 
   } catch (err) {
     console.error('Serve image error:', err);
+    console.error('Error details:', {
+      message: err.message,
+      stack: err.stack,
+      name: err.name
+    });
+    
     return {
       statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'Internal server error' })
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        error: 'Internal server error',
+        details: err.message,
+        timestamp: new Date().toISOString()
+      })
     };
   }
 };
