@@ -122,8 +122,8 @@ export async function handler(event, context) {
       .then(() => {})
       .catch(err => console.log('Share count update failed:', err));
 
-    // Determine content type
-    const contentType = data.image_format === 'png' ? 'image/png' : 'image/jpeg';
+    // Determine content type - always JPEG for consistency
+    const contentType = 'image/jpeg';
     
     console.log(`Serving image: ${data.image_data.length} bytes, type: ${contentType}`);
     console.log('Image data type:', typeof data.image_data, 'isBuffer:', Buffer.isBuffer(data.image_data));

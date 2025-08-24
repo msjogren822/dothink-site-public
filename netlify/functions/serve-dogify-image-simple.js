@@ -166,8 +166,8 @@ export async function handler(event, context) {
       };
     }
 
-    // Step 7: Return image
-    const contentType = data.image_format === 'png' ? 'image/png' : 'image/jpeg';
+    // Step 7: Return image - always JPEG
+    const contentType = 'image/jpeg';
     console.log('Step 7: Returning image, type:', contentType, 'size:', imageBuffer.length);
 
     return {

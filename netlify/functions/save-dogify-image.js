@@ -199,10 +199,10 @@ export async function handler(event, context) {
         .from('dogify_images')
         .insert({
           image_data: base64ImageData, // Store as base64 string, not Buffer
-          image_format: 'jpeg', // Always JPEG for consistency
+          image_format: 'jpeg', // Always JPEG
           image_size: thumbnailBuffer.length, // Original binary size
-          width: 600, // Estimated size for images
-          height: 600,
+          width: 600, // Standardized size
+          height: 600, // Standardized size
           scene_analysis: sceneAnalysis,
           generation_prompt: generationPrompt,
           model_used: modelUsed,
