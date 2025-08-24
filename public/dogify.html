@@ -19,6 +19,20 @@
   <h1>$dog-ify Your Photo</h1>
   <p>Capture a photo and let AI add $dog to your scene! (processing time, about 30 seconds)</p>
 
+  <!-- Save Toggle Section -->
+  <div class="save-toggle-section">
+    <div class="toggle-container">
+      <label class="toggle-label" for="save-toggle">
+        <input type="checkbox" id="save-toggle" class="toggle-input" checked>
+        <span class="toggle-slider"></span>
+        <span class="toggle-text">Save the generated image for easier sharing</span>
+      </label>
+    </div>
+    <div class="save-disclaimer">
+      <small>Your captured image is <strong>NOT SAVED</strong>, only your generated image will be with your permission. Your generated image is based on text descriptions of your captured image so it is safe to store for sharing.</small>
+    </div>
+  </div>
+
   <div class="camera-start-section">
     <div class="start-label">Start Camera:</div>
     <div class="camera-options">
@@ -265,10 +279,12 @@
         captureLeftBtn.style.background = '#28a745';
         captureRightBtn.style.background = '#28a745';
         
-        // Save image to Supabase for stable sharing URL
+        // Save image to Supabase for stable sharing URL (only if toggle is enabled)
         let finalImageUrl = result.generatedImageUrl;
+        const saveToggle = document.getElementById('save-toggle');
+        const shouldSave = saveToggle && saveToggle.checked;
         
-        if (result.saveToSupabase) {
+        if (shouldSave && result.saveToSupabase) {
           statusEl.innerHTML = `🔄 <strong>Saving image...</strong><br><small>Creating shareable link</small>`;
           
           try {
@@ -296,6 +312,8 @@
             console.warn('Failed to save to Supabase:', saveErr);
             // Continue with original URL if save fails
           }
+        } else if (!shouldSave) {
+          console.log('User opted not to save image - using Venice URL directly');
         }
         
         // Show and update share bar with final image URL
@@ -309,6 +327,9 @@
         shareBar.setAttribute('data-a2a-title', '$DOGify your image!');
         shareBar.setAttribute('data-a2a-image', finalImageUrl);
         shareBar.setAttribute('data-a2a-description', 'Check out my AI-generated photo with a cute dog added! Create your own at dothink.in');
+        
+        // Add CSS class based on whether image was saved
+        shareContainer.className = finalImageUrl !== result.generatedImageUrl ? 'saved-url' : 'temp-url';
         
         // Also try setting meta tags for better social media sharing
         const existingOgImage = document.querySelector('meta[property="og:image"]');
