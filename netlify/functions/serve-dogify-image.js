@@ -33,6 +33,7 @@ export async function handler(event, context) {
 
   try {
     const imageId = event.queryStringParameters?.id;
+    const debug = event.queryStringParameters?.debug === 'true';
     
     if (!imageId) {
       return {
@@ -86,6 +87,27 @@ export async function handler(event, context) {
         statusCode: 500,
         headers,
         body: JSON.stringify({ error: 'Image data is corrupted or missing' })
+      };
+    }
+
+    // Debug mode: return JSON with metadata instead of image
+    if (debug) {
+      return {
+        statusCode: 200,
+        headers: { 
+          ...headers, 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({
+          imageId: imageId,
+          dataType: typeof data.image_data,
+          dataLength: data.image_data?.length || 0,
+          isBuffer: Buffer.isBuffer(data.image_data),
+          format: data.image_format,
+          created: data.created_at,
+          firstBytes: data.image_data ? Array.from(data.image_data.slice(0, 10)) : [],
+          hasBase64Header: data.image_data ? data.image_data.toString().startsWith('data:') : false
+        })
       };
     }
 
