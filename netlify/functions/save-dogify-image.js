@@ -135,10 +135,16 @@ export async function handler(event, context) {
       console.log(`Final buffer: ${Math.round(thumbnailBuffer.length / 1024)}KB, isBuffer: ${Buffer.isBuffer(thumbnailBuffer)}`);
 
       // Save to Supabase with timeout protection
+      console.log('About to save to Supabase:', {
+        bufferSize: thumbnailBuffer.length,
+        isBuffer: Buffer.isBuffer(thumbnailBuffer),
+        firstBytes: Array.from(thumbnailBuffer.slice(0, 10))
+      });
+      
       const savePromise = supabase
         .from('dogify_images')
         .insert({
-          image_data: thumbnailBuffer, // Use the original image data (not corrupted)
+          image_data: thumbnailBuffer, // This should be a Buffer for binary storage
           image_format: 'jpeg', // Always JPEG for consistency
           image_size: thumbnailBuffer.length,
           width: 600, // Estimated size for images

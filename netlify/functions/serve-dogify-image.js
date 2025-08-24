@@ -126,6 +126,35 @@ export async function handler(event, context) {
     const contentType = data.image_format === 'png' ? 'image/png' : 'image/jpeg';
     
     console.log(`Serving image: ${data.image_data.length} bytes, type: ${contentType}`);
+    console.log('Image data type:', typeof data.image_data, 'isBuffer:', Buffer.isBuffer(data.image_data));
+
+    // Handle the case where Supabase returns string instead of Buffer
+    let imageBuffer;
+    if (Buffer.isBuffer(data.image_data)) {
+      // Already a buffer - use directly
+      imageBuffer = data.image_data;
+    } else if (typeof data.image_data === 'string') {
+      // It's a string - need to convert back to buffer
+      try {
+        // Try to parse as base64 first
+        imageBuffer = Buffer.from(data.image_data, 'base64');
+        console.log('Converted string to buffer:', imageBuffer.length, 'bytes');
+      } catch (e) {
+        console.error('Failed to convert string to buffer:', e);
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({ error: 'Image data format error' })
+        };
+      }
+    } else {
+      console.error('Unknown image data type:', typeof data.image_data);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: 'Unknown image data format' })
+      };
+    }
 
     // Return the image
     return {
@@ -133,11 +162,11 @@ export async function handler(event, context) {
       headers: {
         ...headers,
         'Content-Type': contentType,
-        'Content-Length': data.image_data.length.toString(),
+        'Content-Length': imageBuffer.length.toString(),
         'Last-Modified': new Date(data.created_at).toUTCString(),
         'ETag': `"${imageId}"`,
       },
-      body: data.image_data.toString('base64'),
+      body: imageBuffer.toString('base64'),
       isBase64Encoded: true
     };
 
