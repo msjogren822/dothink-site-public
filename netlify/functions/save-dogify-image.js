@@ -65,22 +65,51 @@ export async function handler(event, context) {
         imageBuffer = Buffer.from(base64Data, 'base64');
         contentType = imageData.substring(5, imageData.indexOf(';'));
       } else if (imageData.startsWith('http')) {
-        // Handle URL - fetch and convert
-        const response = await fetch(imageData);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch image: ${response.status}`);
+        // Handle URL - fetch and convert with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        try {
+          const response = await fetch(imageData, { 
+            signal: controller.signal,
+            timeout: 10000 
+          });
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status}`);
+          }
+          imageBuffer = Buffer.from(await response.arrayBuffer());
+          contentType = response.headers.get('content-type') || 'image/jpeg';
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          if (fetchError.name === 'AbortError') {
+            throw new Error('Image fetch timed out');
+          }
+          throw fetchError;
         }
-        imageBuffer = Buffer.from(await response.arrayBuffer());
-        contentType = response.headers.get('content-type') || 'image/jpeg';
       } else {
         throw new Error('Unsupported image format');
       }
 
-      // For now, store the original image without resizing to avoid Sharp dependency issues
-      // TODO: Add Sharp processing later when dependencies are properly configured
+      // Limit image size to prevent timeouts (5MB max)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (imageBuffer.length > maxSize) {
+        return {
+          statusCode: 413,
+          headers,
+          body: JSON.stringify({ 
+            ok: false, 
+            error: 'Image too large', 
+            details: `Image size ${Math.round(imageBuffer.length / 1024 / 1024)}MB exceeds 5MB limit` 
+          })
+        };
+      }
 
-      // Save to Supabase
-      const { data, error } = await supabase
+      console.log(`Processing image: ${Math.round(imageBuffer.length / 1024)}KB, type: ${contentType}`);
+
+      // Save to Supabase with timeout protection
+      const savePromise = supabase
         .from('dogify_images')
         .insert({
           image_data: imageBuffer,
@@ -99,12 +128,46 @@ export async function handler(event, context) {
         .select('id')
         .single();
 
+      // Add timeout to Supabase operation
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database operation timed out')), 20000) // 20 seconds
+      );
+
+      const { data, error } = await Promise.race([savePromise, timeoutPromise]);
+
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Supabase error details:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          table: 'dogify_images'
+        });
+        
+        // Provide more specific error messages
+        let errorMessage = 'Failed to save image';
+        let statusCode = 500;
+        
+        if (error.code === '42P01') {
+          errorMessage = 'Database table not found. Please run the table creation script.';
+          statusCode = 503;
+        } else if (error.code === '23505') {
+          errorMessage = 'Duplicate image detected';
+          statusCode = 409;
+        } else if (error.message?.includes('timeout')) {
+          errorMessage = 'Database operation timed out. Please try again.';
+          statusCode = 504;
+        }
+        
         return {
-          statusCode: 500,
+          statusCode: statusCode,
           headers,
-          body: JSON.stringify({ ok: false, error: 'Failed to save image', details: error.message })
+          body: JSON.stringify({ 
+            ok: false, 
+            error: errorMessage, 
+            details: error.message,
+            code: error.code
+          })
         };
       }
 
