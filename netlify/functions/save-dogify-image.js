@@ -141,12 +141,17 @@ export async function handler(event, context) {
         firstBytes: Array.from(thumbnailBuffer.slice(0, 10))
       });
       
+      // Convert Buffer to base64 string for reliable storage in Supabase
+      // Supabase doesn't handle raw Buffer objects well - they get JSON serialized
+      const base64ImageData = thumbnailBuffer.toString('base64');
+      console.log('Converted to base64:', base64ImageData.length, 'chars');
+      
       const savePromise = supabase
         .from('dogify_images')
         .insert({
-          image_data: thumbnailBuffer, // This should be a Buffer for binary storage
+          image_data: base64ImageData, // Store as base64 string, not Buffer
           image_format: 'jpeg', // Always JPEG for consistency
-          image_size: thumbnailBuffer.length,
+          image_size: thumbnailBuffer.length, // Original binary size
           width: 600, // Estimated size for images
           height: 600,
           scene_analysis: sceneAnalysis,

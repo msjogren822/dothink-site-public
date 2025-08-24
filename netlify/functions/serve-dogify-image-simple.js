@@ -103,12 +103,57 @@ export async function handler(event, context) {
         imageBuffer = data.image_data;
         console.log('Step 6a: Using Buffer directly');
       } else if (typeof data.image_data === 'string') {
-        // Try to convert string to buffer
-        imageBuffer = Buffer.from(data.image_data, 'base64');
-        console.log('Step 6b: Converted string to buffer, length:', imageBuffer.length);
+        // Check if it's the old JSON-serialized Buffer format
+        if (data.image_data.startsWith('\\x7b') || data.image_data.includes('"type":"Buffer"')) {
+          console.log('Step 6b: Detected old JSON-serialized Buffer format');
+          try {
+            // Try to parse the JSON-serialized Buffer
+            let parsedData;
+            if (data.image_data.startsWith('\\x')) {
+              // It's hex-encoded, need to decode first
+              const hexString = data.image_data.replace(/\\x/g, '');
+              const jsonString = Buffer.from(hexString, 'hex').toString();
+              parsedData = JSON.parse(jsonString);
+            } else {
+              parsedData = JSON.parse(data.image_data);
+            }
+            
+            if (parsedData.type === 'Buffer' && Array.isArray(parsedData.data)) {
+              imageBuffer = Buffer.from(parsedData.data);
+              console.log('Step 6b: Successfully parsed old Buffer format, length:', imageBuffer.length);
+            } else {
+              throw new Error('Not a valid Buffer JSON');
+            }
+          } catch (parseError) {
+            console.log('Step 6b: Failed to parse old format:', parseError.message);
+            throw new Error('Cannot parse old buffer format');
+          }
+        } else {
+          // Assume it's base64
+          imageBuffer = Buffer.from(data.image_data, 'base64');
+          console.log('Step 6c: Converted base64 string to buffer, length:', imageBuffer.length);
+        }
       } else {
         throw new Error(`Unknown data type: ${typeof data.image_data}`);
       }
+      
+      // Validate that we have a proper image
+      const firstBytes = imageBuffer.slice(0, 4);
+      const isJPEG = firstBytes[0] === 0xFF && firstBytes[1] === 0xD8;
+      const isPNG = firstBytes[0] === 0x89 && firstBytes[1] === 0x50 && firstBytes[2] === 0x4E && firstBytes[3] === 0x47;
+      
+      console.log('Step 6 validation:', {
+        bufferLength: imageBuffer.length,
+        firstBytesHex: firstBytes.toString('hex'),
+        isJPEG,
+        isPNG,
+        isValidImage: isJPEG || isPNG
+      });
+      
+      if (!isJPEG && !isPNG) {
+        throw new Error('Invalid image data - not JPEG or PNG');
+      }
+      
     } catch (conversionError) {
       console.error('Step 6 conversion error:', conversionError);
       return {
