@@ -92,31 +92,61 @@ export async function handler(event, context) {
         throw new Error('Unsupported image format');
       }
 
-      // Limit image size to prevent timeouts (5MB max)
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      if (imageBuffer.length > maxSize) {
+      console.log(`Original image: ${Math.round(imageBuffer.length / 1024)}KB, type: ${contentType}`);
+
+      // Create a smaller thumbnail for faster database operations and social sharing
+      // Most social media platforms will resize anyway, so a smaller image is fine
+      let thumbnailBuffer;
+      try {
+        // Use Canvas API to resize image to 400x400 (much smaller but still good for sharing)
+        const canvas = new OffscreenCanvas(400, 400);
+        const ctx = canvas.getContext('2d');
+        
+        // Create image from buffer
+        const blob = new Blob([imageBuffer], { type: contentType });
+        const imageBitmap = await createImageBitmap(blob);
+        
+        // Draw resized image
+        ctx.drawImage(imageBitmap, 0, 0, 400, 400);
+        
+        // Convert back to buffer
+        const resizedBlob = await canvas.convertToBlob({ 
+          type: 'image/jpeg', 
+          quality: 0.8 // Good quality but smaller file
+        });
+        thumbnailBuffer = Buffer.from(await resizedBlob.arrayBuffer());
+        
+        console.log(`Resized image: ${Math.round(thumbnailBuffer.length / 1024)}KB (400x400)`);
+        
+      } catch (resizeError) {
+        console.log('Canvas resize failed, using original (but will compress):', resizeError.message);
+        // Fallback: just compress the original without resizing
+        thumbnailBuffer = imageBuffer;
+      }
+
+      // Final size check - if still too big, we have a problem
+      const maxSize = 1 * 1024 * 1024; // 1MB max for database
+      if (thumbnailBuffer.length > maxSize) {
         return {
           statusCode: 413,
           headers,
           body: JSON.stringify({ 
             ok: false, 
-            error: 'Image too large', 
-            details: `Image size ${Math.round(imageBuffer.length / 1024 / 1024)}MB exceeds 5MB limit` 
+            error: 'Image still too large after compression', 
+            details: `Image size ${Math.round(thumbnailBuffer.length / 1024)}KB exceeds 1MB limit` 
           })
         };
       }
-
-      console.log(`Processing image: ${Math.round(imageBuffer.length / 1024)}KB, type: ${contentType}`);
 
       // Save to Supabase with timeout protection
       const savePromise = supabase
         .from('dogify_images')
         .insert({
-          image_data: imageBuffer,
-          image_format: contentType.includes('png') ? 'png' : 'jpeg',
-          image_size: imageBuffer.length,
-          width: 1024, // Default, will be updated when Sharp is available
-          height: 1024,
+          image_data: thumbnailBuffer, // Use the smaller thumbnail
+          image_format: 'jpeg', // Always JPEG for smaller size
+          image_size: thumbnailBuffer.length,
+          width: 400, // Fixed size for thumbnails
+          height: 400,
           scene_analysis: sceneAnalysis,
           generation_prompt: generationPrompt,
           model_used: modelUsed,
@@ -128,9 +158,9 @@ export async function handler(event, context) {
         .select('id')
         .single();
 
-      // Add timeout to Supabase operation
+      // Add timeout to Supabase operation (reduced to 10 seconds for smaller images)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database operation timed out')), 20000) // 20 seconds
+        setTimeout(() => reject(new Error('Database operation timed out')), 10000) // 10 seconds
       );
 
       const { data, error } = await Promise.race([savePromise, timeoutPromise]);
