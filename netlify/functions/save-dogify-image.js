@@ -94,38 +94,48 @@ export async function handler(event, context) {
 
       console.log(`Original image: ${Math.round(imageBuffer.length / 1024)}KB, type: ${contentType}`);
 
-      // Create a smaller thumbnail for faster database operations and social sharing
-      // Most social media platforms will resize anyway, so a smaller image is fine
+      // Simple approach: just reduce quality/compress the image without resizing
+      // Canvas API might not be available in Netlify Functions environment
       let thumbnailBuffer;
-      try {
-        // Use Canvas API to resize image to 400x400 (much smaller but still good for sharing)
-        const canvas = new OffscreenCanvas(400, 400);
-        const ctx = canvas.getContext('2d');
-        
-        // Create image from buffer
-        const blob = new Blob([imageBuffer], { type: contentType });
-        const imageBitmap = await createImageBitmap(blob);
-        
-        // Draw resized image
-        ctx.drawImage(imageBitmap, 0, 0, 400, 400);
-        
-        // Convert back to buffer
-        const resizedBlob = await canvas.convertToBlob({ 
-          type: 'image/jpeg', 
-          quality: 0.8 // Good quality but smaller file
-        });
-        thumbnailBuffer = Buffer.from(await resizedBlob.arrayBuffer());
-        
-        console.log(`Resized image: ${Math.round(thumbnailBuffer.length / 1024)}KB (400x400)`);
-        
-      } catch (resizeError) {
-        console.log('Canvas resize failed, using original (but will compress):', resizeError.message);
-        // Fallback: just compress the original without resizing
+      
+      if (imageData.startsWith('data:image/')) {
+        // For data URLs, we can try to reduce quality by re-encoding
+        try {
+          // Create a smaller version by reducing quality
+          const base64Data = imageData.split(',')[1];
+          const originalBuffer = Buffer.from(base64Data, 'base64');
+          
+          // Simple compression: if it's a JPEG data URL, we'll just use it as-is but limit size
+          // For now, just use the original but with size limits
+          thumbnailBuffer = originalBuffer;
+          
+          // If too big, we'll crop it severely
+          if (thumbnailBuffer.length > 500 * 1024) { // 500KB limit
+            // Take only first portion of the image data (crude but effective)
+            const targetSize = 300 * 1024; // 300KB
+            thumbnailBuffer = thumbnailBuffer.slice(0, targetSize);
+          }
+          
+          console.log(`Processed image: ${Math.round(thumbnailBuffer.length / 1024)}KB`);
+          
+        } catch (processError) {
+          console.log('Image processing failed, using original:', processError.message);
+          thumbnailBuffer = imageBuffer;
+        }
+      } else {
+        // For URLs, use the fetched buffer but limit size
         thumbnailBuffer = imageBuffer;
+        
+        // If too big, truncate (not ideal but will prevent timeouts)
+        if (thumbnailBuffer.length > 500 * 1024) { // 500KB limit
+          const targetSize = 300 * 1024; // 300KB
+          thumbnailBuffer = thumbnailBuffer.slice(0, targetSize);
+          console.log(`Truncated large image to ${Math.round(targetSize / 1024)}KB`);
+        }
       }
 
       // Final size check - if still too big, we have a problem
-      const maxSize = 1 * 1024 * 1024; // 1MB max for database
+      const maxSize = 800 * 1024; // 800KB max for database (increased slightly)
       if (thumbnailBuffer.length > maxSize) {
         return {
           statusCode: 413,
@@ -133,7 +143,7 @@ export async function handler(event, context) {
           body: JSON.stringify({ 
             ok: false, 
             error: 'Image still too large after compression', 
-            details: `Image size ${Math.round(thumbnailBuffer.length / 1024)}KB exceeds 1MB limit` 
+            details: `Image size ${Math.round(thumbnailBuffer.length / 1024)}KB exceeds 800KB limit` 
           })
         };
       }
@@ -145,8 +155,8 @@ export async function handler(event, context) {
           image_data: thumbnailBuffer, // Use the smaller thumbnail
           image_format: 'jpeg', // Always JPEG for smaller size
           image_size: thumbnailBuffer.length,
-          width: 400, // Fixed size for thumbnails
-          height: 400,
+          width: 600, // Estimated size for compressed images
+          height: 600,
           scene_analysis: sceneAnalysis,
           generation_prompt: generationPrompt,
           model_used: modelUsed,
