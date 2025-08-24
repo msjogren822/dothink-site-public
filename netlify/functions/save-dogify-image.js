@@ -61,9 +61,21 @@ export async function handler(event, context) {
 
       if (imageData.startsWith('data:image/')) {
         // Handle data URL
+        console.log('Processing data URL, length:', imageData.length);
         const base64Data = imageData.split(',')[1];
+        if (!base64Data) {
+          throw new Error('Invalid data URL - no base64 data found');
+        }
         imageBuffer = Buffer.from(base64Data, 'base64');
         contentType = imageData.substring(5, imageData.indexOf(';'));
+        console.log('Extracted from data URL:', {
+          base64Length: base64Data.length,
+          bufferLength: imageBuffer.length,
+          contentType: contentType,
+          validJPEG: imageBuffer[0] === 0xFF && imageBuffer[1] === 0xD8,
+          validPNG: imageBuffer[0] === 0x89 && imageBuffer[1] === 0x50,
+          firstBytesHex: imageBuffer.slice(0, 4).toString('hex')
+        });
       } else if (imageData.startsWith('http')) {
         // Handle URL - fetch and convert with timeout
         const controller = new AbortController();
@@ -133,6 +145,43 @@ export async function handler(event, context) {
       }
       
       console.log(`Final buffer: ${Math.round(thumbnailBuffer.length / 1024)}KB, isBuffer: ${Buffer.isBuffer(thumbnailBuffer)}`);
+
+      // Validate that we have proper image data before saving
+      if (thumbnailBuffer.length === 0) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ 
+            ok: false, 
+            error: 'Empty image data',
+            details: 'Image buffer is empty after processing'
+          })
+        };
+      }
+
+      // Check for valid image headers
+      const firstBytes = thumbnailBuffer.slice(0, 4);
+      const isJPEG = firstBytes[0] === 0xFF && firstBytes[1] === 0xD8;
+      const isPNG = firstBytes[0] === 0x89 && firstBytes[1] === 0x50 && firstBytes[2] === 0x4E && firstBytes[3] === 0x47;
+      
+      console.log('Image validation:', {
+        firstBytesHex: firstBytes.toString('hex'),
+        isJPEG,
+        isPNG,
+        isValid: isJPEG || isPNG
+      });
+
+      if (!isJPEG && !isPNG) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ 
+            ok: false, 
+            error: 'Invalid image data',
+            details: `Image data does not have valid JPEG or PNG headers. First bytes: ${firstBytes.toString('hex')}`
+          })
+        };
+      }
 
       // Save to Supabase with timeout protection
       console.log('About to save to Supabase:', {
