@@ -13,8 +13,17 @@ export async function handler(event, context) {
   }
 
   try {
-    // Get and clean image ID
-    const imageId = event.queryStringParameters?.id;
+    // Get image ID from either query parameter or path
+    let imageId = event.queryStringParameters?.id;
+    
+    // If no query parameter, try to extract from path (e.g., /uuid.jpg)
+    if (!imageId && event.path) {
+      const pathMatch = event.path.match(/([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?:\.jpg)?$/i);
+      if (pathMatch) {
+        imageId = pathMatch[1];
+      }
+    }
+    
     let cleanImageId = imageId;
     
     // Handle comma-separated UUID corruption

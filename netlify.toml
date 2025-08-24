@@ -9,3 +9,9 @@
 [[edge_functions]]
   function = "share"
   path = "/share/*"
+
+# Redirect image URLs ending in .jpg to the serve function
+[[redirects]]
+  from = "/images/:id.jpg"
+  to = "/.netlify/functions/serve-dogify-image-clean/:id"
+  status = 200

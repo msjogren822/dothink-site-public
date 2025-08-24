@@ -55,7 +55,7 @@ export default async (request, context) => {
     }
 
     // Construct the absolute image URL
-    const imageUrl = `https://${url.host}/.netlify/functions/serve-dogify-image-clean?id=${imageId}`;
+    const imageUrl = `https://${url.host}/images/${imageId}.jpg`;
     const shareUrl = `https://${url.host}/share/${imageId}`;
     
     // Generate the HTML with proper meta tags - STATIC HTML that crawlers can read
