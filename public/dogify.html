@@ -128,63 +128,7 @@
       });
     }
 
-    // Check if this is a shared image URL
-    function checkForSharedImage() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const sharedImageId = urlParams.get('shared');
-      
-      if (sharedImageId) {
-        // This is a shared image - load it and update meta tags
-        const imageUrl = `/.netlify/functions/serve-dogify-image?id=${sharedImageId}`;
-        
-        // Update page meta tags for social media crawlers
-        document.title = 'Check out my $DOGified photo!';
-        document.querySelector('meta[property="og:title"]').content = 'Check out my $DOGified photo!';
-        document.querySelector('meta[property="og:description"]').content = 'I used AI to add a cute dog to my photo! Create your own at dothink.in';
-        document.querySelector('meta[property="og:image"]').content = imageUrl;
-        document.querySelector('meta[name="twitter:title"]').content = 'Check out my $DOGified photo!';
-        document.querySelector('meta[name="twitter:description"]').content = 'I used AI to add a cute dog to my photo! Create your own at dothink.in';
-        
-        // Show the shared image
-        const dogifiedImgEl = document.getElementById('dogified-image');
-        dogifiedImgEl.src = imageUrl;
-        dogifiedImgEl.style.display = 'block';
-        
-        // Hide camera controls and show a message
-        document.querySelector('.camera-start-section').style.display = 'none';
-        document.querySelector('.save-toggle-section').style.display = 'none';
-        document.getElementById('status').innerHTML = '🎉 <strong>Shared $DOGified Photo</strong><br><small><a href="dogify.html">Create your own →</a></small>';
-        
-        // Show sharing options for this shared image
-        const shareContainer = document.getElementById('share-container');
-        shareContainer.innerHTML = `
-          <div style="text-align: center; margin: 1rem 0;">
-            <div style="font-weight: 600; margin-bottom: 0.5rem;">Share this $dogified photo:</div>
-            <div class='a2a_kit a2a_kit_size_24 a2a_default_style' 
-                 data-a2a-url='${window.location.href}' 
-                 data-a2a-title='Check out my $DOGified photo!' 
-                 data-a2a-image='${imageUrl}'
-                 data-a2a-description='I used AI to add a cute dog to my photo! Create your own at dothink.in'>
-              <a class='a2a_button_facebook'></a>
-              <a class='a2a_button_twitter'></a>
-              <a class='a2a_button_linkedin'></a>
-              <a class='a2a_dd' href='https://www.addtoany.com/share'></a>
-            </div>
-          </div>
-        `;
-        shareContainer.style.display = 'block';
-        
-        // Initialize AddToAny
-        setTimeout(() => {
-          if (window.a2a && window.a2a.init_all) {
-            window.a2a.init_all('page');
-          }
-        }, 100);
-      }
-    }
-
-    // Check for shared image on page load
-    checkForSharedImage();
+    // Check for shared image on page load - removed since we're using /share/{id} URLs now
 
     // Accordion toggle function
     function toggleAccordion() {
@@ -355,11 +299,12 @@
         
         // Save image to Supabase for stable sharing URL (only if toggle is enabled)
         let finalImageUrl = result.generatedImageUrl;
+        let shareableUrl = window.location.href;
         const saveToggle = document.getElementById('save-toggle');
         const shouldSave = saveToggle && saveToggle.checked;
         
         if (shouldSave && result.saveToSupabase) {
-          statusEl.innerHTML = `🔄 <strong>Saving image...</strong><br><small>Creating shareable link</small>`;
+          statusEl.innerHTML = `🔄 <strong>Saving image...</strong><br><small>Creating shareable link with proper meta tags</small>`;
           
           try {
             const saveResponse = await fetch('/.netlify/functions/save-dogify-image', {
@@ -379,7 +324,11 @@
               const saveResult = await saveResponse.json();
               if (saveResult.ok) {
                 finalImageUrl = saveResult.imageUrl;
-                console.log('Image saved to Supabase:', saveResult.imageId);
+                // Create proper shareable URL that will have static meta tags
+                const imageId = saveResult.imageId;
+                shareableUrl = `${window.location.origin}/share/${imageId}`;
+                console.log('Image saved to Supabase:', imageId);
+                console.log('Shareable URL created:', shareableUrl);
               }
             } else {
               const errorResult = await saveResponse.json().catch(() => ({}));
@@ -402,16 +351,11 @@
         
         // For proper social media sharing, we need the URLs in static HTML
         // So instead of trying to update this page, we'll create a shareable URL
-        let shareableUrl = window.location.href;
         let shareMessage = '';
         
-        if (finalImageUrl !== result.generatedImageUrl) {
-          // Image was saved to Supabase - create a shareable URL with the image ID
-          const imageId = finalImageUrl.split('id=')[1];
-          if (imageId) {
-            shareableUrl = `${window.location.origin}/dogify.html?shared=${imageId}`;
-            shareMessage = '✅ Shareable link created with embedded image';
-          }
+        if (shareableUrl !== window.location.href) {
+          // Image was saved to Supabase - we have a proper shareable URL with static meta tags
+          shareMessage = '✅ Shareable link created with embedded image for social media';
         } else {
           shareMessage = '⚠️ Using temporary image URL (may not work on social media)';
         }
