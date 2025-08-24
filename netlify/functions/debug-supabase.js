@@ -1,7 +1,7 @@
 // netlify/functions/debug-supabase.js
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
-export async function handler(event, context) {
+exports.handler = async (event, context) => {
   try {
     console.log('Testing Supabase connection...');
     
