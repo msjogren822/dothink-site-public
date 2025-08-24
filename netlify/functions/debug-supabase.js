@@ -5,8 +5,8 @@ exports.handler = async (event, context) => {
   try {
     console.log('Testing Supabase connection...');
     
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseUrl = process.env.SUPABASE_DATABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
     console.log('Environment check:', {
       hasUrl: !!supabaseUrl,
