@@ -94,68 +94,37 @@ export async function handler(event, context) {
 
       console.log(`Original image: ${Math.round(imageBuffer.length / 1024)}KB, type: ${contentType}`);
 
-      // Simple approach: just reduce quality/compress the image without resizing
-      // Canvas API might not be available in Netlify Functions environment
+      // Don't truncate images as it corrupts them! 
+      // Instead, reject if too large or use the original
       let thumbnailBuffer;
       
-      if (imageData.startsWith('data:image/')) {
-        // For data URLs, we can try to reduce quality by re-encoding
-        try {
-          // Create a smaller version by reducing quality
-          const base64Data = imageData.split(',')[1];
-          const originalBuffer = Buffer.from(base64Data, 'base64');
-          
-          // Simple compression: if it's a JPEG data URL, we'll just use it as-is but limit size
-          // For now, just use the original but with size limits
-          thumbnailBuffer = originalBuffer;
-          
-          // If too big, we'll crop it severely
-          if (thumbnailBuffer.length > 500 * 1024) { // 500KB limit
-            // Take only first portion of the image data (crude but effective)
-            const targetSize = 300 * 1024; // 300KB
-            thumbnailBuffer = thumbnailBuffer.slice(0, targetSize);
-          }
-          
-          console.log(`Processed image: ${Math.round(thumbnailBuffer.length / 1024)}KB`);
-          
-        } catch (processError) {
-          console.log('Image processing failed, using original:', processError.message);
-          thumbnailBuffer = imageBuffer;
-        }
-      } else {
-        // For URLs, use the fetched buffer but limit size
-        thumbnailBuffer = imageBuffer;
-        
-        // If too big, truncate (not ideal but will prevent timeouts)
-        if (thumbnailBuffer.length > 500 * 1024) { // 500KB limit
-          const targetSize = 300 * 1024; // 300KB
-          thumbnailBuffer = thumbnailBuffer.slice(0, targetSize);
-          console.log(`Truncated large image to ${Math.round(targetSize / 1024)}KB`);
-        }
-      }
-
-      // Final size check - if still too big, we have a problem
-      const maxSize = 800 * 1024; // 800KB max for database (increased slightly)
-      if (thumbnailBuffer.length > maxSize) {
+      // Check size first - if over 1MB, reject immediately
+      const maxSize = 1 * 1024 * 1024; // 1MB max
+      if (imageBuffer.length > maxSize) {
         return {
           statusCode: 413,
           headers,
           body: JSON.stringify({ 
             ok: false, 
-            error: 'Image still too large after compression', 
-            details: `Image size ${Math.round(thumbnailBuffer.length / 1024)}KB exceeds 800KB limit` 
+            error: 'Image too large for storage', 
+            details: `Image size ${Math.round(imageBuffer.length / 1024)}KB exceeds 1MB limit. Please try with a smaller image.` 
           })
         };
       }
+      
+      // Use the original image buffer (don't corrupt by truncating)
+      thumbnailBuffer = imageBuffer;
+      
+      console.log(`Using image: ${Math.round(thumbnailBuffer.length / 1024)}KB`);
 
       // Save to Supabase with timeout protection
       const savePromise = supabase
         .from('dogify_images')
         .insert({
-          image_data: thumbnailBuffer, // Use the smaller thumbnail
-          image_format: 'jpeg', // Always JPEG for smaller size
+          image_data: thumbnailBuffer, // Use the original image data (not corrupted)
+          image_format: 'jpeg', // Always JPEG for consistency
           image_size: thumbnailBuffer.length,
-          width: 600, // Estimated size for compressed images
+          width: 600, // Estimated size for images
           height: 600,
           scene_analysis: sceneAnalysis,
           generation_prompt: generationPrompt,
@@ -168,9 +137,9 @@ export async function handler(event, context) {
         .select('id')
         .single();
 
-      // Add timeout to Supabase operation (reduced to 10 seconds for smaller images)
+      // Add timeout to Supabase operation (reduced to 15 seconds)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database operation timed out')), 10000) // 10 seconds
+        setTimeout(() => reject(new Error('Database operation timed out')), 15000) // 15 seconds
       );
 
       const { data, error } = await Promise.race([savePromise, timeoutPromise]);
