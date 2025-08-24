@@ -3,13 +3,32 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function handler(event, context) {
   try {
-    const imageId = event.queryStringParameters?.id || '178c6015-49fa-4d9c-97ad-78ecb185c2c7';
-    
     const supabase = createClient(
       process.env.SUPABASE_DATABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
+    // If no ID provided, list recent images
+    if (!event.queryStringParameters?.id) {
+      const { data, error } = await supabase
+        .from('dogify_images')
+        .select('id, image_format, created_at, image_size')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          success: true,
+          recentImages: data,
+          count: data?.length || 0
+        }, null, 2)
+      };
+    }
+    
+    const imageId = event.queryStringParameters.id;
+    
     const { data, error } = await supabase
       .from('dogify_images')
       .select('id, image_format, created_at')
