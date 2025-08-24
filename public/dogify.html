@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/assets/css/dogify.css">
 </head>
 <body>
+  <script async src='https://static.addtoany.com/menu/page.js'></script>
   <h1>$dog-ify Your Photo</h1>
   <p>Capture a photo and let AI add $dog to your scene!</p>
 
@@ -38,6 +39,10 @@
   </div>
 
   <div id="status"></div>
+  <div class='a2a_kit a2a_kit_size_24 a2a_default_style' data-a2a-url='https://www.dothink.in/dogify.html' data-a2a-title='$DOGify your image!'>
+    <a class='a2a_button_facebook'></a>
+    <a class='a2a_button_twitter'></a>
+    <a class='a2a_button_linkedin'></a><a class='a2a_dd' href='https://www.addtoany.com/share'></a></div>
   <img id="dogified-image" alt="AI Generated Image" style="display: none;" />
 
   <!-- Technical Details Accordion -->
@@ -120,7 +125,7 @@
         startCameraBackBtn.style.display = 'none';
         
         const cameraType = facingMode === 'user' ? 'Front' : 'Back';
-        statusEl.innerHTML = `📹 <strong>${cameraType} camera ready!</strong> Tap either capture button when ready.`;
+        statusEl.innerHTML = `📹 <strong>${cameraType} camera ready!</strong><br>Tap either capture button when ready.`;
         
       } catch (err) {
         const activeBtn = facingMode === 'user' ? startCameraFrontBtn : startCameraBackBtn;
