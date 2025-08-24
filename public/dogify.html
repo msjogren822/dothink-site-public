@@ -351,12 +351,25 @@
                 imageDataToSave = canvas.toDataURL('image/jpeg', 0.7);
                 
                 console.log('Compressed image from', Math.round(result.generatedImageUrl.length / 1024), 'KB to', Math.round(imageDataToSave.length / 1024), 'KB');
+                console.log('Compressed image details:', {
+                  startsWithDataJpeg: imageDataToSave.startsWith('data:image/jpeg'),
+                  hasBase64: imageDataToSave.includes('base64,'),
+                  firstChars: imageDataToSave.substring(0, 50),
+                  lengthAfterComma: imageDataToSave.split(',')[1]?.length || 0
+                });
                 
               } catch (compressionError) {
                 console.log('Image compression failed, using original:', compressionError.message);
                 // Use original if compression fails
               }
             }
+            
+            console.log('About to send to backend:', {
+              dataType: typeof imageDataToSave,
+              dataLength: imageDataToSave.length,
+              startsWithData: imageDataToSave.startsWith('data:'),
+              firstChars: imageDataToSave.substring(0, 30)
+            });
             
             const saveResponse = await fetch('/.netlify/functions/save-dogify-image', {
               method: 'POST',
