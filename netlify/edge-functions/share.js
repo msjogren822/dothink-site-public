@@ -36,7 +36,7 @@ export default async (request, context) => {
 
     const { data: imageData, error } = await supabase
       .from('dogify_images')
-      .select('id, created_at, scene_analysis, generation_prompt, model_used')
+      .select('id, created_at, scene_analysis, generation_prompt, model_used, image_url')
       .eq('id', imageId)
       .single();
 
@@ -54,8 +54,9 @@ export default async (request, context) => {
       });
     }
 
-    // Construct the absolute image URL
-    const imageUrl = `https://${url.host}/.netlify/functions/serve-dogify-image-clean?id=${imageId}&file=dogified.jpg`;
+    // Use the stored image URL if available, otherwise fall back to function URL
+    const imageUrl = imageData.image_url || 
+      `https://${url.host}/.netlify/functions/serve-dogify-image-clean?id=${imageId}&file=dogified.jpg`;
     const shareUrl = `https://${url.host}/share/${imageId}`;
     
     // Generate the HTML with proper meta tags - STATIC HTML that crawlers can read
