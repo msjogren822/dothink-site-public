@@ -143,9 +143,8 @@ export default async (request, context) => {
            data-a2a-title='Check out my $DOGified photo!' 
            data-a2a-image='${imageUrl}'>
         <a class='a2a_button_facebook'></a>
-        <a class='a2a_button_twitter'></a>
+        <a class='a2a_button_x'></a>
         <a class='a2a_button_linkedin'></a>
-        <a class='a2a_button_pinterest'></a>
         <a class='a2a_dd' href='https://www.addtoany.com/share'></a>
       </div>
     </div>
