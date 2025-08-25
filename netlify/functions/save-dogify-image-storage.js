@@ -30,9 +30,12 @@ export async function handler(event, context) {
   }
 
   try {
+    console.log('Storage function called with method:', event.httpMethod);
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     if (event.httpMethod === 'POST') {
+      console.log('Processing POST request...');
+      
       // Save a new dogified image
       const { 
         imageData, 
@@ -42,6 +45,14 @@ export async function handler(event, context) {
         generationTimeSeconds,
         userSession 
       } = JSON.parse(event.body);
+
+      console.log('Parsed request data:', {
+        hasImageData: !!imageData,
+        imageDataType: typeof imageData,
+        imageDataLength: imageData?.length || 0,
+        hasSceneAnalysis: !!sceneAnalysis,
+        modelUsed
+      });
 
       if (!imageData) {
         return {
@@ -145,27 +156,62 @@ export async function handler(event, context) {
       const publicUrl = urlData.publicUrl;
       console.log('Image uploaded, public URL:', publicUrl);
 
-      // Save metadata to database (without the binary data)
-      const { data: dbData, error: dbError } = await supabase
-        .from('dogify_images')
-        .insert({
-          id: imageId,
-          image_url: publicUrl, // Store the public URL instead of binary data
-          storage_path: filename, // Store filename for cleanup
-          image_format: 'jpeg',
-          image_size: imageBuffer.length,
-          width: 600,
-          height: 600,
-          scene_analysis: sceneAnalysis,
-          generation_prompt: generationPrompt,
-          model_used: modelUsed,
-          generation_time_seconds: generationTimeSeconds,
-          user_session: userSession,
-          user_agent: event.headers['user-agent'],
-          ip_address: event.headers['x-forwarded-for'] || event.headers['x-nf-client-connection-ip']
-        })
-        .select('id')
-        .single();
+      // Save metadata to database (with fallback for missing columns)
+      console.log('Saving metadata to database...');
+      
+      // First, try to insert with new columns
+      let dbData, dbError;
+      try {
+        const result = await supabase
+          .from('dogify_images')
+          .insert({
+            id: imageId,
+            image_url: publicUrl, // Store the public URL instead of binary data
+            storage_path: filename, // Store filename for cleanup
+            image_format: 'jpeg',
+            image_size: imageBuffer.length,
+            width: 600,
+            height: 600,
+            scene_analysis: sceneAnalysis,
+            generation_prompt: generationPrompt,
+            model_used: modelUsed,
+            generation_time_seconds: generationTimeSeconds,
+            user_session: userSession,
+            user_agent: event.headers['user-agent'],
+            ip_address: event.headers['x-forwarded-for'] || event.headers['x-nf-client-connection-ip']
+          })
+          .select('id')
+          .single();
+        
+        dbData = result.data;
+        dbError = result.error;
+      } catch (insertError) {
+        console.log('Insert with new columns failed, trying fallback...', insertError.message);
+        
+        // Fallback: insert without the new columns (for backwards compatibility)
+        const fallbackResult = await supabase
+          .from('dogify_images')
+          .insert({
+            id: imageId,
+            image_data: null, // Don't store binary data anymore
+            image_format: 'jpeg',
+            image_size: imageBuffer.length,
+            width: 600,
+            height: 600,
+            scene_analysis: sceneAnalysis,
+            generation_prompt: generationPrompt,
+            model_used: modelUsed,
+            generation_time_seconds: generationTimeSeconds,
+            user_session: userSession,
+            user_agent: event.headers['user-agent'],
+            ip_address: event.headers['x-forwarded-for'] || event.headers['x-nf-client-connection-ip']
+          })
+          .select('id')
+          .single();
+        
+        dbData = fallbackResult.data;
+        dbError = fallbackResult.error;
+      }
 
       if (dbError) {
         console.error('Database insert error:', dbError);
