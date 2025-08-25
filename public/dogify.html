@@ -359,7 +359,7 @@
               firstChars: imageDataToSave.substring(0, 30)
             });
             
-            const saveResponse = await fetch('/.netlify/functions/save-dogify-image', {
+            const saveResponse = await fetch('/.netlify/functions/save-dogify-image-storage', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -375,9 +375,9 @@
             if (saveResponse.ok) {
               const saveResult = await saveResponse.json();
               if (saveResult.ok) {
-                finalImageUrl = saveResult.imageUrl;
+                finalImageUrl = saveResult.url; // Use the direct storage URL
                 // Create proper shareable URL that will have static meta tags
-                const imageId = saveResult.imageId;
+                const imageId = saveResult.id;
                 shareableUrl = `${window.location.origin}/share/${imageId}`;
                 console.log('Image saved to Supabase:', imageId);
                 console.log('Shareable URL created:', shareableUrl);
