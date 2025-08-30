@@ -1,21 +1,7 @@
 {
-	"folders": [
-		{
-			"path": "../.."
-		}
-	],
-	{
-		"folders": [
-			{ "path": "." }
-		],
-		"settings": {
-    
-		},
-		"extensions": {
-			"recommendations": [
-				"esbenp.prettier-vscode",
-				"dbaeumer.vscode-eslint"
-			]
-		}
-	}
+    "folders": [
+        {
+            "path": "."
+        }
+    ]
 }
