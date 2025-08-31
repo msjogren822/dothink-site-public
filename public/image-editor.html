@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Editor with Gemini AI</title>
+    <style>
+        body {
+            font-family: 'Google Sans', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .upload-area {
+            border: 2px dashed #4285f4;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            background: #f1f3f4;
+        }
+        .upload-area.dragover {
+            border-color: #1a73e8;
+            background: #e8f0fe;
+        }
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .button {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #1557b0;
+        }
+        .button:disabled {
+            background: #dadce0;
+            cursor: not-allowed;
+        }
+        .prompt-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dadce0;
+            border-radius: 6px;
+            font-size: 14px;
+            margin: 10px 0;
+            min-height: 60px;
+            resize: vertical;
+        }
+        .result-area {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #5f6368;
+        }
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #4285f4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .preset-button {
+            background: #f1f3f4;
+            color: #3c4043;
+            border: 1px solid #dadce0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .preset-button:hover {
+            background: #e8eaed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Image Editor with Gemini AI</h1>
+        <p>Upload images and use AI to edit and combine them!</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <div>📁 Click or drag images here</div>
+            <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+        </div>
+        
+        <div id="imagePreview"></div>
+        
+        <div>
+            <h3>What would you like to do?</h3>
+            <div class="preset-buttons">
+                <button class="preset-button" onclick="setPrompt('Insert the dog image into the Earth Day background image, blending it naturally')">Insert Dog into Earth Day</button>
+                <button class="preset-button" onclick="setPrompt('Remove the background from this image')">Remove Background</button>
+                <button class="preset-button" onclick="setPrompt('Make this image look like a painting')">Artistic Style</button>
+                <button class="preset-button" onclick="setPrompt('Enhance the colors and brightness')">Enhance Colors</button>
+            </div>
+            <textarea id="promptInput" class="prompt-input" placeholder="Describe what you want to do with the image(s)...">Insert the special dog into the Earth Day background image, making it look natural and well-integrated.</textarea>
+        </div>
+        
+        <div>
+            <button class="button" id="processButton" onclick="processImages()" disabled>🚀 Process with AI</button>
+            <button class="button" onclick="loadSampleImages()">📷 Load Sample Images</button>
+        </div>
+        
+        <div id="resultArea" class="result-area" style="display: none;">
+            <h3>Result:</h3>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedImages = [];
+        
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const processButton = document.getElementById('processButton');
+        const promptInput = document.getElementById('promptInput');
+        const resultArea = document.getElementById('resultArea');
+        const resultContent = document.getElementById('resultContent');
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+        
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        uploadedImages.push({
+                            name: file.name,
+                            data: e.target.result,
+                            mimeType: file.type
+                        });
+                        displayImages();
+                        updateProcessButton();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        function displayImages() {
+            imagePreview.innerHTML = '';
+            uploadedImages.forEach((img, index) => {
+                const div = document.createElement('div');
+                div.style.display = 'inline-block';
+                div.style.margin = '10px';
+                div.style.position = 'relative';
+                div.innerHTML = `
+                    <img src="${img.data}" class="image-preview" alt="${img.name}">
+                    <br>
+                    <small>${img.name}</small>
+                    <button onclick="removeImage(${index})" style="position: absolute; top: 5px; right: 5px; background: red; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer;">×</button>
+                `;
+                imagePreview.appendChild(div);
+            });
+        }
+        
+        function removeImage(index) {
+            uploadedImages.splice(index, 1);
+            displayImages();
+            updateProcessButton();
+        }
+        
+        function updateProcessButton() {
+            processButton.disabled = uploadedImages.length === 0 || !promptInput.value.trim();
+        }
+        
+        function setPrompt(text) {
+            promptInput.value = text;
+            updateProcessButton();
+        }
+        
+        promptInput.addEventListener('input', updateProcessButton);
+        
+        async function processImages() {
+            if (uploadedImages.length === 0 || !promptInput.value.trim()) return;
+            
+            processButton.disabled = true;
+            resultArea.style.display = 'block';
+            resultContent.innerHTML = '<div class="loading"><div class="spinner"></div>Processing with Gemini AI...</div>';
+            
+            try {
+                // Use the first image as the main image, include others in the prompt
+                const mainImage = uploadedImages[0];
+                const prompt = promptInput.value.trim();
+                
+                // Convert base64 to just the data part (remove data:image/jpeg;base64, prefix)
+                const base64Data = mainImage.data.split(',')[1];
+                
+                const response = await fetch('/.netlify/functions/gemini-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'gemini-2.5-flash-image-preview',
+                        prompt: prompt,
+                        imageData: base64Data,
+                        mimeType: mainImage.mimeType
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.result.startsWith('data:image/')) {
+                    // Result is an image
+                    resultContent.innerHTML = `
+                        <img src="${data.result}" style="max-width: 100%; border-radius: 8px;">
+                        <br><br>
+                        <button class="button" onclick="downloadResult('${data.result}')">💾 Download Result</button>
+                    `;
+                } else {
+                    // Result is text
+                    resultContent.innerHTML = `<p>${data.result}</p>`;
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultContent.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+            
+            processButton.disabled = false;
+        }
+        
+        function downloadResult(dataUrl) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = 'gemini-edited-image.png';
+            link.click();
+        }
+        
+        async function loadSampleImages() {
+            try {
+                // Load the sample images
+                const earthDayResponse = await fetch('/assets/images/illustrations/meEarthDay.png');
+                const dogResponse = await fetch('/assets/images/special_dog.png');
+                
+                if (earthDayResponse.ok && dogResponse.ok) {
+                    const earthDayBlob = await earthDayResponse.blob();
+                    const dogBlob = await dogResponse.blob();
+                    
+                    const earthDayFile = new File([earthDayBlob], 'meEarthDay.png', { type: 'image/png' });
+                    const dogFile = new File([dogBlob], 'special_dog.png', { type: 'image/png' });
+                    
+                    handleFiles([earthDayFile, dogFile]);
+                    setPrompt('Insert the special dog into the Earth Day background image, making it look natural and well-integrated.');
+                } else {
+                    alert('Could not load sample images. Please upload your own images.');
+                }
+            } catch (error) {
+                console.error('Error loading sample images:', error);
+                alert('Could not load sample images. Please upload your own images.');
+            }
+        }
+    </script>
+</body>
+</html>
