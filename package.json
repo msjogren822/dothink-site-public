@@ -6,6 +6,11 @@
     "@netlify/neon": "^0.1.0",
     "@supabase/supabase-js": "^2.38.0",
     "sharp": "^0.32.6",
-    "@google/generative-ai": "^0.17.1"
+    "@google/generative-ai": "^0.17.1",
+    "@netlify/functions": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.0"
   }
 }

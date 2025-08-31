@@ -2,13 +2,40 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import {GoogleGenAI, Modality} from '@google/genai'
 import {limitFunction} from 'p-limit'
 
 const timeoutMs = 123_333
 const maxRetries = 5
 const baseDelay = 1_233
-const ai = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY})
+
+// Use Netlify function instead of direct API call
+async function callGeminiAPI(model, prompt, inputFile, signal) {
+  try {
+    const response = await fetch('/.netlify/functions/gemini-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        prompt,
+        imageData: inputFile ? inputFile.split(',')[1] : null,
+        mimeType: 'image/jpeg'
+      }),
+      signal
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.result;
+  } catch (error) {
+    console.error('Error calling Gemini API:', error);
+    throw error;
+  }
+}
 
 export default limitFunction(
   async ({model, prompt, inputFile, signal}) => {
@@ -18,47 +45,11 @@ export default limitFunction(
           setTimeout(() => reject(new Error('timeout')), timeoutMs)
         )
 
-        const modelPromise = ai.models.generateContent(
-          {
-            model,
-            config: {responseModalities: [Modality.TEXT, Modality.IMAGE]},
-            contents: [
-              {
-                role: 'user',
-                parts: [
-                  {text: prompt},
-                  ...(inputFile
-                    ? [
-                        {
-                          inlineData: {
-                            data: inputFile.split(',')[1],
-                            mimeType: 'image/jpeg'
-                          }
-                        }
-                      ]
-                    : [])
-                ]
-              }
-            ],
-            safetySettings
-          },
-          {signal}
-        )
+        const apiPromise = callGeminiAPI(model, prompt, inputFile, signal)
 
-        const response = await Promise.race([modelPromise, timeoutPromise])
+        const response = await Promise.race([apiPromise, timeoutPromise])
 
-        if (!response.candidates || response.candidates.length === 0) {
-          throw new Error('No candidates in response')
-        }
-
-        const inlineDataPart = response.candidates[0].content.parts.find(
-          p => p.inlineData
-        )
-        if (!inlineDataPart) {
-          throw new Error('No inline data found in response')
-        }
-
-        return 'data:image/png;base64,' + inlineDataPart.inlineData.data
+        return response
       } catch (error) {
         if (signal?.aborted || error.name === 'AbortError') {
           return
@@ -78,10 +69,3 @@ export default limitFunction(
   },
   {concurrency: 2}
 )
-
-const safetySettings = [
-  'HARM_CATEGORY_HATE_SPEECH',
-  'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-  'HARM_CATEGORY_DANGEROUS_CONTENT',
-  'HARM_CATEGORY_HARASSMENT'
-].map(category => ({category, threshold: 'BLOCK_NONE'}))
