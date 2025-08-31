@@ -10,7 +10,7 @@ const handler: Handler = async (event, context) => {
   }
 
   try {
-    const { model, prompt, imageData, mimeType } = JSON.parse(event.body || '{}');
+    const { model, prompt, imageData, mimeType, foregroundImageData, foregroundMimeType } = JSON.parse(event.body || '{}');
     
     if (!prompt) {
       return {
@@ -35,12 +35,22 @@ const handler: Handler = async (event, context) => {
 
     const parts: any[] = [{ text: prompt }];
     
-    // Add image if provided
+    // Add background image if provided
     if (imageData) {
       parts.push({
         inlineData: {
           data: imageData,
           mimeType: mimeType || 'image/jpeg'
+        }
+      });
+    }
+    
+    // Add foreground image if provided (for multi-image composition)
+    if (foregroundImageData) {
+      parts.push({
+        inlineData: {
+          data: foregroundImageData,
+          mimeType: foregroundMimeType || 'image/jpeg'
         }
       });
     }

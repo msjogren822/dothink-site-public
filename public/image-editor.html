@@ -140,12 +140,12 @@
         <div>
             <h3>What would you like to do?</h3>
             <div class="preset-buttons">
-                <button class="preset-button" onclick="setPrompt('Take the exact dog from the foreground image and place it into the background scene, preserving the dog\'s original appearance, colors, and features exactly as shown')">Exact Dog Transfer</button>
-                <button class="preset-button" onclick="setPrompt('Copy the precise appearance of the dog from the foreground image and seamlessly blend it into the background, maintaining all original details and characteristics')">Preserve Original Dog</button>
-                <button class="preset-button" onclick="setPrompt('Photorealistically composite the specific dog shown in the foreground image into the background scene without changing the dog\'s appearance')">Photorealistic Composite</button>
+                <button class="preset-button" onclick="setPrompt('Create a new image by combining the elements from the provided images. Take the dog from the second image and place it naturally into the scene from the first image. Ensure that the dog\'s features remain completely unchanged while blending seamlessly with the background lighting and atmosphere.')">Multi-Image Fusion</button>
+                <button class="preset-button" onclick="setPrompt('Using the provided images, place the subject from the second image onto the scene from the first image. Ensure that the features of the subject from the second image remain completely unchanged. The added element should blend naturally with the lighting and style of the first image.')">Preserve Features</button>
+                <button class="preset-button" onclick="setPrompt('Combine these two images: use the background from the first image and seamlessly integrate the subject from the second image, maintaining the exact appearance and characteristics of the subject while matching the scene\'s lighting.')">Seamless Integration</button>
                 <button class="preset-button" onclick="setPrompt('Place the foreground subject in the background and adjust the lighting to match the scene')">Match Lighting</button>
             </div>
-            <textarea id="promptInput" class="prompt-input" placeholder="Describe how you want to blend the foreground subject into the background...">Take the exact dog from the foreground image and place it into the background scene, preserving the dog's original appearance, colors, and features exactly as shown.</textarea>
+            <textarea id="promptInput" class="prompt-input" placeholder="Describe how you want to blend the foreground subject into the background...">Create a new image by combining the elements from the provided images. Take the dog from the second image and place it naturally into the scene from the first image. Ensure that the dog's features remain completely unchanged while blending seamlessly with the background lighting and atmosphere.</textarea>
         </div>
         
         <div>
@@ -298,13 +298,14 @@
             
             processButton.disabled = true;
             resultArea.style.display = 'block';
-            resultContent.innerHTML = '<div class="loading"><div class="spinner"></div>Blending images with Gemini AI...</div>';
+            resultContent.innerHTML = '<div class="loading"><div class="spinner"></div>Blending images with Gemini AI (multi-image mode)...</div>';
             
             try {
-                const prompt = `${promptInput.value.trim()}\n\nBackground image: ${backgroundImage.name}\nForeground subject: ${foregroundImage.name}`;
+                const prompt = promptInput.value.trim();
                 
-                // Use background as the main image, mention foreground in prompt
-                const base64Data = backgroundImage.data.split(',')[1];
+                // Send both images to the API
+                const backgroundData = backgroundImage.data.split(',')[1];
+                const foregroundData = foregroundImage.data.split(',')[1];
                 
                 const response = await fetch('/.netlify/functions/gemini-image', {
                     method: 'POST',
@@ -314,8 +315,10 @@
                     body: JSON.stringify({
                         model: 'gemini-2.5-flash-image-preview',
                         prompt: prompt,
-                        imageData: base64Data,
-                        mimeType: backgroundImage.mimeType
+                        imageData: backgroundData,
+                        mimeType: backgroundImage.mimeType,
+                        foregroundImageData: foregroundData,
+                        foregroundMimeType: foregroundImage.mimeType
                     })
                 });
                 
