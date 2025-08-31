@@ -138,13 +138,26 @@
         </div>
         
         <div>
-            <h3>What would you like to do?</h3>
+            <h3>🎨 Composition Style</h3>
             <div class="preset-buttons">
                 <button class="preset-button" onclick="setPrompt('Create a new image by combining the elements from the provided images. Take the dog from the second image and place it naturally into the scene from the first image. Ensure that the dog\'s features remain completely unchanged while blending seamlessly with the background lighting and atmosphere.')">Multi-Image Fusion</button>
                 <button class="preset-button" onclick="setPrompt('Using the provided images, place the subject from the second image onto the scene from the first image. Ensure that the features of the subject from the second image remain completely unchanged. The added element should blend naturally with the lighting and style of the first image.')">Preserve Features</button>
                 <button class="preset-button" onclick="setPrompt('Combine these two images: use the background from the first image and seamlessly integrate the subject from the second image, maintaining the exact appearance and characteristics of the subject while matching the scene\'s lighting.')">Seamless Integration</button>
                 <button class="preset-button" onclick="setPrompt('Place the foreground subject in the background and adjust the lighting to match the scene')">Match Lighting</button>
             </div>
+            
+            <h3>🎭 Artistic Styles</h3>
+            <div class="preset-buttons">
+                <button class="preset-button" onclick="setPrompt('Create a new image by combining the provided images with a vibrant cartoon animation style. Take the dog from the second image and place it into the first image, rendering everything in a colorful, animated cartoon aesthetic with bold outlines and bright colors.')">🎨 Cartoon Style</button>
+                <button class="preset-button" onclick="setPrompt('Combine the provided images in the style of a classical marble statue. Transform the dog from the second image and the background from the first image into an elegant marble sculpture with realistic stone textures and classical proportions.')">🗿 Marble Statue</button>
+                <button class="preset-button" onclick="setPrompt('Create a watercolor painting by combining the provided images. Take the dog from the second image and blend it into the background from the first image using soft watercolor techniques with flowing colors and artistic brush strokes.')">🎨 Watercolor Paint</button>
+                <button class="preset-button" onclick="setPrompt('Transform the combined images into a vintage oil painting style. Composite the dog from the second image into the first image background using rich, textured brushstrokes and warm, classical oil painting colors.')">🖼️ Oil Painting</button>
+                <button class="preset-button" onclick="setPrompt('Create a cyberpunk-style digital art piece by combining the images. Place the dog from the second image into the first image background with neon colors, futuristic lighting, and high-tech digital effects.')">🌃 Cyberpunk</button>
+                <button class="preset-button" onclick="setPrompt('Combine the images in a fantasy art style with magical elements. Take the dog from the second image and place it in the first image background, adding mystical lighting, sparkles, and enchanted atmosphere.')">✨ Fantasy Magic</button>
+                <button class="preset-button" onclick="setPrompt('Transform the combined images into a noir black and white style. Composite the dog from the second image into the first image with dramatic shadows, high contrast, and classic film noir aesthetic.')">🎭 Film Noir</button>
+                <button class="preset-button" onclick="setPrompt('Create a pop art style composition by combining the images. Take the dog from the second image and blend it into the first image background using bright, bold colors and comic book-style effects with halftone patterns.')">💥 Pop Art</button>
+            </div>
+            
             <textarea id="promptInput" class="prompt-input" placeholder="Describe how you want to blend the foreground subject into the background...">Create a new image by combining the elements from the provided images. Take the dog from the second image and place it naturally into the scene from the first image. Ensure that the dog's features remain completely unchanged while blending seamlessly with the background lighting and atmosphere.</textarea>
         </div>
         
