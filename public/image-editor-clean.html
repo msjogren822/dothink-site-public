@@ -175,6 +175,13 @@
                 <button class="preset-button" onclick="setPrompt('Using inpainting technique: Keep the background from the first image exactly as is, but seamlessly add the subject from the second image to appear naturally within the scene, matching all lighting and atmospheric conditions.')">🎯 Inpainting Mode</button>
                 <button class="preset-button" onclick="setPrompt('Apply semantic masking: Transform only the area where the subject will be placed in the first image to accommodate the subject from the second image, blending the edges perfectly while preserving the rest of the scene.')">🎭 Semantic Mask</button>
             </div>
+
+            <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                <label style="display: inline-flex; align-items: center; gap: 8px; user-select: none;">
+                    <input type="checkbox" id="useTwoPass" checked>
+                    <span>Use two-pass stylize → blend pipeline</span>
+                </label>
+            </div>
             
             <textarea id="promptInput" class="prompt-input" placeholder="Describe your blending approach...">Transform both provided images into vibrant cartoon style, then combine them: place the cartoon subject from the second image into the cartoon background from the first image with unified cartoon aesthetics.</textarea>
         </div>
@@ -397,21 +404,40 @@
                 // Send both images to the API
                 const backgroundData = backgroundImage.data.split(',')[1];
                 const foregroundData = foregroundImage.data.split(',')[1];
-                
-                const response = await fetch('/.netlify/functions/gemini-image', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        model: 'gemini-2.5-flash-image-preview',
-                        prompt: prompt,
-                        imageData: backgroundData,
-                        mimeType: backgroundImage.mimeType,
-                        foregroundImageData: foregroundData,
-                        foregroundMimeType: foregroundImage.mimeType
-                    })
-                });
+                const useTwoPass = document.getElementById('useTwoPass')?.checked;
+                let response;
+                if (useTwoPass) {
+                    // Attempt to infer styleKey from the current prompt (simple parse of first style token)
+                    const styleSelect = document.getElementById('styleSelect');
+                    const styleKey = styleSelect ? styleSelect.value : 'cartoon';
+                    const enforceStyle = document.getElementById('enforceStyle')?.checked ?? true;
+                    response = await fetch('/.netlify/functions/gemini-stylize-blend', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            styleKey,
+                            enforceStyle,
+                            promptExtras: prompt,
+                            imageData: backgroundImage.data,
+                            mimeType: backgroundImage.mimeType,
+                            foregroundImageData: foregroundImage.data,
+                            foregroundMimeType: foregroundImage.mimeType,
+                        })
+                    });
+                } else {
+                    response = await fetch('/.netlify/functions/gemini-image', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: 'gemini-2.5-flash-image-preview',
+                            prompt: prompt,
+                            imageData: backgroundData,
+                            mimeType: backgroundImage.mimeType,
+                            foregroundImageData: foregroundData,
+                            foregroundMimeType: foregroundImage.mimeType
+                        })
+                    });
+                }
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
