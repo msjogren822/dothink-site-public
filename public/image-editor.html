@@ -138,27 +138,31 @@
         </div>
         
         <div>
-            <h3>🎨 Composition Style</h3>
+            <h3>🔧 Blending Approach</h3>
             <div class="preset-buttons">
-                <button class="preset-button" onclick="setPrompt('Create a single, unified image that seamlessly merges the scene from the first image with the subject from the second image. The result should look like they were photographed together originally, with matching lighting, shadows, and atmosphere throughout.')">Natural Unity</button>
-                <button class="preset-button" onclick="setPrompt('Generate a cohesive image where the subject from the second image naturally belongs in the environment from the first image. Blend the lighting, colors, and textures so everything appears as one unified photograph with consistent depth and perspective.')">Photorealistic Blend</button>
-                <button class="preset-button" onclick="setPrompt('Merge these images into a single composition where the subject from the second image is fully integrated into the scene from the first image, sharing the same lighting conditions, shadows, and atmospheric effects.')">Environmental Integration</button>
-                <button class="preset-button" onclick="setPrompt('Create one harmonious image combining both scenes, ensuring the subject from the second image casts appropriate shadows and reflects the same lighting as the background environment.')">Complete Harmony</button>
+                <button class="preset-button" onclick="setPrompt('Using the provided image, add a dog from the second image into this scene. Match the lighting, shadows, and atmosphere so the dog appears to naturally belong in this environment.')">Direct Integration</button>
+                <button class="preset-button" onclick="setPrompt('Transform this image to include the dog from the second image. First, convert both images to have the same style and lighting, then seamlessly blend the dog into the background scene.')">Style-First Blend</button>
+                <button class="preset-button" onclick="setPrompt('Using the provided images, change only the background to include the dog from the second image. Keep the background scene exactly the same but add the dog with matching perspective and lighting.')">Inpainting Add</button>
+                <button class="preset-button" onclick="setPrompt('Step 1: Apply cartoon style to both images. Step 2: Blend the cartoon dog into the cartoon background scene maintaining consistent art style throughout.')">Step-by-Step</button>
             </div>
             
-            <h3>🎭 Artistic Styles</h3>
+            <h3>� Style Transfer Options</h3>
             <div class="preset-buttons">
-                <button class="preset-button" onclick="setPrompt('Transform both images into a unified cartoon animation. Create a single cohesive scene where the subject from the second image and the environment from the first image are rendered together in the same vibrant cartoon style with consistent art direction.')">🎨 Cartoon Unity</button>
-                <button class="preset-button" onclick="setPrompt('Sculpt a single marble statue composition merging both images. The subject from the second image and the setting from the first image should be carved as one unified sculpture with consistent stone texture and classical styling throughout.')">🗿 Marble Fusion</button>
-                <button class="preset-button" onclick="setPrompt('Paint a unified watercolor artwork combining both images. Blend the subject from the second image into the scene from the first image using flowing watercolor techniques that merge all elements with the same artistic brush style.')">🎨 Watercolor Blend</button>
-                <button class="preset-button" onclick="setPrompt('Create a single oil painting masterpiece merging both images. The subject from the second image and background from the first image should be painted together with unified brushwork, color palette, and artistic technique.')">🖼️ Oil Painting Unity</button>
-                <button class="preset-button" onclick="setPrompt('Design a unified cyberpunk digital art piece combining both images. Merge the subject from the second image into the first image environment with consistent neon lighting, digital effects, and futuristic atmosphere throughout the entire composition.')">🌃 Cyberpunk Fusion</button>
-                <button class="preset-button" onclick="setPrompt('Enchant both images into a single magical fantasy artwork. The subject from the second image should be mystically integrated into the first image environment with unified magical lighting, sparkles, and enchanted atmosphere affecting the entire scene.')">✨ Fantasy Fusion</button>
-                <button class="preset-button" onclick="setPrompt('Create a unified film noir composition merging both images. The subject from the second image and environment from the first image should share the same dramatic shadows, lighting, and black & white aesthetic throughout.')">🎭 Noir Unity</button>
-                <button class="preset-button" onclick="setPrompt('Design a single pop art masterpiece combining both images. Merge the subject from the second image into the first image background using consistent pop art styling, bold colors, and comic book effects throughout the entire composition.')">💥 Pop Art Fusion</button>
+                <button class="preset-button" onclick="setPrompt('Transform both provided images into vibrant cartoon style, then combine them: place the cartoon dog from the second image into the cartoon background from the first image with unified animation aesthetics.')">🎨 Cartoon Transform</button>
+                <button class="preset-button" onclick="setPrompt('Convert both images to marble sculpture style, then merge: sculpt the dog from the second image into the marble scene from the first image as one unified classical statue.')">🗿 Marble Transform</button>
+                <button class="preset-button" onclick="setPrompt('Apply watercolor painting style to both images, then blend: paint the dog from the second image into the watercolor background from the first image using flowing, unified brush techniques.')">🎨 Watercolor Transform</button>
+                <button class="preset-button" onclick="setPrompt('Render both images as oil paintings, then combine: paint the dog from the second image into the oil painting background from the first image with consistent brushwork and texture.')">🖼️ Oil Paint Transform</button>
+                <button class="preset-button" onclick="setPrompt('Style both images as cyberpunk digital art, then merge: integrate the cyberpunk dog from the second image into the cyberpunk background from the first image with unified neon effects.')">🌃 Cyber Transform</button>
+                <button class="preset-button" onclick="setPrompt('Enchant both images with fantasy magic style, then blend: magically integrate the fantasy dog from the second image into the fantasy background from the first image with unified mystical effects.')">✨ Fantasy Transform</button>
             </div>
             
-            <textarea id="promptInput" class="prompt-input" placeholder="Describe how you want to create a unified composition from both images...">Create a single, unified image that seamlessly merges the scene from the first image with the subject from the second image. The result should look like they were photographed together originally, with matching lighting, shadows, and atmosphere throughout.</textarea>
+            <h3>🎭 Advanced Techniques</h3>
+            <div class="preset-buttons">
+                <button class="preset-button" onclick="setPrompt('Using inpainting technique: Keep the background from the first image exactly as is, but seamlessly add the dog from the second image to appear naturally within the scene, matching all lighting and atmospheric conditions.')">� Inpainting Mode</button>
+                <button class="preset-button" onclick="setPrompt('Apply semantic masking: Transform only the area where the dog will be placed in the first image to accommodate the dog from the second image, blending the edges perfectly while preserving the rest of the scene.')">� Semantic Mask</button>
+            </div>
+            
+            <textarea id="promptInput" class="prompt-input" placeholder="Describe your blending approach...">Transform both provided images into vibrant cartoon style, then combine them: place the cartoon dog from the second image into the cartoon background from the first image with unified animation aesthetics.</textarea>
         </div>
         
         <div>
