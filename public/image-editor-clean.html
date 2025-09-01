@@ -147,20 +147,26 @@
             </div>
             
             <h3>🎨 Style Transform</h3>
-            <div style="margin: 15px 0;">
-                <label for="styleSelect" style="display: block; margin-bottom: 8px; font-weight: bold;">Choose Art Style:</label>
-                <select id="styleSelect" style="padding: 8px; border: 1px solid #dadce0; border-radius: 6px; font-size: 14px; margin-right: 10px;">
-                    <option value="cartoon">Cartoon</option>
-                    <option value="bauhaus">Bauhaus</option>
-                    <option value="impressionist">Impressionist</option>
-                    <option value="cubist">Cubist</option>
-                    <option value="art deco">Art Deco</option>
-                    <option value="watercolor">Watercolor</option>
-                    <option value="oil painting">Oil Painting</option>
-                    <option value="cyberpunk">Cyberpunk</option>
-                    <option value="minimalist">Minimalist</option>
-                    <option value="vintage poster">Vintage Poster</option>
-                </select>
+            <div style="margin: 15px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                <div>
+                    <label for="styleSelect" style="display: block; margin-bottom: 8px; font-weight: bold;">Choose Art Style:</label>
+                    <select id="styleSelect" style="padding: 8px; border: 1px solid #dadce0; border-radius: 6px; font-size: 14px; margin-right: 10px; min-width: 220px;">
+                        <option value="cartoon">Cartoon</option>
+                        <option value="bauhaus">Bauhaus</option>
+                        <option value="impressionist">Impressionist</option>
+                        <option value="cubist">Cubist</option>
+                        <option value="art_deco">Art Deco</option>
+                        <option value="watercolor">Watercolor</option>
+                        <option value="oil_painting">Oil Painting (impasto)</option>
+                        <option value="cyberpunk">Cyberpunk</option>
+                        <option value="minimalist">Minimalist</option>
+                        <option value="vintage_poster">Vintage Poster</option>
+                    </select>
+                </div>
+                <label style="display: inline-flex; align-items: center; gap: 8px; user-select: none;">
+                    <input type="checkbox" id="enforceStyle" checked>
+                    <span>Force strong style, suppress photorealism</span>
+                </label>
                 <button class="preset-button" onclick="setStylePrompt()" style="background: #1a73e8; color: white; padding: 8px 16px;">🎨 Apply Style Transform</button>
             </div>
             
@@ -318,8 +324,61 @@
         
         function setStylePrompt() {
             const styleSelect = document.getElementById('styleSelect');
-            const selectedStyle = styleSelect.value;
-            const prompt = `Transform both provided images into vibrant ${selectedStyle} style, then combine them: place the ${selectedStyle} subject from the second image into the ${selectedStyle} background from the first image with unified ${selectedStyle} aesthetics.`;
+            const enforce = document.getElementById('enforceStyle')?.checked;
+            const key = styleSelect.value;
+
+            // map style keys to user-facing style words and rendering instructions
+            const styles = {
+                cartoon: {
+                    label: 'cartoon',
+                    render: 'simplified forms, flat colors, bold outlines, limited shading, high contrast blocks, no photorealistic detail'
+                },
+                bauhaus: {
+                    label: 'bauhaus',
+                    render: 'geometric abstraction, primary colors (red, yellow, blue), black and white accents, strong composition, minimal detail'
+                },
+                impressionist: {
+                    label: 'impressionist',
+                    render: 'visible broken brushstrokes, soft edges, atmospheric perspective, emphasis on light and color over detail'
+                },
+                cubist: {
+                    label: 'cubist',
+                    render: 'faceted planes, geometric decomposition, multiple viewpoints, limited palette, strong angular edges'
+                },
+                art_deco: {
+                    label: 'art deco',
+                    render: 'streamlined forms, metallic accents, bold geometric patterns, poster-like simplification, limited gradients'
+                },
+                watercolor: {
+                    label: 'watercolor',
+                    render: 'soft washes, bleeding edges, paper texture, translucent layers, low micro-detail, no hard specular highlights'
+                },
+                oil_painting: {
+                    label: 'oil painting',
+                    render: 'heavy impasto texture, thick palette-knife strokes, visible brushwork, layered paint buildup, classical pigment mixing'
+                },
+                cyberpunk: {
+                    label: 'cyberpunk',
+                    render: 'neon rim lighting, chromatic aberration, scanlines, gritty film grain, saturated magenta-cyan highlights'
+                },
+                minimalist: {
+                    label: 'minimalist',
+                    render: 'radically simplified shapes, few colors, strong negative space, flat shading, no texture detail'
+                },
+                vintage_poster: {
+                    label: 'vintage poster',
+                    render: 'halftone or lithograph texture, limited color inks, bold typography feel, flattened perspective, paper grain'
+                }
+            };
+
+            const s = styles[key] || styles.cartoon;
+
+            const base = `Transform both provided images into ${s.label} style, then combine them: place the ${s.label} subject from the second image into the ${s.label} background from the first image with unified ${s.label} aesthetics.`;
+            const cues = ` Render both elements with ${s.render}.`;
+            const antiPhoto = enforce ? ' Strictly avoid photorealistic rendering, photographic textures, lens blur/bokeh, high-frequency micro-detail, or natural camera lighting.' : '';
+            const unify = ' Ensure the subject and background share the exact same style, palette, and material treatment so they appear created as one artwork.';
+
+            const prompt = base + cues + antiPhoto + ' ' + unify;
             setPrompt(prompt);
         }
         
