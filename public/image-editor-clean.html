@@ -146,16 +146,22 @@
                 <button class="preset-button" onclick="setPrompt('Step 1: Apply cartoon style to both images. Step 2: Blend the cartoon subject into the cartoon background scene maintaining consistent art style throughout.')">Step-by-Step</button>
             </div>
             
-            <h3>🎨 Style Transfer Options</h3>
-            <div class="preset-buttons">
-                <button class="preset-button" onclick="setPrompt('Transform both provided images into vibrant cartoon style, then combine them: place the cartoon subject from the second image into the cartoon background from the first image. Render the subject with simplified lines, flat colors, and bold outlines to match the cartoon background aesthetic. Both elements should have unified animation styling.')">🎨 Cartoon Transform</button>
-                <button class="preset-button" onclick="setPrompt('Convert both images to marble sculpture style, then merge: sculpt the subject from the second image into the marble scene from the first image as one unified classical statue. Render the subject with stone texture, classical proportions, and marble coloring to match the sculptural background.')">🗿 Marble Transform</button>
-                <button class="preset-button" onclick="setPrompt('Transform both images into traditional oil painting style with heavy impasto technique. First convert the background to oil painting with thick paint texture, visible brushstrokes, and rich pigmentation. Then paint the subject from the second image using the same oil painting technique - thick palette knife strokes, layered paint buildup, and traditional color mixing. Blend them together ensuring both elements have the same heavy paint texture and classical oil painting appearance.')">🖼️ Oil Paint Transform</button>
-                <button class="preset-button" onclick="setPrompt('Apply watercolor painting style to both images, then blend: paint the subject from the second image into the watercolor background from the first image. Render the subject with soft watercolor brushstrokes, flowing paint effects, and translucent colors to match the painted background.')">🎨 Watercolor Transform</button>
-                <button class="preset-button" onclick="setPrompt('Style both images as cyberpunk digital art, then merge: integrate the cyberpunk subject from the second image into the cyberpunk background from the first image. Render the subject with neon edge lighting, digital glitch effects, and futuristic coloring to match the cyberpunk background atmosphere.')">🌃 Cyber Transform</button>
-                <button class="preset-button" onclick="setPrompt('Enchant both images with fantasy magic style, then blend: magically integrate the fantasy subject from the second image into the fantasy background from the first image. Render the subject with mystical glowing effects, magical aura, and enchanted coloring to match the fantasy background atmosphere.')">✨ Fantasy Transform</button>
-                <button class="preset-button" onclick="setPrompt('Transform both images into film noir style, then combine: integrate the noir subject from the second image into the noir background from the first image. Render the subject with dramatic black and white contrast, film noir shadows, and classic cinema lighting to match the noir background aesthetic.')">🎭 Noir Transform</button>
-                <button class="preset-button" onclick="setPrompt('Style both images as pop art, then merge: integrate the pop art subject from the second image into the pop art background from the first image. Render the subject with bold colors, halftone patterns, and comic book styling to match the pop art background aesthetic.')">💥 Pop Art Transform</button>
+            <h3>🎨 Style Transform</h3>
+            <div style="margin: 15px 0;">
+                <label for="styleSelect" style="display: block; margin-bottom: 8px; font-weight: bold;">Choose Art Style:</label>
+                <select id="styleSelect" style="padding: 8px; border: 1px solid #dadce0; border-radius: 6px; font-size: 14px; margin-right: 10px;">
+                    <option value="cartoon">Cartoon</option>
+                    <option value="bauhaus">Bauhaus</option>
+                    <option value="impressionist">Impressionist</option>
+                    <option value="cubist">Cubist</option>
+                    <option value="art deco">Art Deco</option>
+                    <option value="watercolor">Watercolor</option>
+                    <option value="oil painting">Oil Painting</option>
+                    <option value="cyberpunk">Cyberpunk</option>
+                    <option value="minimalist">Minimalist</option>
+                    <option value="vintage poster">Vintage Poster</option>
+                </select>
+                <button class="preset-button" onclick="setStylePrompt()" style="background: #1a73e8; color: white; padding: 8px 16px;">🎨 Apply Style Transform</button>
             </div>
             
             <h3>🎭 Advanced Techniques</h3>
@@ -164,7 +170,7 @@
                 <button class="preset-button" onclick="setPrompt('Apply semantic masking: Transform only the area where the subject will be placed in the first image to accommodate the subject from the second image, blending the edges perfectly while preserving the rest of the scene.')">🎭 Semantic Mask</button>
             </div>
             
-            <textarea id="promptInput" class="prompt-input" placeholder="Describe your blending approach...">Transform both provided images into vibrant cartoon style, then combine them: place the cartoon subject from the second image into the cartoon background from the first image with unified animation aesthetics.</textarea>
+            <textarea id="promptInput" class="prompt-input" placeholder="Describe your blending approach...">Transform both provided images into vibrant cartoon style, then combine them: place the cartoon subject from the second image into the cartoon background from the first image with unified cartoon aesthetics.</textarea>
         </div>
         
         <div>
@@ -308,6 +314,13 @@
         function setPrompt(text) {
             promptInput.value = text;
             updateProcessButton();
+        }
+        
+        function setStylePrompt() {
+            const styleSelect = document.getElementById('styleSelect');
+            const selectedStyle = styleSelect.value;
+            const prompt = `Transform both provided images into vibrant ${selectedStyle} style, then combine them: place the ${selectedStyle} subject from the second image into the ${selectedStyle} background from the first image with unified ${selectedStyle} aesthetics.`;
+            setPrompt(prompt);
         }
         
         promptInput.addEventListener('input', updateProcessButton);
