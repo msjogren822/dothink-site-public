@@ -97,26 +97,27 @@ exports.handler = async (event) => {
     const bgData = imageData.includes(',') ? imageData.split(',')[1] : imageData;
     const fgData = foregroundImageData.includes(',') ? foregroundImageData.split(',')[1] : foregroundImageData;
 
-    // Pass 1: Stylize background
+    // Pass 1 & 2 in parallel: Stylize background and subject
     const bgPrompt = `Render this image entirely in ${style.label} style with ${style.render}.${antiPhoto}` +
       (promptExtras ? ` Also consider: ${promptExtras}` : '');
-    const bgStylizedB64 = await callGeminiImagePreview(genAI, [
-      { text: bgPrompt },
-      { inlineData: { data: bgData, mimeType: mimeType || 'image/jpeg' } },
-    ]);
-
-    // Pass 2: Stylize subject
     const fgPrompt = `Render this image entirely in ${style.label} style with ${style.render}.${antiPhoto}` +
       (promptExtras ? ` Also consider: ${promptExtras}` : '');
-    const fgStylizedB64 = await callGeminiImagePreview(genAI, [
-      { text: fgPrompt },
-      { inlineData: { data: fgData, mimeType: foregroundMimeType || 'image/jpeg' } },
+
+    const [bgStylizedB64, fgStylizedB64] = await Promise.all([
+      callGeminiImagePreview(genAI, [
+        { text: bgPrompt },
+        { inlineData: { data: bgData, mimeType: mimeType || 'image/jpeg' } },
+      ]),
+      callGeminiImagePreview(genAI, [
+        { text: fgPrompt },
+        { inlineData: { data: fgData, mimeType: foregroundMimeType || 'image/jpeg' } },
+      ]),
     ]);
 
     // Pass 3: Blend stylized images
     const blendPrompt = `Combine these two ${style.label}-styled images: use the first image as the background scene and place the subject from the second image naturally into that scene. Maintain consistent ${style.label} aesthetics, palette, material treatment, lighting, and shadows across both. Ensure seamless edges and integration.${antiPhoto}` +
       (promptExtras ? ` Also consider: ${promptExtras}` : '');
-    const finalB64 = await callGeminiImagePreview(genAI, [
+  const finalB64 = await callGeminiImagePreview(genAI, [
       { text: blendPrompt },
       { inlineData: { data: bgStylizedB64, mimeType: 'image/png' } },
       { inlineData: { data: fgStylizedB64, mimeType: 'image/png' } },

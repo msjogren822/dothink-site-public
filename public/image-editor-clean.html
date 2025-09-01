@@ -256,15 +256,36 @@
             }
         });
         
+        async function downscaleImageToDataURL(dataUrl, maxDim = 1280, quality = 0.9) {
+            try {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                const loaded = new Promise((res, rej) => { img.onload = () => res(); img.onerror = rej; });
+                img.src = dataUrl;
+                await loaded;
+                const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+                const w = Math.max(1, Math.round(img.width * scale));
+                const h = Math.max(1, Math.round(img.height * scale));
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, 0, 0, w, h);
+                // Keep original mime when possible
+                const type = dataUrl.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+                return canvas.toDataURL(type, quality);
+            } catch {
+                return dataUrl; // fallback
+            }
+        }
+
         function handleBackgroundFile(file) {
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    backgroundImage = {
-                        name: file.name,
-                        data: e.target.result,
-                        mimeType: file.type
-                    };
+                reader.onload = async (e) => {
+                    const raw = e.target.result;
+                    const ds = await downscaleImageToDataURL(raw);
+                    backgroundImage = { name: file.name, data: ds, mimeType: file.type };
                     displayBackgroundImage();
                     updateProcessButton();
                 };
@@ -275,12 +296,10 @@
         function handleForegroundFile(file) {
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    foregroundImage = {
-                        name: file.name,
-                        data: e.target.result,
-                        mimeType: file.type
-                    };
+                reader.onload = async (e) => {
+                    const raw = e.target.result;
+                    const ds = await downscaleImageToDataURL(raw);
+                    foregroundImage = { name: file.name, data: ds, mimeType: file.type };
                     displayForegroundImage();
                     updateProcessButton();
                 };
@@ -396,7 +415,8 @@
             
             processButton.disabled = true;
             resultArea.style.display = 'block';
-            resultContent.innerHTML = '<div class="loading"><div class="spinner"></div>Blending images with Gemini AI (multi-image mode)...</div>';
+            const twoPass = document.getElementById('useTwoPass')?.checked;
+            resultContent.innerHTML = `<div class="loading"><div class="spinner"></div>${twoPass ? 'Stylizing both images then blending…' : 'Blending images with Gemini AI (multi-image mode)…'}</div>`;
             
             try {
                 const prompt = promptInput.value.trim();
