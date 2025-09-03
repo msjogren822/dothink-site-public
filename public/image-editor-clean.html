@@ -186,6 +186,13 @@
             <textarea id="promptInput" class="prompt-input" placeholder="Describe your blending approach...">Transform both provided images into vibrant cartoon style, then combine them: place the cartoon subject from the second image into the cartoon background from the first image with unified cartoon aesthetics.</textarea>
         </div>
         
+
+        <div style="margin-bottom: 18px;">
+            <label for="passwordInput" style="font-weight: bold;">Enter password to enable blending:</label>
+            <input type="password" id="passwordInput" style="margin: 0 10px 0 10px; padding: 6px; border-radius: 5px; border: 1px solid #dadce0; font-size: 14px;">
+            <button class="button" id="passwordSubmit" onclick="checkPassword()">Unlock</button>
+            <span id="passwordStatus" style="color: red; margin-left: 10px;"></span>
+        </div>
         <div>
             <button class="button" id="processButton" onclick="processImages()" disabled>🚀 Blend Images</button>
         </div>
@@ -339,8 +346,26 @@
             updateProcessButton();
         }
         
+        let passwordUnlocked = false;
         function updateProcessButton() {
-            processButton.disabled = !backgroundImage || !foregroundImage || !promptInput.value.trim();
+            processButton.disabled = !passwordUnlocked || !backgroundImage || !foregroundImage || !promptInput.value.trim();
+        }
+
+        function checkPassword() {
+            const input = document.getElementById('passwordInput').value;
+            // Example password: "letmein" (base64: bGV0bWVpbg==)
+            const correct = atob('bGV0bWVpbg==');
+            if (input === correct) {
+                passwordUnlocked = true;
+                document.getElementById('passwordStatus').textContent = '✔️ Unlocked';
+                document.getElementById('passwordStatus').style.color = 'green';
+                updateProcessButton();
+            } else {
+                passwordUnlocked = false;
+                document.getElementById('passwordStatus').textContent = 'Incorrect password';
+                document.getElementById('passwordStatus').style.color = 'red';
+                updateProcessButton();
+            }
         }
         
         function setPrompt(text) {
