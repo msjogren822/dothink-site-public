@@ -353,8 +353,7 @@
 
         function checkPassword() {
             const input = document.getElementById('passwordInput').value;
-            // Example password: "letmein" (base64: bGV0bWVpbg==)
-            const correct = atob('bGV0bWVpbg==');
+            const correct = atob('b3BlbnNlc2FtZQ==');
             if (input === correct) {
                 passwordUnlocked = true;
                 document.getElementById('passwordStatus').textContent = '✔️ Unlocked';
