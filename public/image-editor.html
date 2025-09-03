@@ -3,15 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Im                         <button class="preset-button" onclick="setPrompt('Using inpainting technique: Keep the background from the first image exactly as is, but seamlessly add the subject from the second image to appear naturally within the scene, matching all lighting and atmospheric conditions.')">🎯 Inpainting Mode</button>
-                <button class="preset-button" onclick="setPrompt('Apply semantic masking: Transform only the area where the subject will be placed in the first image to accommodate the subject from the second image, blending the edges perfectly while preserving the rest of the scene.')">🎭 Semantic Mask</button>      <div class="preset-buttons">
-                <button class="preset-button" onclick="setPrompt('Using inpainting technique: Keep the background from the first image exactly as is, but seamlessly add the subject from the second image to appear naturally within the scene, matching all lighting and atmospheric conditions.')">🎯 Inpainting Mode</button>
-                <button class="preset-button" onclick="setPrompt('Apply semantic masking: Transform only the area where the subject will be placed in the first image to accommodate the subject from the second image, blending the edges perfectly while preserving the rest of the scene.')">🎭 Semantic Mask</button>
-            </div>              <button class="preset-button" onclick="setPrompt('Apply semantic masking: Transform only the area where the subject will be placed in the first image to accommodate the subject from the second image, blending the edges perfectly while preserving the rest of the scene.')">🎭 Semantic Mask</button>              <button class="preset-button" onclick="setPrompt('Using inpainting technique: Keep the background from the first image exactly as is, but seamlessly add the subject from the second image to appear naturally within the scene, matching all lighting and atmospheric conditions.')">🎯 Inpainting Mode</button>     <h3>🎭 Advanced Techniques</h3>
-            <div class="preset-buttons">
-                <button class="preset-button" onclick="setPrompt('Using inpainting technique: Keep the background from the first image exactly as is, but seamlessly add the subject from the second image to appear naturally within the scene, matching all lighting and atmospheric conditions.')">🎯 Inpainting Mode</button>
-                <button class="preset-button" onclick="setPrompt('Apply semantic masking: Transform only the area where the subject will be placed in the first image to accommodate the subject from the second image, blending the edges perfectly while preserving the rest of the scene.')">🎭 Semantic Mask</button>
-            </div>              <button class="preset-button" onclick="setPrompt('Apply semantic masking: Transform only the area where the subject will be placed in the first image to accommodate the subject from the second image, blending the edges perfectly while preserving the rest of the scene.')">🎭 Semantic Mask</button>              <button class="preset-button" onclick="setPrompt('Using inpainting technique: Keep the background from the first image exactly as is, but seamlessly add the subject from the second image to appear naturally within the scene, matching all lighting and atmospheric conditions.')">🎯 Inpainting Mode</button> Editor with Gemini AI</title>
+    <title>Image Editor with Gemini AI</title>
     <style>
         body {
             font-family: 'Google Sans', Arial, sans-serif;
@@ -175,6 +167,12 @@
             <textarea id="promptInput" class="prompt-input" placeholder="Describe your blending approach...">Transform both provided images into vibrant cartoon style, then combine them: place the cartoon subject from the second image into the cartoon background from the first image with unified animation aesthetics.</textarea>
         </div>
         
+        <div style="margin-bottom: 18px;">
+            <label for="passwordInput" style="font-weight: bold;">Enter password to enable blending:</label>
+            <input type="password" id="passwordInput" style="margin: 0 10px 0 10px; padding: 6px; border-radius: 5px; border: 1px solid #dadce0; font-size: 14px;">
+            <button class="button" id="passwordSubmit" onclick="checkPassword()">Unlock</button>
+            <span id="passwordStatus" style="color: red; margin-left: 10px;"></span>
+        </div>
         <div>
             <button class="button" id="processButton" onclick="processImages()" disabled>🚀 Blend Images</button>
         </div>
@@ -309,8 +307,25 @@
             updateProcessButton();
         }
         
+        let passwordUnlocked = false;
         function updateProcessButton() {
-            processButton.disabled = !backgroundImage || !foregroundImage || !promptInput.value.trim();
+            processButton.disabled = !passwordUnlocked || !backgroundImage || !foregroundImage || !promptInput.value.trim();
+        }
+
+        function checkPassword() {
+            const input = document.getElementById('passwordInput').value;
+            const correct = atob('b3BlbnNlc2FtZQ==');
+            if (input === correct) {
+                passwordUnlocked = true;
+                document.getElementById('passwordStatus').textContent = '✔️ Unlocked';
+                document.getElementById('passwordStatus').style.color = 'green';
+                updateProcessButton();
+            } else {
+                passwordUnlocked = false;
+                document.getElementById('passwordStatus').textContent = 'Incorrect password';
+                document.getElementById('passwordStatus').style.color = 'red';
+                updateProcessButton();
+            }
         }
         
         function setPrompt(text) {
