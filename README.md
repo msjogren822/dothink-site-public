@@ -5,7 +5,7 @@ The main landing page is here. It's kind of a general "me" page.
 https://www.dothink.in/
 
 ## Project
-- [$DOGify: your image experiment for X people](https://www.dothink.in/dogify.html)  
+- [$DOGify your image - experiment for X people](https://www.dothink.in/dogify.html)  
   `public/dogify.html`
 
 ## Recent Experiments
