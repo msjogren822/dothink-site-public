@@ -10,35 +10,74 @@
     <header>
         <h1>🌳 Treehouse Experiments</h1>
         <p>Live builds from hot web trends (updated every 4h). Scout's lab—code, embeds, ideas.</p>
-        <small>Last update: <span id="last-update"></span> | <button onclick="fetchTrends()">🔄 Refresh</button></small>
-        <select id="archive-select" onchange="loadArchive(this.value)"><option value="">Latest</option><option value="trends-2026-03-01-2354.json">Mar 1 23:54</option></select>
+        <small>Last update: <span id="last-update"></span> | <button onclick="fetchTrends()">🔄 Refresh</button> | 
+            <label>Archive: 
+                <select id="archive-select" onchange="loadArchive(this.value)">
+                    <option value="">Latest</option>
+                    <option value="trends-2026-03-01-2354.json">Mar 1 23:54</option>
+                </select>
+            </label>
+        </small>
     </header>
 
     <main id="content">
         <section id="trends">
-            <h2>Today's Hot Web Trends (2026-03-02)</h2>
+            <h2>🔥 Today's Hot Web Trends (2026)</h2>
             <ul id="trend-list">
                 <li>Loading trends...</li>
             </ul>
         </section>
 
         <section id="builds">
-            <h2>Quick Builds</h2>
+            <h2>🛠️ Quick Builds</h2>
             <div class="grid">
-                <!-- Dynamic or static demos -->
+                <div class="card">
+                    <h3>WebGPU Particle Sim</h3>
+                    <p>GPU-powered particle system running entirely in browser.</p>
+                    <a href="https://webgpu.github.io/webgpu-samples/" target="_blank">Try Demo →</a>
+                </div>
+                <div class="card">
+                    <h3>AI Chat UI</h3>
+                    <p>Real-time streaming chat interface with markdown.</p>
+                    <a href="https://chat.openai.com" target="_blank">Inspiration →</a>
+                </div>
+                <div class="card">
+                    <h3>CSS Container Queries</h3>
+                    <p>Component-based responsive design without media queries.</p>
+                    <a href="https://css-tricks.com/a-complete-guide-to-css-container-queries/" target="_blank">Learn →</a>
+                </div>
+                <div class="card">
+                    <h3>View Transitions</h3>
+                    <p>Smooth page animations like a native app.</p>
+                    <a href="https://view-transitions.netlify.app/" target="_blank">Demo →</a>
+                </div>
             </div>
+        </section>
+
+        <section id="mood">
+            <h2>🎲 Random Inspiration</h2>
+            <blockquote id="quote">Loading...</blockquote>
+            <button onclick="fetchQuote()">New Quote</button>
         </section>
     </main>
 
     <footer>
-        <p>Part of <a href="../">dothink.in</a> | GitHub: dothink-site/treehouse</p>
+        <p>Part of <a href="../">dothink.in</a> | GitHub: <a href="https://github.com/mattdothink/dothink-site/tree/main/dothinksite/public/treehouse" target="_blank">dothink-site/treehouse</a></p>
     </footer>
 
     <script src="assets/js/main.js"></script>
+    <script>
+        // Fetch random inspiration quote
+        async function fetchQuote() {
+            try {
+                const res = await fetch('https://api.quotable.io/random?tags=technology|computers|programming');
+                const data = await res.json();
+                document.getElementById('quote').innerHTML = `"${data.content}" — <em>${data.author}</em>`;
+            } catch(e) {
+                document.getElementById('quote').textContent = "Code is like humor. When you have to explain it, it's bad. — Cory House";
+            }
+        }
+        fetchQuote();
+    </script>
 </body>
 </html>
-
-<select id="archive-select">
-  <option value="">Latest</option>
-  <option value="trends-2026-03-01-2354.json">Mar 1 23:54 Archive</option>
-</select>

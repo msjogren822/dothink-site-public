@@ -1,4 +1,4 @@
-// Treehouse JS: Fetch trends from feeds/trends.json or API
+// Treehouse JS: Fetch trends from feeds/trends.json or archive
 async function fetchTrends() {
     try {
         const res = await fetch('feeds/trends.json');
@@ -7,18 +7,17 @@ async function fetchTrends() {
         list.innerHTML = '';
         trends.forEach(trend => {
             const li = document.createElement('li');
-            li.innerHTML = `<strong>${trend.title}</strong> <a href="${trend.url}" class="trend-link" target="_blank">→ Read</a><br>${trend.desc}`;
+            li.innerHTML = `<a href="${trend.url}" class="trend-link" target="_blank">${trend.title}</a><br>${trend.desc}`;
             list.appendChild(li);
         });
         document.getElementById('last-update').textContent = new Date().toLocaleString();
     } catch (e) {
-        document.getElementById('trend-list').innerHTML = '<li>Trends loading... (fallback: check console)</li>';
-        console.error(e);
+        document.getElementById('trend-list').innerHTML = '<li>Trends loading... (check console if issues)</li>';
+        console.error('Fetch error:', e);
     }
 }
-fetchTrends(); // Auto-load
 
-// Archive load
+// Load from archive
 function loadArchive(filename) {
     if (!filename) return fetchTrends();
     fetch(`feeds/archive/${filename}`).then(res => res.json()).then(trends => {
@@ -26,9 +25,15 @@ function loadArchive(filename) {
         list.innerHTML = '';
         trends.forEach(trend => {
             const li = document.createElement('li');
-            li.innerHTML = `<strong>${trend.title}</strong> <a href="${trend.url}" class="trend-link" target="_blank">→ Read</a><br>${trend.desc}`;
+            li.innerHTML = `<a href="${trend.url}" class="trend-link" target="_blank">${trend.title}</a><br>${trend.desc}`;
             list.appendChild(li);
         });
         document.getElementById('last-update').textContent = `Archive: ${filename}`;
-    }).catch(e => console.error(e));
+    }).catch(e => {
+        console.error('Archive load error:', e);
+        document.getElementById('trend-list').innerHTML = '<li>Error loading archive</li>';
+    });
 }
+
+// Auto-load on page load
+document.addEventListener('DOMContentLoaded', fetchTrends);
