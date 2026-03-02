@@ -1,0 +1,27 @@
+[
+  {
+    "title": "View Transitions API",
+    "url": "https://developer.chrome.com/docs/web-platform/view-transitions",
+    "desc": "Create smooth animated transitions between page views in both SPAs and MPAs. Now supported in Chrome 111+."
+  },
+  {
+    "title": "/e/OS De-Googled Mobile Ecosystem",
+    "url": "https://e.foundation/e-os/",
+    "desc": "Complete de-Googled mobile OS promoting privacy-focused web and app development independent of Big Tech services."
+  },
+  {
+    "title": "AI Code Generation on GitHub",
+    "url": "https://github.com/topics/ai-code",
+    "desc": "Growing ecosystem of AI-powered code generation tools on GitHub, from Copilot to specialized coding agents."
+  },
+  {
+    "title": "WebGPU API - Modern Graphics in Browser",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API",
+    "desc": "Next-gen GPU API for the web enabling high-performance graphics and compute. Spec finalized, browser support growing."
+  },
+  {
+    "title": "Omni: Open-Source Postgres Workplace Search",
+    "url": "https://github.com/getomnico/omni",
+    "desc": "Open-source tool for workplace search and chat built on Postgres, suitable for integrating into web applications."
+  }
+]
