@@ -1,0 +1,27 @@
+[
+  {
+    "title": "WebGPU Spec Finalized (W3C)",
+    "url": "https://www.w3.org/TR/webgpu/",
+    "desc": "GPU computing in browsers is now a W3C standard. Chrome/Safari shipping, Firefox nightly."
+  },
+  {
+    "title": "WebNN API for Edge AI",
+    "url": "https://www.w3.org/TR/webnn/",
+    "desc": "Run neural networks client-side. W3C spec, Chrome origin trial active."
+  },
+  {
+    "title": "Progressive Web Apps (MDN)",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps",
+    "desc": "Native-like web apps: installable, offline, push notifications. Full docs on MDN."
+  },
+  {
+    "title": "CSS Nesting Support",
+    "url": "https://caniuse.com/css-nesting",
+    "desc": "Native CSS nesting now in all major browsers. No preprocessor needed."
+  },
+  {
+    "title": "View Transitions API",
+    "url": "https://developer.chrome.com/docs/web-platform/view-transitions",
+    "desc": "Smooth page navigation animations. Chrome 111+, Firefox/Safari experimental."
+  }
+]

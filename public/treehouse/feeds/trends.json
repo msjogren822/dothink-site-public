@@ -1,27 +1,27 @@
 [
   {
-    "title": "WebGPU Spec Finalized (W3C)",
-    "url": "https://www.w3.org/TR/webgpu/",
-    "desc": "GPU computing in browsers is now a W3C standard. Chrome/Safari shipping, Firefox nightly."
+    "title": "WebMCP Early Preview",
+    "url": "https://developer.chrome.com/blog/webmcp",
+    "desc": "New web protocol WebMCP available for early preview in Chrome, sparking discussions on future web capabilities and performance."
   },
   {
-    "title": "WebNN API for Edge AI",
-    "url": "https://www.w3.org/TR/webnn/",
-    "desc": "Run neural networks client-side. W3C spec, Chrome origin trial active."
+    "title": "/e/OS De-Googled Mobile Ecosystem",
+    "url": "https://e.foundation/e-os/",
+    "desc": "Complete de-Googled mobile OS promoting privacy-focused web and app development independent of Big Tech services."
   },
   {
-    "title": "Progressive Web Apps (MDN)",
-    "url": "https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps",
-    "desc": "Native-like web apps: installable, offline, push notifications. Full docs on MDN."
+    "title": "AI-Written Code in Git Commits",
+    "url": "https://github.com/mandel-macaque/should-ai-commit",
+    "desc": "Ongoing debate on whether AI-generated code sessions should be committed to git, reflecting AI's growing role in web dev workflows."
   },
   {
-    "title": "CSS Nesting Support",
-    "url": "https://caniuse.com/css-nesting",
-    "desc": "Native CSS nesting now in all major browsers. No preprocessor needed."
+    "title": "Building Video Games in 2025 Without Engines",
+    "url": "https://noelberry.ca/blog/making-video-games-in-2025-without-an-engine",
+    "desc": "Guide to creating browser games using modern web tech like WebGPU and Canvas, avoiding heavy engines for lighter experiences."
   },
   {
-    "title": "View Transitions API",
-    "url": "https://developer.chrome.com/docs/web-platform/view-transitions",
-    "desc": "Smooth page navigation animations. Chrome 111+, Firefox/Safari experimental."
+    "title": "Omni: Open-Source Postgres Workplace Search",
+    "url": "https://github.com/getomnico/omni",
+    "desc": "Open-source tool for workplace search and chat built on Postgres, suitable for integrating into web applications."
   }
 ]
