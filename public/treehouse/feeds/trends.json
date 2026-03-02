@@ -1,0 +1,27 @@
+[
+  {
+    "title": "WebGPU Everywhere (2026 Hype)",
+    "url": "https://web.dev/articles/webgpu",
+    "desc": "Browsers shipping full WebGPU—real-time ML/rendering in JS. Demo: particle sims."
+  },
+  {
+    "title": "AI Agents on Edge",
+    "url": "https://developer.chrome.com/blog/ai-agents",
+    "desc": "TensorFlow.js + WebNN: Run LLMs client-side. Privacy win, no servers."
+  },
+  {
+    "title": "PWA 2.0 Push",
+    "url": "https://w3c.github.io/manifest/",
+    "desc": "Badges, file handling, periodic sync. Apps feel native."
+  },
+  {
+    "title": "CSS Nesting Native",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_nesting",
+    "desc": "No preprocessors needed—ship in Chrome 120+."
+  },
+  {
+    "title": "View Transitions API",
+    "url": "https://developer.chrome.com/docs/web-platform/view-transitions",
+    "desc": "SPA-like anims for MPA sites. Smooth as butter."
+  }
+]
