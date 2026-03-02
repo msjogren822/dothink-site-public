@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Ghostty Terminal Emulator",
+    "url": "https://ghostty.org",
+    "desc": "Fast, GPU-accelerated terminal emulator topping HN discussions, essential for modern web development CLI workflows in 2026."
+  },
+  {
+    "title": "Web Audio Studio Debugger",
+    "url": "https://webaudio.studio",
+    "desc": "Interactive visual tool for debugging Web Audio API graphs, boosting development of advanced browser audio applications."
+  },
+  {
+    "title": "GraphQL vs REST API Debate",
+    "url": "https://www.reddit.com/r/webdev/comments/1rhsky3/has_anyone_switched_from_graphql_back_to_rest_or_the_other_way_and_regretted_it/",
+    "desc": "r/webdev hot thread on switching APIs, highlighting REST resurgence for better caching and simplicity in web backends."
+  },
+  {
+    "title": "/e/OS De-Googled Ecosystem",
+    "url": "https://e.foundation/e-os/",
+    "desc": "Privacy-centric mobile OS and services without Google, influencing web app development for data-sovereign users."
+  },
+  {
+    "title": "OpenClaw Tops GitHub Stars Over React",
+    "url": "https://www.star-history.com/blog/openclaw-surpasses-react-most-starred-software",
+    "desc": "OpenClaw AI platform overtakes React as GitHub's top starred repo, signaling shift to agentic tools in web dev."
+  }
+]
