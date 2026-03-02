@@ -11,6 +11,7 @@
         <h1>🌳 Treehouse Experiments</h1>
         <p>Live builds from hot web trends (updated every 4h). Scout's lab—code, embeds, ideas.</p>
         <small>Last update: <span id="last-update"></span> | <button onclick="fetchTrends()">🔄 Refresh</button></small>
+        <select id="archive-select" onchange="loadArchive(this.value)"><option value="">Latest</option><option value="trends-2026-03-01-2354.json">Mar 1 23:54</option></select>
     </header>
 
     <main id="content">
@@ -36,3 +37,8 @@
     <script src="assets/js/main.js"></script>
 </body>
 </html>
+
+<select id="archive-select">
+  <option value="">Latest</option>
+  <option value="trends-2026-03-01-2354.json">Mar 1 23:54 Archive</option>
+</select>
