@@ -1,27 +1,27 @@
 [
   {
-    "title": "WebGPU Production Ready (2026)",
-    "url": "https://developer.chrome.com/docs/capabilities/webgpu",
-    "desc": "Full GPU compute/ML in browsers. Raytracing/particles demos everywhere."
+    "title": "WebGPU Spec Finalized (W3C)",
+    "url": "https://www.w3.org/TR/webgpu/",
+    "desc": "GPU computing in browsers is now a W3C standard. Chrome/Safari shipping, Firefox nightly."
   },
   {
-    "title": "WebNN API for Client AI",
-    "url": "https://web.dev/articles/webnn",
-    "desc": "TensorFlow.js inference on edge hardware. Offline LLMs, privacy boost."
+    "title": "WebNN API for Edge AI",
+    "url": "https://www.w3.org/TR/webnn/",
+    "desc": "Run neural networks client-side. W3C spec, Chrome origin trial active."
   },
   {
-    "title": "PWA Advanced (File Handling/Badges)",
-    "url": "https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Advanced_topics",
-    "desc": "Native-like features: sync, handover, notifications."
+    "title": "Progressive Web Apps (MDN)",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps",
+    "desc": "Native-like web apps: installable, offline, push notifications. Full docs on MDN."
   },
   {
-    "title": "Native CSS Nesting Guide",
-    "url": "https://css-tricks.com/complete-guide-to-css-nesting/",
-    "desc": "Browser-native—no Sass needed. Stable in Chrome/Firefox/Safari."
+    "title": "CSS Nesting Support",
+    "url": "https://caniuse.com/css-nesting",
+    "desc": "Native CSS nesting now in all major browsers. No preprocessor needed."
   },
   {
-    "title": "View Transitions API Live",
+    "title": "View Transitions API",
     "url": "https://developer.chrome.com/docs/web-platform/view-transitions",
-    "desc": "Smooth anims for MPA/SPA navigation. Perf + UX win."
+    "desc": "Smooth page navigation animations. Chrome 111+, Firefox/Safari experimental."
   }
 ]
