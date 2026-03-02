@@ -35,5 +35,27 @@ function loadArchive(filename) {
     });
 }
 
+// Populate archive dropdown dynamically
+async function populateArchiveDropdown() {
+    try {
+        const res = await fetch('feeds/archive-index.json');
+        const archives = await res.json();
+        const select = document.getElementById('archive-select');
+        // Keep "Latest" option
+        select.innerHTML = '<option value="">Latest</option>';
+        archives.forEach(arch => {
+            const opt = document.createElement('option');
+            opt.value = arch.file;
+            opt.textContent = arch.label;
+            select.appendChild(opt);
+        });
+    } catch (e) {
+        console.error('Archive index load error:', e);
+    }
+}
+
 // Auto-load on page load
-document.addEventListener('DOMContentLoaded', fetchTrends);
+document.addEventListener('DOMContentLoaded', () => {
+    fetchTrends();
+    populateArchiveDropdown();
+});
