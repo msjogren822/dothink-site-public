@@ -40,7 +40,7 @@ h1 {
 }
 
 h2 { 
-    color: var(--primary-dark); 
+    color: #1a365d; 
     border-bottom: 3px solid #e0e6ed; 
     padding-bottom: 0.5rem; 
     margin-top: 2rem;

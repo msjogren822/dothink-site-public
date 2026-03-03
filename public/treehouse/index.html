@@ -13,7 +13,6 @@
         <small>Last update: <span id="last-update"></span> | <button onclick="fetchTrends()">🔄 Refresh</button> | 
             <label>Archive: 
                 <select id="archive-select" onchange="loadArchive(this.value)">
-                    <option value="">Latest</option>
                     <option value="trends-2026-03-02-0448.json">Mar 2 04:48</option>
                     <option value="trends-2026-03-01-2354.json">Mar 1 23:54</option>
                 </select>
@@ -84,11 +83,11 @@
         async function fetchQuote() {
             try {
                 const res = await fetch('https://api.quotable.io/random?tags=technology|computers|programming');
+                if (!res.ok) throw new Error('API unavailable');
                 const data = await res.json();
                 document.getElementById('quote').innerHTML = `"${data.content}" — <em>${data.author}</em>`;
             } catch(e) {
-                const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
-                document.getElementById('quote').textContent = randomQuote;
+                document.getElementById('quote').textContent = "Coming soon...";
             }
         }
         fetchQuote();
