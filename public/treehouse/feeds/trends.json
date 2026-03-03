@@ -1,27 +1,27 @@
 [
   {
-    "title": "WebGPU Reaches W3C Recommendation",
-    "url": "https://www.w3.org/TR/webgpu/",
-    "desc": "The WebGPU API for high-performance graphics and compute in browsers is now a W3C Recommendation, signaling broad browser support."
+    "title": "Chrome 130 New Features",
+    "url": "https://developer.chrome.com/blog/new-in-chrome-130",
+    "desc": "Latest Chrome release includes improved dev tools, CSS features, and performance optimizations for web developers."
   },
   {
-    "title": "View Transitions API Goes Mainstream",
+    "title": "Bun 1.0 - All-in-One JS Runtime",
+    "url": "https://bun.sh/",
+    "desc": "Bun is a fast JavaScript runtime, package manager, and test runner. Now stable and gaining traction for server-side JS."
+  },
+  {
+    "title": "Vercel Blog - AI & Web Trends",
+    "url": "https://vercel.com/blog",
+    "desc": "Leading deployment platform shares insights on AI integration, edge computing, and modern web development patterns."
+  },
+  {
+    "title": "View Transitions API",
     "url": "https://developer.chrome.com/docs/web-platform/view-transitions",
-    "desc": "Native page transition animations without JavaScript libraries. Now supported in Chrome, with Safari and Firefox following."
+    "desc": "Native page transition API enables smooth, app-like animations between views without heavy JavaScript libraries."
   },
   {
-    "title": "CSS Container Queries Ship Everywhere",
-    "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_container_queries",
-    "desc": "Component-level responsive design without media queries. Elements respond to their container's size, not the viewport."
-  },
-  {
-    "title": "2026 Web Development Trends",
-    "url": "https://github.com/topics/web-development",
-    "desc": "Explore trending web dev topics on GitHub - from React server components to edge computing and AI integration patterns."
-  },
-  {
-    "title": "State of JavaScript 2026 Results",
-    "url": "https://2024.stateofjs.com/",
-    "desc": "Annual survey results showing emerging frameworks, tools, and techniques that developers are adopting in 2026."
+    "title": "Fediverse: Decentralized Social Web",
+    "url": "https://fediverse.party/",
+    "desc": "Decentralized alternative to Big Tech social media. Growing interest among developers building ActivityPub-compatible apps."
   }
 ]
