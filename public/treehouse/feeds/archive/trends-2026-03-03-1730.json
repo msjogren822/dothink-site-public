@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Intel's 18A Process Node - 288-Core Xeon",
+    "url": "https://www.tomshardware.com/pc-components/cpus/intels-make-or-break-18a-process-node-debuts-for-data-center-with-288-core-xeon-6-cpu-multi-chip-monster-sports-12-channels-of-ddr5-8000-foveros-direct-3d-packaging-tech",
+    "desc": "Intel's breakthrough 18A process node powers a 288-core data center CPU with 12 DDR5 channels and Foveros 3D packaging technology."
+  },
+  {
+    "title": "Apple MacBook Pro with M5 Pro and M5 Max",
+    "url": "https://www.apple.com/newsroom/2026/03/apple-introduces-macbook-pro-with-all-new-m5-pro-and-m5-max/",
+    "desc": "Apple unveils new MacBook Pro lineup featuring the latest M5 Pro and M5 Max chips with enhanced performance and efficiency."
+  },
+  {
+    "title": "GPT-5.3 Instant",
+    "url": "https://openai.com/index/gpt-5-3-instant/",
+    "desc": "OpenAI releases GPT-5.3 Instant, featuring improved reasoning capabilities and faster response times for real-time applications."
+  },
+  {
+    "title": "Apple MacBook Air with M5",
+    "url": "https://www.apple.com/newsroom/2026/03/apple-introduces-the-new-macbook-air-with-m5/",
+    "desc": "The new MacBook Air arrives with Apple's M5 chip, delivering exceptional performance in an ultra-portable design."
+  },
+  {
+    "title": "Meta's AI Smart Glasses and Privacy Concerns",
+    "url": "https://www.svd.se/a/K8nrV4/metas-ai-smart-glasses-and-data-privacy-concerns-workers-say-we-see-everything",
+    "desc": "Meta's AI-powered smart glasses raise data privacy concerns as workers report seeing everything through the devices."
+  }
+]
