@@ -40,7 +40,7 @@ h1 {
 }
 
 h2 { 
-    color: var(--primary); 
+    color: var(--primary-dark); 
     border-bottom: 3px solid #e0e6ed; 
     padding-bottom: 0.5rem; 
     margin-top: 2rem;
@@ -94,7 +94,7 @@ select {
 }
 
 .trend-link { 
-    color: var(--primary); 
+    color: var(--primary-dark); 
     text-decoration: none; 
     font-weight: 600;
     font-size: 1.1rem;
@@ -124,7 +124,7 @@ select {
     box-shadow: 0 8px 25px rgba(0,0,0,0.12);
 }
 
-.card h3 { margin: 0 0 0.5rem 0; color: var(--primary); }
+.card h3 { margin: 0 0 0.5rem 0; color: var(--primary-dark); }
 .card p { color: var(--text-light); font-size: 0.95rem; margin-bottom: 1rem; }
 .card a { color: var(--accent); text-decoration: none; font-weight: 600; }
 

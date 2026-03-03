@@ -68,17 +68,31 @@
 
     <script src="assets/js/main.js"></script>
     <script>
+    <script>
         // Fetch random inspiration quote
+        const quotes = [
+            "Code is like humor. When you have to explain it, it's bad. — Cory House",
+            "First, solve the problem. Then, write the code. — John Johnson",
+            "Experience is the name everyone gives to their mistakes. — Oscar Wilde",
+            "The best error message is the one that never shows up. — Thomas Fuchs",
+            "Simplicity is the soul of efficiency. — Austin Freeman",
+            "Make it work, make it right, make it fast. — Kent Beck",
+            "Any fool can write code that a computer can understand. Good programmers write code that humans can understand. — Martin Fowler",
+            "Programming isn't about what you know; it's about what you can figure out. — Chris Pine"
+        ];
+        
         async function fetchQuote() {
             try {
                 const res = await fetch('https://api.quotable.io/random?tags=technology|computers|programming');
                 const data = await res.json();
                 document.getElementById('quote').innerHTML = `"${data.content}" — <em>${data.author}</em>`;
             } catch(e) {
-                document.getElementById('quote').textContent = "Code is like humor. When you have to explain it, it's bad. — Cory House";
+                const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+                document.getElementById('quote').textContent = randomQuote;
             }
         }
         fetchQuote();
+    </script>
     </script>
 </body>
 </html>
