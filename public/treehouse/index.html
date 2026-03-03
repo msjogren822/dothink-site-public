@@ -55,7 +55,7 @@
         </section>
 
         <section id="mood">
-            <h2>🎲 Random Inspiration</h2>
+            <h2>🧠 Mind Break</h2>
             <blockquote id="quote">Loading...</blockquote>
             <button onclick="fetchQuote()">New Quote</button>
         </section>
@@ -68,26 +68,16 @@
     <script src="assets/js/main.js"></script>
     <script>
     <script>
-        // Fetch random inspiration quote
-        const quotes = [
-            "Code is like humor. When you have to explain it, it's bad. — Cory House",
-            "First, solve the problem. Then, write the code. — John Johnson",
-            "Experience is the name everyone gives to their mistakes. — Oscar Wilde",
-            "The best error message is the one that never shows up. — Thomas Fuchs",
-            "Simplicity is the soul of efficiency. — Austin Freeman",
-            "Make it work, make it right, make it fast. — Kent Beck",
-            "Any fool can write code that a computer can understand. Good programmers write code that humans can understand. — Martin Fowler",
-            "Programming isn't about what you know; it's about what you can figure out. — Chris Pine"
-        ];
-        
+        // Fetch random Wikipedia article
         async function fetchQuote() {
             try {
-                const res = await fetch('https://api.quotable.io/random?tags=technology|computers|programming');
+                const res = await fetch('https://en.wikipedia.org/api/rest_v1/page/random/summary');
                 if (!res.ok) throw new Error('API unavailable');
                 const data = await res.json();
-                document.getElementById('quote').innerHTML = `"${data.content}" — <em>${data.author}</em>`;
+                document.getElementById('quote').innerHTML = 
+                    `<a href="${data.content_urls.desktop.page}" target="_blank" style="color: inherit; text-decoration: none;">📚 ${data.title}</a><br><span style="font-size: 0.9em; color: var(--text-light);">${data.extract || 'Click to explore...'}</span>`;
             } catch(e) {
-                document.getElementById('quote').textContent = "Coming soon...";
+                document.getElementById('quote').textContent = "Take a break — stretch your legs! 🚶";
             }
         }
         fetchQuote();
