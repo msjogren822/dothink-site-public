@@ -163,7 +163,7 @@ footer a { color: white; }
 /* Tree emoji - separate from gradient text */
 .tree-emoji {
     font-size: 1em;
-    filter: hue-rotate(80deg) saturate(1.5);
+    filter: saturate(1.8) brightness(1.1);
 }
 
 .tree-text {
