@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Component Filenames in 2026: Kebab vs Pascal?",
+    "url": "https://www.reddit.com/r/webdev/comments/1ri05q5/whats_the_move_for_component_filenames_in_2026/",
+    "desc": "Developers debate switching from PascalCase.tsx to kebab-case.tsx for React components to avoid Git/CI case-sensitivity issues while distinguishing from hooks and utils."
+  },
+  {
+    "title": "VersionDB: Tech Stacks from 5.6M Sites",
+    "url": "https://versiondb.io/",
+    "desc": "Dataset covering technologies on 5.6M domains enables lead generation, market research, and security audits via interactive filters on stacks, countries, and more."
+  },
+  {
+    "title": "ArezGit: Unified Git, HTTP, Editor Tool",
+    "url": "https://arezgit.com/",
+    "desc": "Rust/Tauri desktop app combines visual Git, HTTP client, Monaco code editor, mock data, and Pomodoro timers to streamline web dev workflows."
+  },
+  {
+    "title": "trackable.: Self-Hosted Time Tracking PWA",
+    "url": "https://www.reddit.com/r/webdev/comments/1rj3fna/trackable_simple_selfhosted_time_tracking_app_for/",
+    "desc": "Open-source PWA for freelancers with multi-profiles, PDF/CSV exports, vacation calc, holidays, and monthly summaries—all self-hosted."
+  },
+  {
+    "title": "Privacy Audit: Online Code Editors Expose Secrets",
+    "url": "https://www.reddit.com/r/webdev/comments/1rj1oac/i_planted_fake_api_keys_in_online_code_editors/",
+    "desc": "Fake API keys reveal that tools like CodePen and Replit send code/keystrokes to servers real-time for ads/AI training, exposing developer secrets publicly."
+  }
+]

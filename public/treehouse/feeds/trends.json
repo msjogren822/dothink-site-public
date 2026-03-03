@@ -1,27 +1,27 @@
 [
   {
-    "title": "Component Filenames in 2026: Kebab vs Pascal?",
-    "url": "https://www.reddit.com/r/webdev/comments/1ri05q5/whats_the_move_for_component_filenames_in_2026/",
-    "desc": "Developers debate switching from PascalCase.tsx to kebab-case.tsx for React components to avoid Git/CI case-sensitivity issues while distinguishing from hooks and utils."
+    "title": "WebGPU Reaches W3C Recommendation",
+    "url": "https://www.w3.org/TR/webgpu/",
+    "desc": "The WebGPU API for high-performance graphics and compute in browsers is now a W3C Recommendation, signaling broad browser support."
   },
   {
-    "title": "VersionDB: Tech Stacks from 5.6M Sites",
-    "url": "https://versiondb.io/",
-    "desc": "Dataset covering technologies on 5.6M domains enables lead generation, market research, and security audits via interactive filters on stacks, countries, and more."
+    "title": "View Transitions API Goes Mainstream",
+    "url": "https://developer.chrome.com/docs/web-platform/view-transitions",
+    "desc": "Native page transition animations without JavaScript libraries. Now supported in Chrome, with Safari and Firefox following."
   },
   {
-    "title": "ArezGit: Unified Git, HTTP, Editor Tool",
-    "url": "https://arezgit.com/",
-    "desc": "Rust/Tauri desktop app combines visual Git, HTTP client, Monaco code editor, mock data, and Pomodoro timers to streamline web dev workflows."
+    "title": "CSS Container Queries Ship Everywhere",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_container_queries",
+    "desc": "Component-level responsive design without media queries. Elements respond to their container's size, not the viewport."
   },
   {
-    "title": "trackable.: Self-Hosted Time Tracking PWA",
-    "url": "https://www.reddit.com/r/webdev/comments/1rj3fna/trackable_simple_selfhosted_time_tracking_app_for/",
-    "desc": "Open-source PWA for freelancers with multi-profiles, PDF/CSV exports, vacation calc, holidays, and monthly summaries—all self-hosted."
+    "title": "2026 Web Development Trends",
+    "url": "https://github.com/topics/web-development",
+    "desc": "Explore trending web dev topics on GitHub - from React server components to edge computing and AI integration patterns."
   },
   {
-    "title": "Privacy Audit: Online Code Editors Expose Secrets",
-    "url": "https://www.reddit.com/r/webdev/comments/1rj1oac/i_planted_fake_api_keys_in_online_code_editors/",
-    "desc": "Fake API keys reveal that tools like CodePen and Replit send code/keystrokes to servers real-time for ads/AI training, exposing developer secrets publicly."
+    "title": "State of JavaScript 2026 Results",
+    "url": "https://2024.stateofjs.com/",
+    "desc": "Annual survey results showing emerging frameworks, tools, and techniques that developers are adopting in 2026."
   }
 ]
