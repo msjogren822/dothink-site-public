@@ -159,3 +159,16 @@ footer a { color: white; }
     body { padding: 1rem; } 
     .grid { grid-template-columns: 1fr; }
 }
+
+/* Tree emoji - separate from gradient text */
+.tree-emoji {
+    font-size: 1em;
+    filter: hue-rotate(80deg) saturate(1.5);
+}
+
+.tree-text {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
