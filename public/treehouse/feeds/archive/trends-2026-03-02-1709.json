@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Parallel Coding Agents with Tmux",
+    "url": "https://schipper.ai/posts/parallel-coding-agents/",
+    "desc": "Running 4-8 AI coding agents in parallel using tmux and Markdown feature specs for efficient development."
+  },
+  {
+    "title": "Go: Best Language for AI Agents",
+    "url": "https://getbruin.com/blog/go-is-the-best-language-for-agents/",
+    "desc": "Go excels in concurrency and ecosystem for building AI agents in web services due to its performance and reliability."
+  },
+  {
+    "title": "Privacy Audit of Online Code Editors",
+    "url": "https://www.reddit.com/r/webdev/comments/1rj1oac/i_planted_fake_api_keys_in_online_code_editors/",
+    "desc": "Fake API keys reveal that tools like CodePen and Replit send code to servers in real-time, exposing secrets publicly."
+  },
+  {
+    "title": "Packaging Gleam Apps into Executables",
+    "url": "https://www.dhzdhd.dev/blog/gleam-executable",
+    "desc": "Guide to creating standalone executables for Gleam projects targeting Erlang or JavaScript using various tools."
+  },
+  {
+    "title": "Zclaw: 888 KiB AI Assistant on ESP32",
+    "url": "https://zclaw.dev",
+    "desc": "Compact firmware enables local AI agents on ESP32 for Telegram control, scheduling, and GPIO with minimal footprint."
+  }
+]
