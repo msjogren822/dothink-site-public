@@ -35,6 +35,7 @@ h1 {
     background: linear-gradient(135deg, #667eea, #764ba2);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    color: inherit;
     background-clip: text;
 }
 
@@ -164,11 +165,14 @@ footer a { color: white; }
 .tree-emoji {
     font-size: 1em;
     filter: saturate(1.8) brightness(1.1);
+    -webkit-text-fill-color: initial;
+    color: initial;
 }
 
 .tree-text {
     background: linear-gradient(135deg, #667eea, #764ba2);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    color: inherit;
     background-clip: text;
 }
