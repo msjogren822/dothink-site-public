@@ -75,10 +75,10 @@ async function populateArchiveDropdown() {
 // Auto-load on page load - load most recent archive by default
 document.addEventListener('DOMContentLoaded', async () => {
     await populateArchiveDropdown();
-    // Auto-select the most recent archive
+    // Auto-select the most recent archive (index 1, after placeholder)
     const select = document.getElementById('archive-select');
     if (select.options.length > 1) {
-        select.selectedIndex = 1; // Select first real archive (most recent)
+        select.selectedIndex = 1;
         loadArchive(select.value);
     } else {
         fetchTrends();
