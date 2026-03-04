@@ -32,7 +32,8 @@ function loadScoutView(data) {
 
 // Load from archive
 function loadArchive(filename) {
-    const url = filename ? `feeds/archive/${filename}` : 'feeds/trends.json';
+    const cacheBust = '_t=' + Date.now();
+    const url = filename ? `feeds/archive/${filename}?${cacheBust}` : `feeds/trends.json?${cacheBust}`;
     fetch(url).then(res => res.json()).then(trends => {
         // Update trends list
         const list = document.getElementById('trend-list');
