@@ -58,9 +58,7 @@ async function populateArchiveDropdown() {
         const res = await fetch('feeds/archive-index.json');
         const archives = await res.json();
         const select = document.getElementById('archive-select');
-        // First option is empty - page already shows latest (trends.json)
-        // Then include all archives including the most recent
-        select.innerHTML = '<option value="">-- Select Archive --</option>';
+        // Include all archives - no placeholder
         archives.forEach(arch => {
             const opt = document.createElement('option');
             opt.value = arch.file;
@@ -75,10 +73,10 @@ async function populateArchiveDropdown() {
 // Auto-load on page load - load most recent archive by default
 document.addEventListener('DOMContentLoaded', async () => {
     await populateArchiveDropdown();
-    // Auto-select the most recent archive (index 1, after placeholder)
+    // Auto-select the most recent archive (index 0, since no placeholder)
     const select = document.getElementById('archive-select');
-    if (select.options.length > 1) {
-        select.selectedIndex = 1;
+    if (select.options.length > 0) {
+        select.selectedIndex = 0;
         loadArchive(select.value);
     } else {
         fetchTrends();
