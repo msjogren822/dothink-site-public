@@ -176,3 +176,21 @@ footer a { color: white; }
     color: inherit;
     background-clip: text;
 }
+
+#scout-view {
+    background: rgba(255,255,255,0.9);
+    padding: 2rem;
+    border-radius: 12px;
+    margin-top: 2rem;
+    border-left: 4px solid #764ba2;
+}
+
+#scout-view h2 {
+    color: #1a365d;
+    margin-top: 0;
+}
+
+#scout-view p {
+    color: #2d3748;
+    line-height: 1.7;
+}
