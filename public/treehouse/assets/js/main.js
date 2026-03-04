@@ -5,7 +5,7 @@ async function fetchTrends() {
         const trends = await res.json();
         const list = document.getElementById('trend-list');
         list.innerHTML = '';
-        trends.forEach(trend => {
+        trends.filter(t => !t.signature).forEach(trend => {
             const li = document.createElement('li');
             li.innerHTML = `<a href="${trend.url}" class="trend-link" target="_blank">${trend.title}</a><br>${trend.desc}`;
             list.appendChild(li);
@@ -23,7 +23,7 @@ function loadArchive(filename) {
     fetch(`feeds/archive/${filename}`).then(res => res.json()).then(trends => {
         const list = document.getElementById('trend-list');
         list.innerHTML = '';
-        trends.forEach(trend => {
+        trends.filter(t => !t.signature).forEach(trend => {
             const li = document.createElement('li');
             li.innerHTML = `<a href="${trend.url}" class="trend-link" target="_blank">${trend.title}</a><br>${trend.desc}`;
             list.appendChild(li);
