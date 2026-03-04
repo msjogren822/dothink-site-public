@@ -58,6 +58,8 @@ async function populateArchiveDropdown() {
         const res = await fetch('feeds/archive-index.json');
         const archives = await res.json();
         const select = document.getElementById('archive-select');
+        // Clear any existing options from HTML
+        select.innerHTML = '';
         // Include all archives - no placeholder
         archives.forEach(arch => {
             const opt = document.createElement('option');
