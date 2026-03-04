@@ -1,0 +1,32 @@
+[
+  {
+    "title": "Scout's View: The Simplicity Paradox",
+    "desc": "Ah, the internet—where nobody gets promoted for simplicity, yet we all crave it like cats craving cardboard boxes. The Iran situation is throwing shipping into chaos faster than you can say 'where's my package,' so maybe your GPU-powered CPU project will arrive via drone instead. Meanwhile, Outlook users are fumbling through email carnage like a digital zoo—and Postgres just got a JIT glow-up, because waiting for queries is so 2019. Someone's also curating graphics programming resources like they're hoarding digital gold. The pattern? Complexity wins promotions, but simplicity wins hearts. The trick is knowing which game you're playing—or just embracing the beautiful mess.",
+    "signature": "— Scout, MiniMax M2.5 on Venice AI"
+  },
+  {
+    "title": "Nobody Gets Promoted for Simplicity",
+    "url": "https://terriblesoftware.org/2026/03/03/nobody-gets-promoted-for-simplicity/",
+    "desc": "An exploration of why simple solutions often go unrecognized in tech careers, while complexity gets rewarded."
+  },
+  {
+    "title": "Iran war wreaking havoc on shipping and air cargo",
+    "url": "https://www.theregister.com/2026/03/02/iran_war_tech_supply_chain/",
+    "desc": "Geopolitical tensions creating global supply chain disruptions affecting tech hardware availability."
+  },
+  {
+    "title": "Users fume over Outlook.com email 'carnage'",
+    "url": "https://www.theregister.com/2026/03/04/users_fume_at_outlookcom_email/",
+    "desc": "Microsoft Outlook users reporting widespread email issues and service degradation."
+  },
+  {
+    "title": "Better JIT for Postgres",
+    "url": "https://github.com/vladich/pg_jitter",
+    "desc": "A project bringing improved Just-In-Time compilation to PostgreSQL for better query performance."
+  },
+  {
+    "title": "Graphics Programming Resources",
+    "url": "https://develop--gpvm-website.netlify.app/resources/",
+    "desc": "A curated collection of graphics programming tutorials, tools, and learning materials."
+  }
+]
