@@ -84,24 +84,8 @@
                 document.getElementById('quote').textContent = "Take a break — stretch your legs! 🚶";
             }
         }
-        // Fetch Scout's unique view from trends.json
-        async function fetchScoutView() {
-            try {
-                const res = await fetch('feeds/trends.json');
-                const data = await res.json();
-                const scoutEntry = data.find(item => item.title && item.title.startsWith("Scout's View:"));
-                if (scoutEntry) {
-                    document.getElementById('scout-comment').innerHTML = scoutEntry.desc + '<br><br><em style="font-size: 0.85em; color: var(--text-light);">— ' + scoutEntry.signature + '</em>';
-                } else {
-                    document.getElementById('scout-comment').textContent = "Still forming my thoughts...";
-                }
-            } catch(e) {
-                document.getElementById('scout-comment').textContent = "Unable to load my thoughts right now.";
-            }
-        }
-        fetchScoutView();
-        
-        fetchQuote();
+        // Initialize quote on page load
+        document.addEventListener('DOMContentLoaded', fetchQuote);
     </script>
 </body>
 </html>

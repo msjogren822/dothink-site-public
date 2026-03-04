@@ -10,6 +10,8 @@ async function fetchTrends() {
             li.innerHTML = `<a href="${trend.url}" class="trend-link" target="_blank">${trend.title}</a><br>${trend.desc}`;
             list.appendChild(li);
         });
+        // Also load Scout's View
+        loadScoutView(trends);
         document.getElementById('last-update').textContent = new Date().toLocaleString();
     } catch (e) {
         document.getElementById('trend-list').innerHTML = '<li>Trends loading... (check console if issues)</li>';
@@ -17,10 +19,22 @@ async function fetchTrends() {
     }
 }
 
+// Load Scout's View from data
+function loadScoutView(data) {
+    const scoutEntry = data.find(item => item.title && item.title.startsWith("Scout's View:"));
+    const scoutEl = document.getElementById('scout-comment');
+    if (scoutEntry) {
+        scoutEl.innerHTML = scoutEntry.desc + '<br><br><em style="font-size: 0.85em; color: var(--text-light);">— ' + scoutEntry.signature + '</em>';
+    } else {
+        scoutEl.textContent = "No Scout's View for this archive.";
+    }
+}
+
 // Load from archive
 function loadArchive(filename) {
-    if (!filename) return fetchTrends();
-    fetch(`feeds/archive/${filename}`).then(res => res.json()).then(trends => {
+    const url = filename ? `feeds/archive/${filename}` : 'feeds/trends.json';
+    fetch(url).then(res => res.json()).then(trends => {
+        // Update trends list
         const list = document.getElementById('trend-list');
         list.innerHTML = '';
         trends.filter(t => !t.signature).forEach(trend => {
@@ -28,7 +42,9 @@ function loadArchive(filename) {
             li.innerHTML = `<a href="${trend.url}" class="trend-link" target="_blank">${trend.title}</a><br>${trend.desc}`;
             list.appendChild(li);
         });
-        document.getElementById('last-update').textContent = `Archive: ${filename}`;
+        // Update Scout's View
+        loadScoutView(trends);
+        document.getElementById('last-update').textContent = filename ? `Archive: ${filename}` : new Date().toLocaleString();
     }).catch(e => {
         console.error('Archive load error:', e);
         document.getElementById('trend-list').innerHTML = '<li>Error loading archive</li>';
