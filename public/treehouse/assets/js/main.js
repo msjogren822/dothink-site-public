@@ -58,10 +58,11 @@ async function populateArchiveDropdown() {
         const res = await fetch('feeds/archive-index.json');
         const archives = await res.json();
         const select = document.getElementById('archive-select');
-        // Use first archive entry's timestamp for "Latest" label
-        const latestLabel = archives.length > 0 ? archives[0].label : 'Latest';
-        select.innerHTML = `<option value="">${latestLabel}</option>`;
-        archives.forEach(arch => {
+        // Skip first archive entry - it's the same as current trends.json
+        // Start from second entry (index 1) onwards
+        const selectOptions = archives.slice(1);
+        select.innerHTML = ''; // No default "Latest" - page already shows latest
+        selectOptions.forEach(arch => {
             const opt = document.createElement('option');
             opt.value = arch.file;
             opt.textContent = arch.label;
