@@ -1,22 +1,39 @@
-// Treehouse JS: Fetch trends from feeds/trends.json or archive
+// Treehouse JS: Fetch trends from Neon API, fall back to static JSON
 async function fetchTrends() {
+    try {
+        // Try Neon API first
+        const apiRes = await fetch('/.netlify/functions/treehouse-api');
+        if (apiRes.ok) {
+            const trends = await apiRes.json();
+            displayTrends(trends, new Date().toLocaleString() + ' (live)');
+            return;
+        }
+    } catch (e) {
+        console.log('API not available, trying static JSON:', e.message);
+    }
+    
+    // Fall back to static JSON
     try {
         const res = await fetch('feeds/trends.json');
         const trends = await res.json();
-        const list = document.getElementById('trend-list');
-        list.innerHTML = '';
-        trends.filter(t => !t.signature).forEach(trend => {
-            const li = document.createElement('li');
-            li.innerHTML = `<a href="${trend.url}" class="trend-link" target="_blank">${trend.title}</a><br>${trend.desc}`;
-            list.appendChild(li);
-        });
-        // Also load Scout's View
-        loadScoutView(trends);
-        document.getElementById('last-update').textContent = new Date().toLocaleString();
+        displayTrends(trends, new Date().toLocaleString());
     } catch (e) {
-        document.getElementById('trend-list').innerHTML = '<li>Trends loading... (check console if issues)</li>';
+        document.getElementById('trend-list').innerHTML = '<li>Trends loading...</li>';
         console.error('Fetch error:', e);
     }
+}
+
+// Display trends in the UI
+function displayTrends(trends, timestamp) {
+    const list = document.getElementById('trend-list');
+    list.innerHTML = '';
+    trends.filter(t => !t.signature).forEach(trend => {
+        const li = document.createElement('li');
+        li.innerHTML = `<a href="${trend.url}" class="trend-link" target="_blank">${trend.title}</a><br>${trend.desc}`;
+        list.appendChild(li);
+    });
+    loadScoutView(trends);
+    document.getElementById('last-update').textContent = timestamp;
 }
 
 // Load Scout's View from data
