@@ -77,11 +77,12 @@ async function populateArchiveDropdown() {
         const archives = await res.json();
         const select = document.getElementById('archive-select');
         select.innerHTML = '';
-        // Skip the first one (it's already showing as latest)
-        archives.slice(1).forEach(arch => {
+        // Show ALL records (most recent first) so user can compare any
+        archives.forEach((arch, index) => {
             const opt = document.createElement('option');
             opt.value = arch.dbId;
-            opt.textContent = arch.label;
+            const label = index === 0 ? arch.label + ' (latest)' : arch.label;
+            opt.textContent = label;
             select.appendChild(opt);
         });
     } catch (e) {
