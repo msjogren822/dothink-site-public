@@ -41,7 +41,8 @@ function displayTrends(trends, timestamp) {
 
 // Load Scout's View from data
 function loadScoutView(data) {
-    const scoutEntry = data.find(item => item.title && item.title.startsWith("Scout's View:"));
+    // Scout's View is identified by having a signature field
+    const scoutEntry = data.find(item => item.signature && item.signature.includes("Scout"));
     const scoutEl = document.getElementById('scout-comment');
     if (scoutEntry) {
         scoutEl.innerHTML = scoutEntry.desc + '<br><br><em style="font-size: 0.85em; color: var(--text-light);">— ' + scoutEntry.signature + '</em>';
@@ -85,15 +86,9 @@ async function populateArchiveDropdown() {
     }
 }
 
-// Auto-load on page load - load most recent archive by default
+// Auto-load on page load - show current trends by default, not archive
 document.addEventListener('DOMContentLoaded', async () => {
     await populateArchiveDropdown();
-    // Auto-select the most recent archive (index 0, since no placeholder)
-    const select = document.getElementById('archive-select');
-    if (select.options.length > 0) {
-        select.selectedIndex = 0;
-        loadArchive(select.value);
-    } else {
-        fetchTrends();
-    }
+    // Load current trends first (not archive)
+    fetchTrends();
 });
