@@ -47,40 +47,30 @@ function loadScoutView(data) {
     }
 }
 
-// Load from archive
-function loadArchive(filename) {
-    const cacheBust = '_t=' + Date.now();
-    const url = filename ? `feeds/archive/${filename}?${cacheBust}` : `feeds/trends.json?${cacheBust}`;
-    fetch(url).then(res => res.json()).then(trends => {
-        // Update trends list
-        const list = document.getElementById('trend-list');
-        list.innerHTML = '';
-        trends.filter(t => !t.signature).forEach(trend => {
-            const li = document.createElement('li');
-            li.innerHTML = `<a href="${trend.url}" class="trend-link" target="_blank">${trend.title}</a><br>${trend.desc}`;
-            list.appendChild(li);
+// Load from archive (Neon API)
+function loadArchive(dbId) {
+    fetch(`/.netlify/functions/treehouse-archive?id=${dbId}`)
+        .then(res => res.json())
+        .then(trends => {
+            displayTrends(trends, 'Archive loaded');
+        })
+        .catch(e => {
+            console.error('Archive load error:', e);
+            document.getElementById('trend-list').innerHTML = '<li>Error loading archive</li>';
         });
-        // Update Scout's View
-        loadScoutView(trends);
-        document.getElementById('last-update').textContent = filename ? `Archive: ${filename}` : new Date().toLocaleString();
-    }).catch(e => {
-        console.error('Archive load error:', e);
-        document.getElementById('trend-list').innerHTML = '<li>Error loading archive</li>';
-    });
 }
 
-// Populate archive dropdown dynamically
+// Populate archive dropdown from Neon
 async function populateArchiveDropdown() {
     try {
-        const res = await fetch('feeds/archive-index.json');
+        const res = await fetch('/.netlify/functions/treehouse-archives');
         const archives = await res.json();
         const select = document.getElementById('archive-select');
-        // Clear any existing options from HTML
         select.innerHTML = '';
-        // Include all archives - no placeholder
-        archives.forEach(arch => {
+        // Skip the first one (it's already showing as latest)
+        archives.slice(1).forEach(arch => {
             const opt = document.createElement('option');
-            opt.value = arch.file;
+            opt.value = arch.dbId;
             opt.textContent = arch.label;
             select.appendChild(opt);
         });
