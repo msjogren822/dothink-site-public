@@ -171,8 +171,7 @@ async function handleCommentSubmit(e) {
         if (!res.ok) throw new Error('Failed to post');
         document.getElementById('comment-message').value = '';
         document.getElementById('comment-name').value = '';
-        // reload comments
-        await loadComments();
+        alert('Thanks! Your comment is pending review and will appear soon.');
     } catch (e) {
         console.error('Comment submit error:', e);
         alert('Unable to post comment. Try again later.');

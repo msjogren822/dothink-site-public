@@ -1,5 +1,5 @@
 // netlify/functions/treehouse-comments.js
-// Handle visitor comments
+// Handle visitor comments with moderation
 const { neon } = require('@netlify/neon');
 
 const sql = neon();
@@ -9,7 +9,7 @@ exports.handler = async function(event, context) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type'
   };
 
@@ -18,11 +18,12 @@ exports.handler = async function(event, context) {
   }
 
   try {
+    // GET: only show APPROVED comments
     if (event.httpMethod === 'GET') {
-      // Get all comments, newest first
       const rows = await sql`
         SELECT id, name, message, created_at
         FROM treehouse_comments
+        WHERE approved = true
         ORDER BY created_at DESC
         LIMIT 20
       `;
@@ -41,6 +42,7 @@ exports.handler = async function(event, context) {
       };
     }
     
+    // POST: add comment (starts as pending/approved=false)
     if (event.httpMethod === 'POST') {
       const { name, message } = JSON.parse(event.body);
       
@@ -52,16 +54,31 @@ exports.handler = async function(event, context) {
         };
       }
       
+      // Always save as approved=false initially (pending moderation)
       const result = await sql`
-        INSERT INTO treehouse_comments (name, message)
-        VALUES (${name || null}, ${message})
+        INSERT INTO treehouse_comments (name, message, approved)
+        VALUES (${name || null}, ${message}, false)
         RETURNING id, created_at
       `;
       
       return {
         statusCode: 201,
         headers,
-        body: JSON.stringify({ ok: true, id: result[0].id })
+        body: JSON.stringify({ ok: true, id: result[0].id, pending: true })
+      };
+    }
+    
+    // DELETE: moderate (approve/remove) - for admin use
+    if (event.httpMethod === 'DELETE') {
+      const { id } = JSON.parse(event.body);
+      
+      // Actually delete the comment
+      await sql`DELETE FROM treehouse_comments WHERE id = ${id}`;
+      
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ ok: true })
       };
     }
     
