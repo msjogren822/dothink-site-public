@@ -32,7 +32,10 @@ function displayTrends(trends, timestamp) {
     list.innerHTML = '';
     trends.filter(t => !t.signature).forEach(trend => {
         const li = document.createElement('li');
-        li.innerHTML = `<a href="${trend.url}" class="trend-link" target="_blank">${trend.title}</a><br>${trend.desc}`;
+        // Handle both 'summary' (Neon) and 'desc' (static JSON) field names
+        const description = trend.summary || trend.desc || '';
+        const source = trend.source ? `<span style="color: var(--text-light); font-size: 0.85em;">(${trend.source})</span>` : '';
+        li.innerHTML = `<a href="${trend.url}" class="trend-link" target="_blank">${trend.title}</a> ${source}<br>${description}`;
         list.appendChild(li);
     });
     loadScoutView(trends);
