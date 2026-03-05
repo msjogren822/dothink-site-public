@@ -4,8 +4,11 @@ async function fetchTrends() {
         // Try Neon API first
         const apiRes = await fetch('/.netlify/functions/treehouse-api');
         if (apiRes.ok) {
-            const trends = await apiRes.json();
-            displayTrends(trends, new Date().toLocaleString() + ' (live)');
+            const data = await apiRes.json();
+            // Handle new format with _meta or old format
+            const trends = data.trends || data;
+            const timestamp = (data._meta && data._meta.generatedAt) || 'Live from DB';
+            displayTrends(trends, timestamp);
             return;
         }
     } catch (e) {
@@ -51,8 +54,11 @@ function loadScoutView(data) {
 function loadArchive(dbId) {
     fetch(`/.netlify/functions/treehouse-archive?id=${dbId}`)
         .then(res => res.json())
-        .then(trends => {
-            displayTrends(trends, 'Archive loaded');
+        .then(data => {
+            // Handle new format with _meta or old format
+            const trends = data.trends || data;
+            const timestamp = (data._meta && data._meta.generatedAt) || 'Archive';
+            displayTrends(trends, 'Archive: ' + timestamp);
         })
         .catch(e => {
             console.error('Archive load error:', e);

@@ -23,15 +23,29 @@ exports.handler = async function(event, context) {
     
     const row = latest[0];
     
-    // Build response in the same format as the JSON files
-    const response = [
-      {
-        title: row.scout_title,
-        desc: row.scout_desc,
-        signature: row.scout_signature
-      },
-      ...row.topics
-    ];
+    // Convert UTC to CST for display
+    const date = new Date(row.created_at);
+    date.setHours(date.getHours() - 6);
+    const timestamp = date.toLocaleString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    
+    // Build response - include metadata
+    const response = {
+      _meta: { generatedAt: timestamp },
+      trends: [
+        {
+          title: row.scout_title,
+          desc: row.scout_desc,
+          signature: row.scout_signature
+        },
+        ...row.topics
+      ]
+    };
     
     return {
       statusCode: 200,
