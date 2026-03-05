@@ -90,9 +90,44 @@ async function populateArchiveDropdown() {
     }
 }
 
+// Countdown to next update (runs every 4h from 12:46 AM CST = 6:46 AM UTC)
+function startCountdown() {
+    const nextUpdate = new Date();
+    // Next update: 4:46 PM CST today (or tomorrow if past)
+    nextUpdate.setHours(16, 46, 0, 0);
+    const now = new Date();
+    if (now > nextUpdate) {
+        nextUpdate.setDate(nextUpdate.getDate() + 1);
+    }
+    
+    function update() {
+        const now = new Date();
+        const diff = nextUpdate - now;
+        
+        if (diff <= 0) {
+            nextUpdate.setDate(nextUpdate.getDate() + 1);
+            return;
+        }
+        
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        // Funky display
+        const el = document.getElementById('countdown');
+        if (el) {
+            el.innerHTML = `<span style="color: #ff6b6b; font-weight: bold;">⏱️ ${hours}h ${mins}m ${secs}s</span>`;
+        }
+    }
+    
+    update();
+    setInterval(update, 1000);
+}
+
 // Auto-load on page load - show current trends by default, not archive
 document.addEventListener('DOMContentLoaded', async () => {
     await populateArchiveDropdown();
+    startCountdown();
     // Load current trends first (not archive)
     fetchTrends();
 });
