@@ -13,9 +13,11 @@ exports.handler = async function(event, context) {
       ORDER BY created_at DESC
     `;
     
-    // Build archive list
+    // Build archive list - convert UTC to CST (UTC-6)
     const archives = rows.map(row => {
       const date = new Date(row.created_at);
+      // Convert from UTC to CST (America/Chicago is UTC-6)
+      date.setHours(date.getHours() - 6);
       const label = date.toLocaleString('en-US', { 
         month: 'short', 
         day: 'numeric',
@@ -24,7 +26,7 @@ exports.handler = async function(event, context) {
         hour12: true
       });
       return {
-        file: `trends-${row.id}.json`, // Use DB ID as filename
+        file: `trends-${row.id}.json`,
         label: label,
         dbId: row.id
       };
