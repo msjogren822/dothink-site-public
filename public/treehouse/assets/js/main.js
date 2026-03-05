@@ -1,5 +1,8 @@
 // Treehouse JS: Fetch trends from Neon API, fall back to static JSON
 async function fetchTrends() {
+    // Fetch votes first
+    const votes = await fetchVotes();
+    
     try {
         // Try Neon API first
         const apiRes = await fetch('/.netlify/functions/treehouse-api');
@@ -8,7 +11,7 @@ async function fetchTrends() {
             // Handle new format with _meta or old format
             const trends = data.trends || data;
             const timestamp = (data._meta && data._meta.generatedAt) || 'Live from DB';
-            displayTrends(trends, timestamp);
+            displayTrends(trends, timestamp, votes);
             return;
         }
     } catch (e) {
@@ -19,7 +22,7 @@ async function fetchTrends() {
     try {
         const res = await fetch('feeds/trends.json');
         const trends = await res.json();
-        displayTrends(trends, new Date().toLocaleString());
+        displayTrends(trends, new Date().toLocaleString(), votes);
     } catch (e) {
         document.getElementById('trend-list').innerHTML = '<li>Trends loading...</li>';
         console.error('Fetch error:', e);
@@ -27,19 +30,61 @@ async function fetchTrends() {
 }
 
 // Display trends in the UI
-function displayTrends(trends, timestamp) {
+function displayTrends(trends, timestamp, votes = {}) {
     const list = document.getElementById('trend-list');
     list.innerHTML = '';
-    trends.filter(t => !t.signature).forEach(trend => {
+    trends.filter(t => !t.signature).forEach((trend, idx) => {
         const li = document.createElement('li');
         // Handle both 'summary' (Neon) and 'desc' (static JSON) field names
         const description = trend.summary || trend.desc || '';
         const source = trend.source ? `<span style="color: var(--text-light); font-size: 0.85em;">(${trend.source})</span>` : '';
-        li.innerHTML = `<a href="${trend.url}" class="trend-link" target="_blank">${trend.title}</a> ${source}<br>${description}`;
+        
+        const v = votes[idx] || { up: 0, down: 0 };
+        
+        li.innerHTML = `
+            <div style="display:flex; align-items:flex-start; gap:0.5rem;">
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    <button onclick="voteTrend(${idx}, 'up')" title="thumbs up" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em;">👍</button>
+                    <span style="font-size:0.8em; text-align:center;">${v.up}</span>
+                    <button onclick="voteTrend(${idx}, 'down')" title="thumbs down" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em;">👎</button>
+                    <span style="font-size:0.8em; text-align:center;">${v.down}</span>
+                </div>
+                <div>
+                    <a href="${trend.url}" class="trend-link" target="_blank">${trend.title}</a> ${source}<br>${description}
+                </div>
+            </div>
+        `;
         list.appendChild(li);
     });
     loadScoutView(trends);
     document.getElementById('last-update').textContent = timestamp;
+}
+
+// Fetch votes from API
+async function fetchVotes() {
+    try {
+        const res = await fetch('/.netlify/functions/treehouse-votes');
+        if (!res.ok) return {};
+        return await res.json();
+    } catch (e) {
+        console.log('Votes unavailable:', e.message);
+        return {};
+    }
+}
+
+// Vote on a trend
+async function voteTrend(idx, vote) {
+    try {
+        await fetch('/.netlify/functions/treehouse-votes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ trend_id: idx, vote: vote })
+        });
+        // Refresh to show new counts
+        fetchTrends();
+    } catch (e) {
+        console.error('Vote failed:', e);
+    }
 }
 
 // Load Scout's View from data
