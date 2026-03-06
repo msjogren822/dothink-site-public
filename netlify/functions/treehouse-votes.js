@@ -19,36 +19,71 @@ exports.handler = async function(event, context) {
   try {
     // GET: return all vote counts
     if (event.httpMethod === 'GET') {
-      const rows = await sql`SELECT * FROM treehouse_trend_votes`;
-      const votes = {};
-      rows.forEach(r => { votes[r.trend_id] = { up: r.upvotes, down: r.downvotes }; });
-      return { statusCode: 200, headers, body: JSON.stringify(votes) };
+      try {
+        const rows = await sql`SELECT * FROM treehouse_trend_votes`;
+        const votes = {};
+        rows.forEach(r => { votes[r.trend_id] = { up: r.upvotes, down: r.downvotes }; });
+        return { statusCode: 200, headers, body: JSON.stringify(votes) };
+      } catch (e) {
+        // Table might not exist yet - return empty
+        console.log('Votes table not ready:', e.message);
+        return { statusCode: 200, headers, body: JSON.stringify({}) };
+      }
     }
     
     // POST: vote on a trend
     if (event.httpMethod === 'POST') {
-      const { trend_id, vote } = JSON.parse(event.body); // vote = 'up' or 'down'
+      let body = event.body;
+      // Handle JSON string or already-parsed
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch(e) { body = {}; }
+      }
+      
+      const { trend_id, vote } = body;
+      console.log('Vote request:', { trend_id, vote, body: event.body });
+      
       if (!trend_id || !vote) {
-        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing trend_id or vote' }) };
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing trend_id or vote', received: body }) };
       }
       
       const col = vote === 'up' ? 'upvotes' : 'downvotes';
       
-      // Upsert: add vote, create row if not exists
-      await sql`
-        INSERT INTO treehouse_trend_votes (trend_id, ${sql(col)}, 0)
-        VALUES (${trend_id}, 1, 0)
-        ON CONFLICT (trend_id) DO UPDATE SET 
-          ${sql(col)} = treehouse_trend_votes.${sql(col)} + 1
-      `;
+      // Try to insert, create table if not exists
+      try {
+        await sql`
+          INSERT INTO treehouse_trend_votes (trend_id, upvotes, downvotes)
+          VALUES (${trend_id}, ${vote === 'up' ? 1 : 0}, ${vote === 'down' ? 1 : 0})
+          ON CONFLICT (trend_id) DO UPDATE SET 
+            upvotes = treehouse_trend_votes.upvotes + ${vote === 'up' ? 1 : 0},
+            downvotes = treehouse_trend_votes.downvotes + ${vote === 'down' ? 1 : 0}
+        `;
+      } catch (e) {
+        // Table might not exist - create it and retry
+        console.log('Creating votes table:', e.message);
+        await sql`
+          CREATE TABLE IF NOT EXISTS treehouse_trend_votes (
+            trend_id INTEGER PRIMARY KEY,
+            upvotes INTEGER DEFAULT 0,
+            downvotes INTEGER DEFAULT 0
+          )
+        `;
+        // Retry the insert
+        await sql`
+          INSERT INTO treehouse_trend_votes (trend_id, upvotes, downvotes)
+          VALUES (${trend_id}, ${vote === 'up' ? 1 : 0}, ${vote === 'down' ? 1 : 0})
+          ON CONFLICT (trend_id) DO UPDATE SET 
+            upvotes = treehouse_trend_votes.upvotes + ${vote === 'up' ? 1 : 0},
+            downvotes = treehouse_trend_votes.downvotes + ${vote === 'down' ? 1 : 0}
+        `;
+      }
       
-      return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
+      return { statusCode: 200, headers, body: JSON.stringify({ ok: true, trend_id, vote }) };
     }
     
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
     
   } catch (e) {
     console.error('Vote error:', e);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: e.message, stack: e.stack }) };
   }
 };
