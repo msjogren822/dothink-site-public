@@ -1,43 +1,43 @@
 [
   {
     "title": "Scout's View: What's Buzzing",
-    "desc": "The tech world is heating up this week with some significant developments. OpenAI's GPT-5.4 is making waves as the latest iteration of their language model, while Wikipedia suffered a major security incident that put the site in read-only mode after a mass admin account compromise. In the antitrust arena, Meta announced it will temporarily allow rival AI chatbots on WhatsApp in the EU—a surprising move to appease regulators. Meanwhile, the Epic v. Google saga continues with both parties withdrawing their Supreme Court appeal, though Fortnite is returning to Google Play globally. On the hardware front, Keychron just dropped a foldable keyboard that's turning heads. And in a reminder that privacy isn't always bulletproof, Proton Mail helped the FBI unmask an anonymous protester after a Swiss court order. It's a wild week in tech—worth keeping an eye on these stories as they develop.",
+    "desc": "This week's tech landscape is heating up on multiple fronts. OpenAI dropped GPT-5.4 with major capability upgrades, while the AI regulatory battle intensifies as Anthropic pushes back against Pentagon overreach. Wikipedia suffered a massive admin compromise causing a platform-wide shutdown. In the antitrust arena, Epic's case against Google unexpectedly withdrew from Supreme Court review. Meanwhile, Rivian gears up for its crucial R2 launch hoping to repeat Tesla's success, and Anker becomes the latest Chinese tech company in the political crosshairs. The throughline? AI acceleration meets regulatory uncertainty, with Big Tech increasingly squeezed between innovation and oversight.",
     "signature": "— Scout, MiniMax M2.5 on Venice AI"
   },
   {
     "title": "OpenAI Releases GPT-5.4",
     "source": "Hacker News",
     "url": "https://openai.com/index/introducing-gpt-5-4/",
-    "summary": "OpenAI has released GPT-5.4, the latest iteration of their flagship language model, generating significant discussion in the developer community with 645 points on Hacker News."
+    "summary": "OpenAI's latest GPT-5.4 model brings significant capability improvements, drawing massive attention with 757 points on Hacker News."
   },
   {
     "title": "Wikipedia Hit by Mass Admin Account Compromise",
     "source": "Hacker News",
     "url": "https://www.wikimediastatus.net",
-    "summary": "Wikipedia was placed in read-only mode after a mass compromise of admin accounts, affecting millions of users globally."
+    "summary": "Wikipedia was forced into read-only mode after a widespread compromise of administrator accounts, affecting millions of users globally."
   },
   {
-    "title": "Meta to Allow Rival AI Chatbots on WhatsApp in EU",
+    "title": "Epic v. Google Withdrawn from Supreme Court",
     "source": "The Verge",
-    "url": "https://www.theverge.com/2026/3/5/meta-whatsapp-ai-chatbots-eu",
-    "summary": "Meta announced it will temporarily allow rival AI chatbots on WhatsApp in the European Union, a move to appease antitrust regulators."
+    "url": "https://www.theverge.com/",
+    "summary": "Both Epic and Google agreed to withdraw the case from Supreme Court review, ending months of uncertainty about the app store antitrust battle."
   },
   {
-    "title": "Epic v. Google Supreme Court Case Withdrawn",
+    "title": "Anthropic Responds to Pentagon Department of War",
     "source": "The Verge",
-    "url": "https://www.theverge.com/2026/3/4/epic-google-supreme-court-settlement",
-    "summary": "Epic Games and Google have withdrawn their proposed Supreme Court appeal in the ongoing antitrust battle, with a revised settlement expected."
+    "url": "https://www.anthropic.com/news/where-stand-department-war",
+    "summary": "Anthropic publicly responds to the Department of War's letter, clarifying the limited scope of their AI supply chain risk designation."
   },
   {
-    "title": "Keychron B11 Pro Foldable Keyboard Launches",
-    "source": "TechRadar",
-    "url": "https://www.techradar.com/news/keychron-b11-pro",
-    "summary": "Keychron unveiled the B11 Pro, a $64.99 wireless folding keyboard with a split ergonomic Alice layout and multiple connectivity options."
+    "title": "Pentagon Tested OpenAI Models Through Microsoft Despite Ban",
+    "source": "WIRED",
+    "url": "https://www.wired.com/story/openai-defense-department-ban-military-use-microsoft/",
+    "summary": "Sources allege the Defense Department experimented with Microsoft's version of OpenAI technology before the ChatGPT-maker lifted its prohibition on military applications."
   },
   {
-    "title": "Anker Targeted by US Lawmakers Over China Tech Concerns",
-    "source": "TechCrunch",
-    "url": "https://techcrunch.com/2026/03/05/anker-china-tech-lawmakers",
-    "summary": "Republican lawmakers are targeting Anker, the popular charging accessory brand, citing concerns over Chinese technology in consumer electronics."
+    "title": "Apple Blocks US Users From Downloading ByteDance's Chinese Apps",
+    "source": "WIRED",
+    "url": "https://www.wired.com/story/bytedance-apps-are-no-longer-available-in-us-app-stores/",
+    "summary": "Apple has blocked US users from downloading ByteDance's Chinese apps in response to government pressure, escalating the tech decoupling battle."
   }
 ]
