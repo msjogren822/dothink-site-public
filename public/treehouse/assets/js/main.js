@@ -63,9 +63,9 @@ function displayTrends(trends, timestamp, votes = {}) {
         li.innerHTML = `
             <div style="display:flex; align-items:flex-start; gap:0.5rem;">
                 <div style="display:flex; flex-direction:column; gap:2px;">
-                    <button onclick="voteTrend(${idx}, 'up')" title="thumbs up" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${upStyle}">👍</button>
+                    <button onclick="voteTrend(${idx}, 'up', this)" title="thumbs up" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${upStyle}">👍</button>
                     <span style="font-size:0.8em; text-align:center;">${v.up}</span>
-                    <button onclick="voteTrend(${idx}, 'down')" title="thumbs down" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${downStyle}">👎</button>
+                    <button onclick="voteTrend(${idx}, 'down', this)" title="thumbs down" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${downStyle}">👎</button>
                     <span style="font-size:0.8em; text-align:center;">${v.down}</span>
                 </div>
                 <div>
@@ -94,7 +94,7 @@ async function fetchVotes() {
 }
 
 // Vote on a trend
-async function voteTrend(idx, vote) {
+async function voteTrend(idx, vote, btnElement) {
     const userToken = getUserToken();
     try {
         const res = await fetch('/.netlify/functions/treehouse-votes', {
@@ -105,13 +105,13 @@ async function voteTrend(idx, vote) {
         
         if (res.status === 409) {
             const data = await res.json();
-            showToast(`Already voted ${data.existingVote === 'up' ? '👍' : '👎'} on this!`);
+            showToast(`Already voted ${data.existingVote === 'up' ? '👍' : '👎'} on this!`, btnElement);
             return;
         }
         
         if (!res.ok) {
             const data = await res.json();
-            showToast(data.error || 'Oops! Something went wrong');
+            showToast(data.error || 'Oops! Something went wrong', btnElement);
             return;
         }
         
@@ -119,15 +119,30 @@ async function voteTrend(idx, vote) {
         fetchTrends();
     } catch (e) {
         console.error('Vote failed:', e);
-        showToast('Connection issue — try again?');
+        showToast('Connection issue — try again?', btnElement);
     }
 }
 
 // Show toast notification
-function showToast(message, duration = 2500) {
+function showToast(message, targetEl, duration = 2500) {
     const toast = document.getElementById('toast');
     const msgEl = document.getElementById('toast-message');
     msgEl.textContent = message;
+    
+    if (targetEl) {
+        // Position near the target element
+        const rect = targetEl.getBoundingClientRect();
+        toast.style.left = (rect.left + rect.width/2) + 'px';
+        toast.style.top = (rect.bottom + 10) + 'px';
+        toast.style.transform = 'translateX(-50%)';
+    } else {
+        // Default: bottom center
+        toast.style.left = '50%';
+        toast.style.top = 'auto';
+        toast.style.bottom = '20px';
+        toast.style.transform = 'translateX(-50%)';
+    }
+    
     toast.style.display = 'block';
     setTimeout(() => {
         toast.style.display = 'none';
@@ -266,6 +281,7 @@ function escapeHtml(str) {
 // Submit comment handler
 async function handleCommentSubmit(e) {
     e.preventDefault();
+    const form = e.target;
     const name = document.getElementById('comment-name').value.trim();
     const message = document.getElementById('comment-message').value.trim();
     if (!message) return;
@@ -278,10 +294,10 @@ async function handleCommentSubmit(e) {
         if (!res.ok) throw new Error('Failed to post');
         document.getElementById('comment-message').value = '';
         document.getElementById('comment-name').value = '';
-        showToast('Thanks! Comment pending review 💬');
+        showToast('Thanks! Comment pending review 💬', form);
     } catch (e) {
         console.error('Comment submit error:', e);
-        showToast('Couldn\'t post — try again?');
+        showToast('Couldn\'t post — try again?', form);
     }
 }
 
