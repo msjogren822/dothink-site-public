@@ -104,15 +104,14 @@ async function voteTrend(idx, vote) {
         });
         
         if (res.status === 409) {
-            // Already voted - alert user
             const data = await res.json();
-            alert(`You already voted ${data.existingVote === 'up' ? '👍' : '👎'} on this trend`);
+            showToast(`Already voted ${data.existingVote === 'up' ? '👍' : '👎'} on this!`);
             return;
         }
         
         if (!res.ok) {
             const data = await res.json();
-            alert(data.error || 'Vote failed');
+            showToast(data.error || 'Oops! Something went wrong');
             return;
         }
         
@@ -120,7 +119,19 @@ async function voteTrend(idx, vote) {
         fetchTrends();
     } catch (e) {
         console.error('Vote failed:', e);
+        showToast('Connection issue — try again?');
     }
+}
+
+// Show toast notification
+function showToast(message, duration = 2500) {
+    const toast = document.getElementById('toast');
+    const msgEl = document.getElementById('toast-message');
+    msgEl.textContent = message;
+    toast.style.display = 'block';
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, duration);
 }
 
 // Load Scout's View from data
@@ -267,10 +278,10 @@ async function handleCommentSubmit(e) {
         if (!res.ok) throw new Error('Failed to post');
         document.getElementById('comment-message').value = '';
         document.getElementById('comment-name').value = '';
-        alert('Thanks! Your comment is pending review and will appear soon.');
+        showToast('Thanks! Comment pending review 💬');
     } catch (e) {
         console.error('Comment submit error:', e);
-        alert('Unable to post comment. Try again later.');
+        showToast('Couldn\'t post — try again?');
     }
 }
 
