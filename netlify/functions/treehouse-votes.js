@@ -42,7 +42,7 @@ exports.handler = async function(event, context) {
       const { trend_id, vote } = body;
       console.log('Vote request:', { trend_id, vote, body: event.body });
       
-      if (!trend_id || !vote) {
+      if (trend_id === undefined || trend_id === null || !vote) {
         return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing trend_id or vote' }) };
       }
       
