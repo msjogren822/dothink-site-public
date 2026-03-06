@@ -33,11 +33,17 @@ exports.handler = async function(event, context) {
     
     // POST: vote on a trend
     if (event.httpMethod === 'POST') {
+      // Debug: log what we received
+      console.log('Raw body:', event.body);
+      
       let body = event.body;
       // Handle JSON string or already-parsed
       if (typeof body === 'string') {
         try { body = JSON.parse(body); } catch(e) { body = {}; }
       }
+      
+      // Debug: log parsed body
+      console.log('Parsed body:', body);
       
       const { trend_id, vote } = body;
       console.log('Vote request:', { trend_id, vote, body: event.body });
