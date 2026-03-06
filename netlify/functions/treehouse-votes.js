@@ -85,7 +85,7 @@ exports.handler = async function(event, context) {
         await sql`INSERT INTO treehouse_trend_votes (trend_id, upvotes, downvotes) VALUES (${trend_id}, ${vote === 'up' ? 1 : 0}, ${vote === 'down' ? 1 : 0}) ON CONFLICT (trend_id) DO UPDATE SET upvotes = treehouse_trend_votes.upvotes + ${vote === 'up' ? 1 : 0}, downvotes = treehouse_trend_votes.downvotes + ${vote === 'down' ? 1 : 0}`;
       } catch (e) {
         await sql`CREATE TABLE IF NOT EXISTS treehouse_trend_votes (trend_id INTEGER PRIMARY KEY, upvotes INTEGER DEFAULT 0, downvotes INTEGER DEFAULT 0)`;
-        await sql`INSERT INTO treehouse_trend_votes (trend_id, upvotes, downvotes) VALUES (trend_id, 1, 0) ON CONFLICT (trend_id) DO UPDATE SET upvotes = treehouse_trend_votes.upvotes + 1`;
+        await sql`INSERT INTO treehouse_trend_votes (trend_id, upvotes, downvotes) VALUES (${trend_id}, ${vote === 'up' ? 1 : 0}, ${vote === 'down' ? 1 : 0}) ON CONFLICT (trend_id) DO UPDATE SET upvotes = treehouse_trend_votes.upvotes + ${vote === 'up' ? 1 : 0}, downvotes = treehouse_trend_votes.downvotes + ${vote === 'down' ? 1 : 0}`;
       }
       
       // Record user's vote
