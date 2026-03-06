@@ -1,7 +1,21 @@
 // Treehouse JS: Fetch trends from Neon API, fall back to static JSON
+
+// Get or create user token for duplicate prevention
+function getUserToken() {
+    let token = localStorage.getItem('treehouse_user_token');
+    if (!token) {
+        token = 't_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+        localStorage.setItem('treehouse_user_token', token);
+    }
+    return token;
+}
+
+let userVotes = {}; // Track which trends user has voted on
+
 async function fetchTrends() {
-    // Fetch votes first
-    const votes = await fetchVotes();
+    // Fetch votes first (includes user's votes)
+    const { votes, userVotes: uv } = await fetchVotes();
+    userVotes = uv || {};
     
     try {
         // Try Neon API first
@@ -40,13 +54,18 @@ function displayTrends(trends, timestamp, votes = {}) {
         const source = trend.source ? `<span style="color: var(--text-light); font-size: 0.85em;">(${trend.source})</span>` : '';
         
         const v = votes[idx] || { up: 0, down: 0 };
+        const userVote = userVotes[idx]; // 'up', 'down', or undefined
+        
+        // Style for voted buttons
+        const upStyle = userVote === 'up' ? 'opacity:1; filter:grayscale(0);' : (userVote ? 'opacity:0.3;' : '');
+        const downStyle = userVote === 'down' ? 'opacity:1; filter:grayscale(0);' : (userVote ? 'opacity:0.3;' : '');
         
         li.innerHTML = `
             <div style="display:flex; align-items:flex-start; gap:0.5rem;">
                 <div style="display:flex; flex-direction:column; gap:2px;">
-                    <button onclick="voteTrend(${idx}, 'up')" title="thumbs up" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em;">👍</button>
+                    <button onclick="voteTrend(${idx}, 'up')" title="thumbs up" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${upStyle}">👍</button>
                     <span style="font-size:0.8em; text-align:center;">${v.up}</span>
-                    <button onclick="voteTrend(${idx}, 'down')" title="thumbs down" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em;">👎</button>
+                    <button onclick="voteTrend(${idx}, 'down')" title="thumbs down" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${downStyle}">👎</button>
                     <span style="font-size:0.8em; text-align:center;">${v.down}</span>
                 </div>
                 <div>
@@ -60,26 +79,43 @@ function displayTrends(trends, timestamp, votes = {}) {
     document.getElementById('last-update').textContent = timestamp;
 }
 
-// Fetch votes from API
+// Fetch votes from API (includes user votes)
 async function fetchVotes() {
+    const userToken = getUserToken();
     try {
-        const res = await fetch('/.netlify/functions/treehouse-votes');
-        if (!res.ok) return {};
-        return await res.json();
+        const res = await fetch(`/.netlify/functions/treehouse-votes?user=${encodeURIComponent(userToken)}`);
+        if (!res.ok) return { votes: {}, userVotes: {} };
+        const data = await res.json();
+        return { votes: data.votes || data, userVotes: data.userVotes || {} };
     } catch (e) {
         console.log('Votes unavailable:', e.message);
-        return {};
+        return { votes: {}, userVotes: {} };
     }
 }
 
 // Vote on a trend
 async function voteTrend(idx, vote) {
+    const userToken = getUserToken();
     try {
-        await fetch('/.netlify/functions/treehouse-votes', {
+        const res = await fetch('/.netlify/functions/treehouse-votes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ trend_id: idx, vote: vote })
+            body: JSON.stringify({ trend_id: idx, vote: vote, user_token: userToken })
         });
+        
+        if (res.status === 409) {
+            // Already voted - alert user
+            const data = await res.json();
+            alert(`You already voted ${data.existingVote === 'up' ? '👍' : '👎'} on this trend`);
+            return;
+        }
+        
+        if (!res.ok) {
+            const data = await res.json();
+            alert(data.error || 'Vote failed');
+            return;
+        }
+        
         // Refresh to show new counts
         fetchTrends();
     } catch (e) {
@@ -107,7 +143,9 @@ function loadArchive(dbId) {
             // Handle new format with _meta or old format
             const trends = data.trends || data;
             const timestamp = (data._meta && data._meta.generatedAt) || 'Archive';
-            displayTrends(trends, 'Archive: ' + timestamp);
+            // Clear userVotes when loading archive (votes don't carry over)
+            userVotes = {};
+            displayTrends(trends, 'Archive: ' + timestamp, {});
         })
         .catch(e => {
             console.error('Archive load error:', e);
@@ -211,7 +249,7 @@ async function loadComments() {
 
 function escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/[&<>"']/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[m]; });
+    return str.replace(/[&<>"']/g, function(m) { return ({'&':'&','<':'<','>':'>','"':'"',"'":"'"})[m]; });
 }
 
 // Submit comment handler
