@@ -53,8 +53,10 @@ function displayTrends(trends, timestamp, votes = {}) {
         const description = trend.summary || trend.desc || '';
         const source = trend.source ? `<span style="color: var(--text-light); font-size: 0.85em;">(${trend.source})</span>` : '';
         
-        const v = votes[idx] || { up: 0, down: 0 };
-        const userVote = userVotes[idx]; // 'up', 'down', or undefined
+        // Look up votes by URL
+        const urlKey = trend.url;
+        const v = votes[urlKey] || { up: 0, down: 0 };
+        const userVote = userVotes[urlKey]; // 'up', 'down', or undefined
         
         // Style for voted buttons
         const upStyle = userVote === 'up' ? 'opacity:1; filter:grayscale(0);' : (userVote ? 'opacity:0.3;' : '');
@@ -63,9 +65,9 @@ function displayTrends(trends, timestamp, votes = {}) {
         li.innerHTML = `
             <div style="display:flex; align-items:flex-start; gap:0.5rem;">
                 <div style="display:flex; flex-direction:column; gap:2px;">
-                    <button onclick="voteTrend(${idx}, 'up', this)" title="thumbs up" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${upStyle}">👍</button>
+                    <button onclick="voteTrend('${encodeURIComponent(trend.url)}', 'up', this)" title="thumbs up" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${upStyle}">👍</button>
                     <span style="font-size:0.8em; text-align:center;">${v.up}</span>
-                    <button onclick="voteTrend(${idx}, 'down', this)" title="thumbs down" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${downStyle}">👎</button>
+                    <button onclick="voteTrend('${encodeURIComponent(trend.url)}', 'down', this)" title="thumbs down" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${downStyle}">👎</button>
                     <span style="font-size:0.8em; text-align:center;">${v.down}</span>
                 </div>
                 <div>
@@ -93,14 +95,15 @@ async function fetchVotes() {
     }
 }
 
-// Vote on a trend
-async function voteTrend(idx, vote, btnElement) {
+// Vote on a trend (now uses URL as identifier)
+async function voteTrend(trendUrl, vote, btnElement) {
     const userToken = getUserToken();
+    const decodedUrl = decodeURIComponent(trendUrl);
     try {
         const res = await fetch('/.netlify/functions/treehouse-votes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ trend_id: idx, vote: vote, user_token: userToken })
+            body: JSON.stringify({ trend_url: decodedUrl, vote: vote, user_token: userToken })
         });
         
         if (res.status === 409) {
