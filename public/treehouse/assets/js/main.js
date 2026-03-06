@@ -173,6 +173,7 @@ function loadScoutView(data) {
 
 // Load from archive (Neon API)
 function loadArchive(dbId) {
+    console.log('Loading archive:', dbId);
     fetch(`/.netlify/functions/treehouse-archive?id=${dbId}`)
         .then(res => res.json())
         .then(data => {
@@ -180,11 +181,15 @@ function loadArchive(dbId) {
             const trends = data.trends || data;
             const timestamp = (data._meta && data._meta.generatedAt) || 'Archive';
             
+            console.log('Archive loaded, trends count:', trends.length);
+            
             // Get list of URLs from archived trends
             const urls = trends.filter(t => t.url).map(t => t.url);
+            console.log('URLs to fetch votes for:', urls);
             
             // Fetch votes for each URL
             fetchVotesForUrls(urls).then(votes => {
+                console.log('Votes fetched for archive:', votes);
                 // Clear userVotes when loading archive (votes don't carry over)
                 userVotes = {};
                 displayTrends(trends, 'Archive: ' + timestamp, votes);
