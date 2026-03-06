@@ -65,9 +65,9 @@ function displayTrends(trends, timestamp, votes = {}) {
         li.innerHTML = `
             <div style="display:flex; align-items:flex-start; gap:0.5rem;">
                 <div style="display:flex; flex-direction:column; gap:2px;">
-                    <button onclick="voteTrend('${encodeURIComponent(trend.url)}', 'up', this)" title="thumbs up" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${upStyle}">👍</button>
+                    <button type="button" onclick="voteTrend('${encodeURIComponent(trend.url)}', 'up', this)" title="thumbs up" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${upStyle}">👍</button>
                     <span style="font-size:0.8em; text-align:center;">${v.up}</span>
-                    <button onclick="voteTrend('${encodeURIComponent(trend.url)}', 'down', this)" title="thumbs down" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${downStyle}">👎</button>
+                    <button type="button" onclick="voteTrend('${encodeURIComponent(trend.url)}', 'down', this)" title="thumbs down" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${downStyle}">👎</button>
                     <span style="font-size:0.8em; text-align:center;">${v.down}</span>
                 </div>
                 <div>
@@ -97,14 +97,21 @@ async function fetchVotes() {
 
 // Vote on a trend (now uses URL as identifier)
 async function voteTrend(trendUrl, vote, btnElement) {
+    if (!trendUrl) {
+        console.error('No URL provided for voting');
+        return;
+    }
     const userToken = getUserToken();
     const decodedUrl = decodeURIComponent(trendUrl);
+    console.log('Voting:', decodedUrl, vote);
     try {
         const res = await fetch('/.netlify/functions/treehouse-votes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ trend_url: decodedUrl, vote: vote, user_token: userToken })
         });
+        
+        console.log('Vote response:', res.status);
         
         if (res.status === 409) {
             const data = await res.json();
