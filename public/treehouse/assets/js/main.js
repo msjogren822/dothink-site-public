@@ -172,14 +172,52 @@ function loadArchive(dbId) {
             // Handle new format with _meta or old format
             const trends = data.trends || data;
             const timestamp = (data._meta && data._meta.generatedAt) || 'Archive';
-            // Clear userVotes when loading archive (votes don't carry over)
-            userVotes = {};
-            displayTrends(trends, 'Archive: ' + timestamp, {});
+            
+            // Get list of URLs from archived trends
+            const urls = trends.filter(t => t.url).map(t => t.url);
+            
+            // Fetch votes for each URL
+            fetchVotesForUrls(urls).then(votes => {
+                // Clear userVotes when loading archive (votes don't carry over)
+                userVotes = {};
+                displayTrends(trends, 'Archive: ' + timestamp, votes);
+            });
         })
         .catch(e => {
             console.error('Archive load error:', e);
             document.getElementById('trend-list').innerHTML = '<li>Error loading archive</li>';
         });
+}
+
+// Fetch votes for specific URLs
+async function fetchVotesForUrls(urls) {
+    const votes = {};
+    const userToken = getUserToken();
+    try {
+        // Get all votes and filter to requested URLs
+        const res = await fetch(`/.netlify/functions/treehouse-votes?user=${encodeURIComponent(userToken)}`);
+        if (!res.ok) return votes;
+        const data = await res.json();
+        
+        // Filter to only the URLs we need
+        urls.forEach(url => {
+            if (data.votes && data.votes[url]) {
+                votes[url] = data.votes[url];
+            }
+        });
+        
+        // Also update userVotes for display
+        if (data.userVotes) {
+            urls.forEach(url => {
+                if (data.userVotes[url]) {
+                    userVotes[url] = data.userVotes[url];
+                }
+            });
+        }
+    } catch (e) {
+        console.log('Votes fetch error:', e.message);
+    }
+    return votes;
 }
 
 // Populate archive dropdown from Neon
