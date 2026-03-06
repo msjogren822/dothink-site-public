@@ -194,3 +194,17 @@ footer a { color: white; }
     color: #2d3748;
     line-height: 1.7;
 }
+
+/* Form entry fields - wire border */
+#comment-form input[type="text"] {
+    border: 2px solid #000 !important;
+    border-radius: 4px;
+    padding: 0.5rem;
+    background: white;
+}
+
+#comment-form input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
