@@ -135,22 +135,36 @@ async function populateArchiveDropdown() {
     }
 }
 
-// Countdown to next update (runs every 4h from 12:46 AM CST = 6:46 AM UTC)
+// Countdown to next update (runs every 4h from 12:46 AM CST)
 function startCountdown() {
-    const nextUpdate = new Date();
-    // Next update: 4:46 PM CST today (or tomorrow if past)
-    nextUpdate.setHours(16, 46, 0, 0);
-    const now = new Date();
-    if (now > nextUpdate) {
-        nextUpdate.setDate(nextUpdate.getDate() + 1);
+    function getNextUpdate() {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMin = now.getMinutes();
+        
+        // Next run is at :46 minutes, every 4 hours
+        // Calculate hours: 0, 4, 8, 12, 16, 20
+        let nextHour = Math.ceil(currentHour / 4) * 4;
+        
+        const next = new Date(now);
+        next.setHours(nextHour, 46, 0, 0);
+        
+        // If we've passed that time or it's too close, add 4 hours
+        if (next < now || (nextHour === currentHour && currentMin >= 46)) {
+            next.setHours(next.getHours() + 4);
+        }
+        
+        return next;
     }
+    
+    let nextUpdate = getNextUpdate();
     
     function update() {
         const now = new Date();
         const diff = nextUpdate - now;
         
         if (diff <= 0) {
-            nextUpdate.setDate(nextUpdate.getDate() + 1);
+            nextUpdate = getNextUpdate();
             return;
         }
         
@@ -158,7 +172,6 @@ function startCountdown() {
         const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const secs = Math.floor((diff % (1000 * 60)) / 1000);
         
-        // Funky display
         const el = document.getElementById('countdown');
         if (el) {
             el.innerHTML = `<span style="color: #ff6b6b; font-weight: bold;">⏱️ ${hours}h ${mins}m ${secs}s</span>`;
