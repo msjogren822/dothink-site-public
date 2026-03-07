@@ -2,6 +2,7 @@
 
 // Track current view state
 let currentDbId = null; // null = current trends, number = archive ID
+let currentRunId = null; // The DB ID of the current run for voting
 
 // Get or create user token for duplicate prevention
 function getUserToken() {
@@ -18,10 +19,6 @@ let userVotes = {}; // Track which trends user has voted on
 async function fetchTrends() {
     currentDbId = null; // Reset to current trends view
     
-    // Fetch votes first (includes user's votes)
-    const { votes, userVotes: uv } = await fetchVotes();
-    userVotes = uv || {};
-    
     try {
         // Try Neon API first
         const apiRes = await fetch('/.netlify/functions/treehouse-api');
@@ -30,6 +27,15 @@ async function fetchTrends() {
             // Handle new format with _meta or old format
             const trends = data.trends || data;
             const timestamp = (data._meta && data._meta.generatedAt) || 'Live from DB';
+            
+            // Extract run_id from the response (returned as dbId in the _meta or we can get it from headers)
+            // For now, we'll fetch the latest ID from archives
+            await fetchLatestRunId();
+            
+            // Fetch votes for this specific run
+            const { votes, userVotes: uv } = await fetchVotesForRun(currentRunId);
+            userVotes = uv || {};
+            
             displayTrends(trends, timestamp, votes);
             return;
         }
@@ -41,10 +47,25 @@ async function fetchTrends() {
     try {
         const res = await fetch('feeds/trends.json');
         const trends = await res.json();
-        displayTrends(trends, new Date().toLocaleString(), votes);
+        displayTrends(trends, new Date().toLocaleString(), {});
     } catch (e) {
         document.getElementById('trend-list').innerHTML = '<li>Trends loading...</li>';
         console.error('Fetch error:', e);
+    }
+}
+
+// Fetch the latest run ID from archives
+async function fetchLatestRunId() {
+    try {
+        const res = await fetch('/.netlify/functions/treehouse-archives');
+        const archives = await res.json();
+        if (archives && archives.length > 0) {
+            // First entry is the latest
+            currentRunId = archives[0].dbId;
+            console.log('Current run ID:', currentRunId);
+        }
+    } catch (e) {
+        console.error('Failed to get run ID:', e);
     }
 }
 
@@ -86,11 +107,15 @@ function displayTrends(trends, timestamp, votes = {}) {
     document.getElementById('last-update').textContent = timestamp;
 }
 
-// Fetch votes from API (includes user votes)
-async function fetchVotes() {
+// Fetch votes for a specific run
+async function fetchVotesForRun(runId) {
     const userToken = getUserToken();
+    if (!runId) {
+        console.log('No runId provided for votes');
+        return { votes: {}, userVotes: {} };
+    }
     try {
-        const res = await fetch(`/.netlify/functions/treehouse-votes?user=${encodeURIComponent(userToken)}`);
+        const res = await fetch(`/.netlify/functions/treehouse-votes?user=${encodeURIComponent(userToken)}&run_id=${runId}`);
         if (!res.ok) return { votes: {}, userVotes: {} };
         const data = await res.json();
         return { votes: data.votes || data, userVotes: data.userVotes || {} };
@@ -100,20 +125,29 @@ async function fetchVotes() {
     }
 }
 
-// Vote on a trend (now uses URL as identifier)
+// Vote on a trend (now uses run_id + URL as identifier)
 async function voteTrend(trendUrl, vote, btnElement) {
     if (!trendUrl) {
         console.error('No URL provided for voting');
         return;
     }
+    if (!currentRunId) {
+        showToast('Cannot vote - no run ID', btnElement);
+        return;
+    }
     const userToken = getUserToken();
     const decodedUrl = decodeURIComponent(trendUrl);
-    console.log('Voting:', decodedUrl, vote);
+    console.log('Voting:', decodedUrl, vote, 'run:', currentRunId);
     try {
         const res = await fetch('/.netlify/functions/treehouse-votes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ trend_url: decodedUrl, vote: vote, user_token: userToken })
+            body: JSON.stringify({ 
+                trend_url: decodedUrl, 
+                vote: vote, 
+                user_token: userToken,
+                run_id: currentRunId
+            })
         });
         
         console.log('Vote response:', res.status);
@@ -194,6 +228,7 @@ function loadScoutView(data) {
 function loadArchive(dbId) {
     console.log('Loading archive:', dbId);
     currentDbId = dbId; // Track that we're viewing an archive
+    currentRunId = dbId; // Set the run ID for voting
     
     fetch(`/.netlify/functions/treehouse-archive?id=${dbId}`)
         .then(res => res.json())
@@ -208,10 +243,10 @@ function loadArchive(dbId) {
             const urls = trends.filter(t => t.url).map(t => t.url);
             console.log('URLs to fetch votes for:', urls);
             
-            // Fetch votes for each URL
-            fetchVotesForUrls(urls).then(votes => {
+            // Fetch votes for this specific archive run
+            fetchVotesForRun(dbId).then(votes => {
                 console.log('Votes fetched for archive:', votes);
-                // Clear userVotes when loading archive (votes don't carry over)
+                // Clear userVotes when loading archive
                 userVotes = {};
                 displayTrends(trends, 'Archive: ' + timestamp, votes);
             });
@@ -220,37 +255,6 @@ function loadArchive(dbId) {
             console.error('Archive load error:', e);
             document.getElementById('trend-list').innerHTML = '<li>Error loading archive</li>';
         });
-}
-
-// Fetch votes for specific URLs
-async function fetchVotesForUrls(urls) {
-    const votes = {};
-    const userToken = getUserToken();
-    try {
-        // Get all votes and filter to requested URLs
-        const res = await fetch(`/.netlify/functions/treehouse-votes?user=${encodeURIComponent(userToken)}`);
-        if (!res.ok) return votes;
-        const data = await res.json();
-        
-        // Filter to only the URLs we need
-        urls.forEach(url => {
-            if (data.votes && data.votes[url]) {
-                votes[url] = data.votes[url];
-            }
-        });
-        
-        // Also update userVotes for display
-        if (data.userVotes) {
-            urls.forEach(url => {
-                if (data.userVotes[url]) {
-                    userVotes[url] = data.userVotes[url];
-                }
-            });
-        }
-    } catch (e) {
-        console.log('Votes fetch error:', e.message);
-    }
-    return votes;
 }
 
 // Populate archive dropdown from Neon
@@ -268,6 +272,10 @@ async function populateArchiveDropdown() {
             opt.textContent = label;
             select.appendChild(opt);
         });
+        // Set initial run ID to latest
+        if (archives.length > 0) {
+            currentRunId = archives[0].dbId;
+        }
     } catch (e) {
         console.error('Archive index load error:', e);
     }

@@ -34,9 +34,9 @@ exports.handler = async function(event, context) {
       hour12: true
     });
     
-    // Build response - include metadata
+    // Build response - include metadata with run ID
     const response = {
-      _meta: { generatedAt: timestamp },
+      _meta: { generatedAt: timestamp, runId: row.id },
       trends: [
         {
           title: row.scout_title,

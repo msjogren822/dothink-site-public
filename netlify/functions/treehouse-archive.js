@@ -45,7 +45,7 @@ exports.handler = async function(event, context) {
     });
     
     const response = {
-      _meta: { generatedAt: timestamp },
+      _meta: { generatedAt: timestamp, runId: row.id },
       trends: [
         {
           title: row.scout_title,
