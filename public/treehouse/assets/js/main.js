@@ -82,6 +82,7 @@ function displayTrends(trends, timestamp, votes = {}) {
         // Look up votes by URL
         const urlKey = trend.url;
         const v = votes[urlKey] || { up: 0, down: 0 };
+        console.log('Rendering trend:', trend.title, 'urlKey:', urlKey, 'votes:', v);
         const userVote = userVotes[urlKey]; // 'up', 'down', or undefined
         
         // Style for voted buttons
@@ -110,12 +111,15 @@ function displayTrends(trends, timestamp, votes = {}) {
 // Fetch votes for a specific run
 async function fetchVotesForRun(runId) {
     const userToken = getUserToken();
+    console.log('fetchVotesForRun called with runId:', runId);
     if (!runId) {
         console.log('No runId provided for votes');
         return { votes: {}, userVotes: {} };
     }
     try {
-        const res = await fetch(`/.netlify/functions/treehouse-votes?user=${encodeURIComponent(userToken)}&run_id=${runId}`);
+        // Add cache-bust param to ensure fresh data
+        const cacheBust = Date.now();
+        const res = await fetch(`/.netlify/functions/treehouse-votes?user=${encodeURIComponent(userToken)}&run_id=${runId}&_=${cacheBust}`);
         if (!res.ok) return { votes: {}, userVotes: {} };
         const data = await res.json();
         return { votes: data.votes || data, userVotes: data.userVotes || {} };
@@ -226,9 +230,10 @@ function loadScoutView(data) {
 
 // Load from archive (Neon API)
 function loadArchive(dbId) {
-    console.log('Loading archive:', dbId);
+    console.log('loadArchive called with dbId:', dbId);
     currentDbId = dbId; // Track that we're viewing an archive
     currentRunId = dbId; // Set the run ID for voting
+    console.log('Set currentRunId to:', currentRunId);
     
     fetch(`/.netlify/functions/treehouse-archive?id=${dbId}`)
         .then(res => res.json())
@@ -244,10 +249,12 @@ function loadArchive(dbId) {
             console.log('URLs to fetch votes for:', urls);
             
             // Fetch votes for this specific archive run
-            fetchVotesForRun(dbId).then(votes => {
-                console.log('Votes fetched for archive:', votes);
+            fetchVotesForRun(dbId).then(votesResult => {
+                console.log('Votes result for archive:', votesResult);
+                const votes = votesResult.votes || {};
                 // Clear userVotes when loading archive
-                userVotes = {};
+                userVotes = votesResult.userVotes || {};
+                console.log('Displaying with votes:', votes, 'userVotes:', userVotes);
                 displayTrends(trends, 'Archive: ' + timestamp, votes);
             });
         })
