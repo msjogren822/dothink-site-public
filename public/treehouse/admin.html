@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treehouse Admin</title>
+    <style>
+        :root {
+            --bg: #0d0d1a;
+            --bg-card: #1a1a2e;
+            --text: #eee;
+            --text-light: #aaa;
+            --accent: #ff6b6b;
+            --border: #333;
+            --success: #4ade80;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        h1, h2 { margin: 0 0 1rem 0; }
+        a { color: var(--accent); text-decoration: none; }
+        .header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .back-link { font-size: 0.9rem; }
+        
+        /* Login screen */
+        #login-screen {
+            max-width: 400px;
+            margin: 100px auto;
+            text-align: center;
+        }
+        #login-screen input {
+            padding: 0.75rem;
+            margin: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            width: 200px;
+        }
+        #login-screen button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            cursor: pointer;
+            margin: 0.5rem;
+        }
+        
+        /* Admin content (hidden by default) */
+        #admin-content { display: none; }
+        
+        .section {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .source-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .source-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+        }
+        .source-row input {
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+        }
+        .source-row input[type="text"] { flex: 1; }
+        .source-row input[type="checkbox"] { width: auto; }
+        .source-name { min-width: 120px; font-weight: 500; }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-success { background: var(--success); color: #000; }
+        .btn-small { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+        
+        .form-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .form-row input {
+            flex: 1;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+        }
+        
+        .error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <a href="/" class="back-link">← Back to Trends</a>
+            <h1>⚙️ Treehouse Admin</h1>
+        </div>
+        <button id="logout-btn" class="btn btn-small" style="display:none;">Logout</button>
+    </div>
+    
+    <!-- Login screen -->
+    <div id="login-screen">
+        <h2>Admin Login</h2>
+        <input type="password" id="password" placeholder="Password">
+        <br>
+        <button onclick="login()" class="btn btn-primary">Login</button>
+        <p id="login-error" class="error" style="display:none;"></p>
+    </div>
+    
+    <!-- Admin content -->
+    <div id="admin-content">
+        <div class="section">
+            <h2>📰 Scrape Sources</h2>
+            <p style="color: var(--text-light); margin-bottom: 1rem;">Manage the URLs that are scraped for trends. Enable/disable sources without deleting them.</p>
+            
+            <!-- Add new source -->
+            <div class="form-row">
+                <input type="text" id="new-name" placeholder="Source name (e.g., The Verge)">
+                <input type="text" id="new-url" placeholder="URL (e.g., https://theverge.com)">
+                <button onclick="addSource()" class="btn btn-success">Add Source</button>
+            </div>
+            
+            <!-- Source list -->
+            <div id="source-list" class="source-list">
+                <div class="loading">Loading sources...</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📊 Analytics</h2>
+            <p><a href="analytics.html" target="_blank">View Analytics →</a></p>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_KEY = 'treehouse_admin_key';
+        let sources = [];
+        
+        function checkAuth() {
+            const key = localStorage.getItem(ADMIN_KEY);
+            if (key) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('admin-content').style.display = 'block';
+                document.getElementById('logout-btn').style.display = 'block';
+                loadSources();
+            }
+        }
+        
+        function login() {
+            const password = document.getElementById('password').value;
+            // Simple client-side check (in production, verify server-side)
+            if (password === 'treehouse123') {
+                localStorage.setItem(ADMIN_KEY, 'true');
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('admin-content').style.display = 'block';
+                document.getElementById('logout-btn').style.display = 'block';
+                loadSources();
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+                document.getElementById('login-error').textContent = 'Invalid password';
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem(ADMIN_KEY);
+            location.reload();
+        }
+        
+        async function loadSources() {
+            const res = await fetch('/.netlify/functions/treehouse-sources');
+            sources = await res.json();
+            renderSources();
+        }
+        
+        function renderSources() {
+            const el = document.getElementById('source-list');
+            if (sources.length === 0) {
+                el.innerHTML = '<p style="color: var(--text-light);">No sources yet. Add one above!</p>';
+                return;
+            }
+            
+            el.innerHTML = sources.map(s => `
+                <div class="source-row">
+                    <input type="text" value="${escapeHtml(s.name)}" onchange="updateSource(${s.id}, 'name', this.value)">
+                    <input type="text" value="${escapeHtml(s.url)}" onchange="updateSource(${s.id}, 'url', this.value)">
+                    <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="updateSource(${s.id}, 'enabled', this.checked)">
+                    <button class="btn btn-danger btn-small" onclick="deleteSource(${s.id})">Delete</button>
+                </div>
+            `).join('');
+        }
+        
+        async function addSource() {
+            const name = document.getElementById('new-name').value.trim();
+            const url = document.getElementById('new-url').value.trim();
+            
+            if (!name || !url) {
+                alert('Please enter both name and URL');
+                return;
+            }
+            
+            const res = await fetch('/.netlify/functions/treehouse-sources', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Admin-Password': 'treehouse123'
+                },
+                body: JSON.stringify({ name, url })
+            });
+            
+            if (res.ok) {
+                document.getElementById('new-name').value = '';
+                document.getElementById('new-url').value = '';
+                loadSources();
+            } else {
+                alert('Error adding source');
+            }
+        }
+        
+        async function updateSource(id, field, value) {
+            const body = { id };
+            body[field] = value;
+            
+            await fetch('/.netlify/functions/treehouse-sources', {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Admin-Password': 'treehouse123'
+                },
+                body: JSON.stringify(body)
+            });
+        }
+        
+        async function deleteSource(id) {
+            if (!confirm('Delete this source?')) return;
+            
+            await fetch(`/.netlify/functions/treehouse-sources?id=${id}`, {
+                method: 'DELETE',
+                headers: { 'X-Admin-Password': 'treehouse123' }
+            });
+            
+            loadSources();
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, m => ({'&':'&','<':'<','>':'>','"':'"',"'":"'"})[m]);
+        }
+        
+        document.getElementById('logout-btn').onclick = logout;
+        
+        // Check auth on load
+        checkAuth();
+    </script>
+</body>
+</html>
