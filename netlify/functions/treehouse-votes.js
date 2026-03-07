@@ -5,6 +5,23 @@ const { neon } = require('@netlify/neon');
 const sql = neon();
 
 async function ensureTables() {
+  // Check if old schema exists (without run_id) and migrate
+  try {
+    const oldTable = await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'treehouse_trend_votes' AND column_name = 'upvotes'`;
+    if (oldTable.length > 0) {
+      // Check if run_id column exists
+      const hasRunId = await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'treehouse_trend_votes' AND column_name = 'run_id'`;
+      if (hasRunId.length === 0) {
+        // Old schema - drop and recreate
+        console.log('Migrating votes table to new schema...');
+        await sql`DROP TABLE IF EXISTS treehouse_user_votes`;
+        await sql`DROP TABLE IF EXISTS treehouse_trend_votes`;
+      }
+    }
+  } catch (e) {
+    console.log('Migration check:', e.message);
+  }
+  
   // Create tables if they don't exist - now using run_id + URL as key
   try {
     await sql`CREATE TABLE IF NOT EXISTS treehouse_trend_votes (run_id INTEGER NOT NULL, trend_url TEXT NOT NULL, upvotes INTEGER DEFAULT 0, downvotes INTEGER DEFAULT 0, PRIMARY KEY(run_id, trend_url))`;
