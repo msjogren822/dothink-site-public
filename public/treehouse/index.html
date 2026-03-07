@@ -16,11 +16,12 @@
         <h1>🔥 Hot Web Trends</h1>
         <p style="margin-top: 0.5rem; color: var(--text-light); font-style: italic;">🌳 A Treehouse Experiment</p>
         <small>Last update: <span id="last-update"></span> | <span id="countdown"></span> | 
-            <label>Archive: 
-                <select id="archive-select" onchange="loadArchive(this.value)">
+            <label>Recent: 
+                <select id="archive-select" onchange="handleArchiveSelect(this.value)">
                     <option value="">Loading...</option>
                 </select>
             </label>
+            <label> | Date: <input type="date" id="date-picker" onchange="handleDateSelect(this.value)" style="background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 2px 4px; border-radius: 4px;"></label>
         </small>
     </header>
 

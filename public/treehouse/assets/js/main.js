@@ -264,14 +264,14 @@ function loadArchive(dbId) {
         });
 }
 
-// Populate archive dropdown from Neon
+// Populate archive dropdown from Neon (last 30 runs only)
 async function populateArchiveDropdown() {
     try {
-        const res = await fetch('/.netlify/functions/treehouse-archives');
+        const res = await fetch('/.netlify/functions/treehouse-archives?limit=30');
         const archives = await res.json();
         const select = document.getElementById('archive-select');
         select.innerHTML = '';
-        // Show ALL records (most recent first) so user can compare any
+        // Show recent 30 records (most recent first)
         archives.forEach((arch, index) => {
             const opt = document.createElement('option');
             opt.value = arch.dbId;
@@ -286,6 +286,118 @@ async function populateArchiveDropdown() {
     } catch (e) {
         console.error('Archive index load error:', e);
     }
+}
+
+// Handle archive dropdown selection
+function handleArchiveSelect(value) {
+    if (!value) return;
+    // Clear date picker when using dropdown
+    document.getElementById('date-picker').value = '';
+    loadArchive(value);
+}
+
+// Handle date picker selection - load all runs from that day
+async function handleDateSelect(dateStr) {
+    if (!dateStr) return;
+    // Clear dropdown when using date picker
+    document.getElementById('archive-select').value = '';
+    
+    console.log('Loading archives for date:', dateStr);
+    
+    try {
+        const res = await fetch(`/.netlify/functions/treehouse-archives?date=${dateStr}`);
+        const archives = await res.json();
+        
+        if (!archives || archives.length === 0) {
+            showToast('No trends found for that date', null);
+            return;
+        }
+        
+        console.log('Found archives for date:', archives.length, 'runs');
+        
+        // Load all runs from this day, one by one
+        await loadDayArchive(archives);
+        
+    } catch (e) {
+        console.error('Date load error:', e);
+        showToast('Error loading that date', null);
+    }
+}
+
+// Load all runs from a single day and combine them
+async function loadDayArchive(archives) {
+    const allTrends = [];
+    const timestamps = [];
+    
+    for (const arch of archives) {
+        try {
+            const res = await fetch(`/.netlify/functions/treehouse-archive?id=${arch.dbId}`);
+            const data = await res.json();
+            const trends = data.trends || data;
+            const timestamp = data._meta?.generatedAt || arch.label;
+            
+            timestamps.push(timestamp);
+            
+            // Add each topic (skip Scout's View, we'll add our own)
+            trends.forEach(t => {
+                if (!t.signature) {
+                    allTrends.push(t);
+                }
+            });
+        } catch (e) {
+            console.error('Error loading archive', arch.dbId, e);
+        }
+    }
+    
+    if (allTrends.length === 0) {
+        document.getElementById('trend-list').innerHTML = '<li>No trends found</li>';
+        return;
+    }
+    
+    // Get votes for all URLs from all runs in this day
+    const urls = allTrends.filter(t => t.url).map(t => t.url);
+    const dayRunIds = archives.map(a => a.dbId);
+    
+    // Fetch votes for each run separately and combine
+    let combinedVotes = {};
+    let combinedUserVotes = {};
+    
+    for (const runId of dayRunIds) {
+        const { votes, userVotes: uv } = await fetchVotesForRun(runId);
+        Object.assign(combinedVotes, votes);
+        Object.assign(combinedUserVotes, uv);
+    }
+    
+    userVotes = combinedUserVotes;
+    currentDbId = 'day'; // Mark as day view
+    currentRunId = dayRunIds[0]; // Use first run for new votes
+    
+    // Show date range in header
+    const dateLabel = archives[0].label.split(',')[0]; // e.g., "Mar 7"
+    const timestamp = `${dateLabel} (${archives.length} batches)`;
+    
+    // Add Scout's View from the most recent run
+    try {
+        const latestRes = await fetch(`/.netlify/functions/treehouse-archive?id=${archives[0].dbId}`);
+        const latestData = await latestRes.json();
+        const latestTrends = latestData.trends || latestData;
+        const scoutEntry = latestTrends.find(t => t.signature && t.signature.includes("Scout"));
+        if (scoutEntry) {
+            allTrends.unshift(scoutEntry);
+        }
+    } catch (e) {
+        console.log('Could not load Scout View:', e);
+    }
+    
+    // Build combined data structure
+    const combinedData = {
+        _meta: { generatedAt: timestamp, runIds: dayRunIds },
+        trends: allTrends
+    };
+    
+    displayTrends(combinedData.trends, timestamp, combinedVotes);
+    loadScoutView(combinedData.trends);
+    document.getElementById('last-update').textContent = timestamp;
 }
 
 // Countdown to next update (runs every 4h from 12:46 AM CST)
