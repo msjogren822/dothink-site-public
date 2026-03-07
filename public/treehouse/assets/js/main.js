@@ -1,8 +1,9 @@
 // Treehouse JS: Fetch trends from Neon API, fall back to static JSON
 
 // Track current view state
-let currentDbId = null; // null = current trends, number = archive ID
+let currentDbId = null; // null = current trends, number = archive ID, 'day' = day view
 let currentRunId = null; // The DB ID of the current run for voting
+let currentDayArchives = null; // Store archives array when viewing a day
 
 // Get or create user token for duplicate prevention
 function getUserToken() {
@@ -168,8 +169,10 @@ async function voteTrend(trendUrl, vote, btnElement) {
             return;
         }
         
-        // Refresh the correct view (current or archive)
-        if (currentDbId) {
+        // Refresh the correct view (current, archive, or day)
+        if (currentDbId === 'day' && currentDayArchives) {
+            loadDayArchive(currentDayArchives);
+        } else if (currentDbId) {
             loadArchive(currentDbId);
         } else {
             fetchTrends();
@@ -370,6 +373,7 @@ async function loadDayArchive(archives) {
     
     userVotes = combinedUserVotes;
     currentDbId = 'day'; // Mark as day view
+    currentDayArchives = archives; // Store for refresh after voting
     currentRunId = dayRunIds[0]; // Use first run for new votes
     
     // Show date range in header
