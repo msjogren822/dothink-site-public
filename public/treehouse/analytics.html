@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treehouse Analytics</title>
+    <style>
+        :root {
+            --bg: #0d0d1a;
+            --bg-card: #1a1a2e;
+            --text: #eee;
+            --text-light: #aaa;
+            --accent: #ff6b6b;
+            --border: #333;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        h1, h2 { margin: 0 0 1rem 0; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .header h1 { font-size: 2rem; }
+        .header p { color: var(--text-light); margin: 0; }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        .stat-card .label {
+            color: var(--text-light);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+        .section {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        .section h2 {
+            font-size: 1.2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .keyword-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .keyword {
+            background: rgba(255,107,107,0.15);
+            padding: 0.3rem 0.7rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        .keyword .count {
+            color: var(--accent);
+            font-weight: bold;
+            margin-left: 0.3rem;
+        }
+        .source-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .source-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .source-bar {
+            flex: 1;
+            height: 24px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .source-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.5s ease;
+        }
+        .source-name {
+            min-width: 120px;
+            font-weight: 500;
+        }
+        .source-count {
+            min-width: 50px;
+            text-align: right;
+            color: var(--text-light);
+        }
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Back to Trends</a>
+    
+    <div class="header">
+        <h1>📊 Treehouse Analytics</h1>
+        <p>What's been trending across all batches</p>
+    </div>
+    
+    <div id="stats" class="stats-grid">
+        <div class="stat-card"><div class="value" id="total-batches">—</div><div class="label">Batches</div></div>
+        <div class="stat-card"><div class="value" id="total-topics">—</div><div class="label">Topics</div></div>
+        <div class="stat-card"><div class="value" id="total-upvotes">—</div><div class="label">Upvotes</div></div>
+        <div class="stat-card"><div class="value" id="total-downvotes">—</div><div class="label">Downvotes</div></div>
+    </div>
+    
+    <div class="section">
+        <h2>🔑 Top Keywords</h2>
+        <div id="keywords" class="keyword-list"><div class="loading">Loading...</div></div>
+    </div>
+    
+    <div class="section">
+        <h2>📰 Source Distribution</h2>
+        <div id="sources" class="source-list"><div class="loading">Loading...</div></div>
+    </div>
+
+    <script>
+        async function loadAnalytics() {
+            try {
+                const res = await fetch('/.netlify/functions/treehouse-analytics');
+                const data = await res.json();
+                
+                // Stats
+                document.getElementById('total-batches').textContent = data.stats.totalBatches;
+                document.getElementById('total-topics').textContent = data.stats.totalTopics;
+                document.getElementById('total-upvotes').textContent = data.stats.totalUpvotes;
+                document.getElementById('total-downvotes').textContent = data.stats.totalDownvotes;
+                
+                // Keywords
+                const keywordsEl = document.getElementById('keywords');
+                keywordsEl.innerHTML = data.topKeywords.map(k => 
+                    `<span class="keyword">${k.word}<span class="count">${k.count}</span></span>`
+                ).join('');
+                
+                // Sources
+                const sourcesEl = document.getElementById('sources');
+                const maxCount = Math.max(...data.sourceDistribution.map(s => s.count));
+                sourcesEl.innerHTML = data.sourceDistribution.map(s => {
+                    const pct = (s.count / maxCount) * 100;
+                    return `
+                        <div class="source-row">
+                            <span class="source-name">${s.source}</span>
+                            <div class="source-bar"><div class="source-fill" style="width:${pct}%"></div></div>
+                            <span class="source-count">${s.count}</span>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (e) {
+                document.getElementById('keywords').innerHTML = '<div class="loading">Error loading analytics</div>';
+                console.error(e);
+            }
+        }
+        
+        loadAnalytics();
+    </script>
+</body>
+</html>
