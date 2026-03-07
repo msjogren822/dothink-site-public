@@ -174,7 +174,13 @@ function loadScoutView(data) {
     const scoutEntry = data.find(item => item.signature && item.signature.includes("Scout"));
     const scoutEl = document.getElementById('scout-comment');
     if (scoutEntry) {
-        scoutEl.innerHTML = scoutEntry.desc + '<br><br><em style="font-size: 0.85em; color: var(--text-light);">— ' + scoutEntry.signature + '</em>';
+        // If desc already ends with the signature, strip it to avoid duplication
+        let desc = scoutEntry.desc || '';
+        const sig = scoutEntry.signature || '';
+        if (desc.endsWith(sig)) {
+            desc = desc.slice(0, -sig.length).trim();
+        }
+        scoutEl.innerHTML = desc + '<br><br><em style="font-size: 0.85em; color: var(--text-light);">' + sig + '</em>';
     } else {
         scoutEl.textContent = "No Scout's View for this archive.";
     }
