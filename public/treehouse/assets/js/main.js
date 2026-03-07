@@ -1,5 +1,8 @@
 // Treehouse JS: Fetch trends from Neon API, fall back to static JSON
 
+// Track current view state
+let currentDbId = null; // null = current trends, number = archive ID
+
 // Get or create user token for duplicate prevention
 function getUserToken() {
     let token = localStorage.getItem('treehouse_user_token');
@@ -13,6 +16,8 @@ function getUserToken() {
 let userVotes = {}; // Track which trends user has voted on
 
 async function fetchTrends() {
+    currentDbId = null; // Reset to current trends view
+    
     // Fetch votes first (includes user's votes)
     const { votes, userVotes: uv } = await fetchVotes();
     userVotes = uv || {};
@@ -125,8 +130,12 @@ async function voteTrend(trendUrl, vote, btnElement) {
             return;
         }
         
-        // Refresh to show new counts
-        fetchTrends();
+        // Refresh the correct view (current or archive)
+        if (currentDbId) {
+            loadArchive(currentDbId);
+        } else {
+            fetchTrends();
+        }
     } catch (e) {
         console.error('Vote failed:', e);
         showToast('Connection issue — try again?', btnElement);
@@ -174,6 +183,8 @@ function loadScoutView(data) {
 // Load from archive (Neon API)
 function loadArchive(dbId) {
     console.log('Loading archive:', dbId);
+    currentDbId = dbId; // Track that we're viewing an archive
+    
     fetch(`/.netlify/functions/treehouse-archive?id=${dbId}`)
         .then(res => res.json())
         .then(data => {
