@@ -143,16 +143,20 @@ async function voteTrend(trendUrl, vote, btnElement) {
 }
 
 // Show toast notification
-function showToast(message, targetEl, duration = 2500) {
+function showToast(message, targetEl, duration = 4500) {
     const toast = document.getElementById('toast');
     const msgEl = document.getElementById('toast-message');
     msgEl.textContent = message;
+    
+    // Reset styles to default centered position
+    toast.style.whiteSpace = 'nowrap';
     
     if (targetEl) {
         // Position near the target element
         const rect = targetEl.getBoundingClientRect();
         toast.style.left = (rect.left + rect.width/2) + 'px';
         toast.style.top = (rect.bottom + 10) + 'px';
+        toast.style.bottom = 'auto';
         toast.style.transform = 'translateX(-50%)';
     } else {
         // Default: bottom center
