@@ -64,8 +64,9 @@ exports.handler = async function(event, context) {
         if (t) {
           allTopics.push(t);
           
-          // Count sources
-          const source = t.source || 'Unknown';
+          // Count sources (normalize name - title case)
+          const rawSource = t.source || 'Unknown';
+          const source = rawSource.trim().replace(/\b\w/g, c => c.toUpperCase());
           sourceCount[source] = (sourceCount[source] || 0) + 1;
         }
       });
