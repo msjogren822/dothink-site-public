@@ -44,13 +44,31 @@ exports.handler = async function(event, context) {
       hour12: true
     });
     
+    // Normalize Scout's View: ensure signature field exists
+    let scoutDesc = row.scout_desc || '';
+    let scoutSig = row.scout_signature;
+    
+    if (!scoutSig && scoutDesc) {
+      // Try to extract signature from end of desc
+      const sigMatch = scoutDesc.match(/\s*[-–—]\s*Scout,[^—–-]+$/);
+      if (sigMatch) {
+        scoutSig = sigMatch[0].trim();
+        scoutDesc = scoutDesc.slice(0, -sigMatch[0].length).trim();
+      }
+    }
+    
+    // If still no signature, add default
+    if (!scoutSig) {
+      scoutSig = '— Scout, MiniMax M2.5 on Venice AI';
+    }
+    
     const response = {
       _meta: { generatedAt: timestamp, runId: row.id },
       trends: [
         {
           title: row.scout_title,
-          desc: row.scout_desc,
-          signature: row.scout_signature
+          desc: scoutDesc,
+          signature: scoutSig
         },
         ...row.topics
       ]
