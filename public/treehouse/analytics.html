@@ -143,7 +143,7 @@
         <h2>🔑 Top Keywords</h2>
         <div id="keywords" class="keyword-list"><div class="loading">Loading...</div></div>
         <p style="margin-top:1rem;">
-            <a href="wordcloud.html" target="_blank" class="btn" style="background: var(--accent); color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; display: inline-block;">🌐 Orbital View</a>
+            <a href="#" onclick="openWordcloud(); return false;" class="btn" style="background: var(--accent); color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; display: inline-block;">🌐 Orbital View</a>
         </p>
     </div>
     
@@ -193,7 +193,13 @@
         loadAnalytics();
     </script>
     
-    <!-- Experiment 1: P5.js Test Modal -->
+    <!-- Wordcloud modal (2D) + Experiment 1 test -->
+    <div id="wordcloud-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1000;">
+        <button onclick="closeWordcloud();" style="position:absolute; top:20px; right:20px; background:#ff6b6b; border:none; color:white; padding:10px 20px; cursor:pointer; border-radius:4px; z-index:1100;">✕ Close</button>
+        <div id="wordcloud-canvas" style="width:100%; height:100%;"></div>
+    </div>
+
+    <!-- Experiment 1: quick p5 test modal -->
     <div id="exp1-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000;">
         <button onclick="document.getElementById('exp1-modal').style.display='none'" style="position:absolute; top:20px; right:20px; background:#ff6b6b; border:none; color:white; padding:10px 20px; cursor:pointer; border-radius:4px;">✕ Close</button>
         <div id="exp1-canvas" style="width:100%; height:100%;"></div>
@@ -202,35 +208,63 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
     <script>
+    // Wordcloud modal controls
+    function closeWordcloud() { document.getElementById('wordcloud-modal').style.display = 'none'; }
+    function openWordcloud() { document.getElementById('wordcloud-modal').style.display = 'block'; if (!window.wordcloudLoaded) { window.wordcloudLoaded = true; startWordcloud(); } }
+
+    function startWordcloud() {
+        // fallback data
+        const fallback = [
+            {word:'ai', count:20},{word:'claude',count:12},{word:'gpt',count:18},{word:'security',count:8},{word:'verge',count:6},{word:'downloads',count:4},{word:'pentagon',count:3}
+        ];
+        new p5(function(p) {
+            let keywords = [];
+            let words = [];
+            let angle = 0;
+            p.setup = function() { p.createCanvas(p.windowWidth, p.windowHeight); p.fetchKeywords(); };
+            p.fetchKeywords = function() {
+                fetch('/.netlify/functions/treehouse-analytics')
+                    .then(r=>r.json())
+                    .then(d=>{ keywords = d.topKeywords || fallback; createWords(); })
+                    .catch(e=>{ console.warn('analytics fetch failed, using fallback', e); keywords = fallback; createWords(); });
+            };
+            function createWords(){
+                const maxCount = keywords.length>0?keywords[0].count:1;
+                words = [];
+                const colors = ['#ff6b6b','#4ecdc4','#ffe66d','#95e1d3','#aa96da','#fcbad3'];
+                keywords.forEach((kw,i)=>{
+                    const t = i/keywords.length; const ang = t*p.TWO_PI*2; const r = 80 + t*Math.min(p.width,p.height)*0.35;
+                    const x = Math.cos(ang)*r, y = Math.sin(ang)*r*0.6;
+                    words.push({word:kw.word,count:kw.count,x:x,y:y,size:p.map(kw.count,1,maxCount,14,64),color:colors[i%colors.length]});
+                });
+            }
+            p.draw = function(){ p.background(240); // light background per request
+                if(!words.length){ p.fill(0); p.textAlign(p.CENTER,p.CENTER); p.textSize(18); p.text('Loading...',p.width/2,p.height/2); return; }
+                p.push(); p.translate(p.width/2,p.height/2); p.rotate(angle); angle+=0.002;
+                words.forEach(w=>{
+                    p.push(); p.translate(w.x,w.y);
+                    for(let g=3; g>0; g--){ p.noStroke(); p.fill(p.red(p.color(w.color)),p.green(p.color(w.color)),p.blue(p.color(w.color)),20); p.textSize(w.size+g*4); p.textStyle(p.BOLD); p.textAlign(p.CENTER,p.CENTER); p.text(w.word,0,0);} 
+                    p.fill(w.color); p.textSize(w.size); p.textStyle(p.BOLD); p.textAlign(p.CENTER,p.CENTER); p.text(w.word,0,0);
+                    p.fill(0,140); p.textSize(w.size*0.35); p.textStyle(p.NORMAL); p.text(w.count,0,w.size*0.7);
+                    p.pop();
+                });
+                p.pop();
+            };
+            p.windowResized = function(){ p.resizeCanvas(p.windowWidth,p.windowHeight); };
+            p.mouseDragged = function(){ angle += (p.mouseX - p.pmouseX)*0.01; return false; };
+            p.mouseWheel = function(e){ return false; };
+        }, 'wordcloud-canvas');
+    }
+
     function openExp1() {
         document.getElementById('exp1-modal').style.display = 'block';
         if (!window.exp1Loaded) {
             window.exp1Loaded = true;
             new p5(function(p) {
-                p.setup = function() {
-                    p.createCanvas(p.windowWidth, p.windowHeight);
-                };
-                p.draw = function() {
-                    p.background(40, 44, 52);
-                    p.fill(255);
-                    p.noStroke();
-                    p.textSize(32);
-                    p.textAlign(p.CENTER, p.CENTER);
-                    p.text('🧪 P5.js is working!', p.width/2, p.height/2);
-                    
-                    // Rotating cube
-                    p.push();
-                    p.translate(p.width/2, p.height/2 + 80);
-                    p.rotateX(p.frameCount * 0.01);
-                    p.rotateY(p.frameCount * 0.01);
-                    p.stroke(255, 100);
-                    p.noFill();
-                    p.box(60);
-                    p.pop();
-                };
-                p.windowResized = function() {
-                    p.resizeCanvas(p.windowWidth, p.windowHeight);
-                };
+                p.setup = function() { p.createCanvas(p.windowWidth, p.windowHeight); };
+                p.draw = function() { p.background(40,44,52); p.fill(255); p.noStroke(); p.textSize(32); p.textAlign(p.CENTER,p.CENTER); p.text('🧪 P5.js is working!', p.width/2, p.height/2);
+                    p.push(); p.translate(p.width/2, p.height/2+80); p.rotateX(p.frameCount*0.01); p.rotateY(p.frameCount*0.01); p.stroke(255,100); p.noFill(); p.box(60); p.pop(); };
+                p.windowResized = function(){ p.resizeCanvas(p.windowWidth, p.windowHeight); };
             }, 'exp1-canvas');
         }
     }
