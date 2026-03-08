@@ -53,9 +53,9 @@ exports.handler = async function(event, context) {
       scoutSig = '— Scout, MiniMax M2.5 on Venice AI';
     }
     
-    // Build response - include metadata with run ID
+    // Build response - include metadata with run ID and raw timestamp
     const response = {
-      _meta: { generatedAt: timestamp, runId: row.id },
+      _meta: { generatedAt: timestamp, runId: row.id, runAt: row.created_at },
       trends: [
         {
           title: row.scout_title,

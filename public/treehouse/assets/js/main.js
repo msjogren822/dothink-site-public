@@ -29,6 +29,11 @@ async function fetchTrends() {
             const trends = data.trends || data;
             const timestamp = (data._meta && data._meta.generatedAt) || 'Live from DB';
             
+            // Store last run time for countdown
+            if (data._meta && data._meta.runAt) {
+                lastRunTimestamp = data._meta.runAt;
+            }
+            
             // Extract run_id from the response (returned as dbId in the _meta or we can get it from headers)
             // For now, we'll fetch the latest ID from archives
             await fetchLatestRunId();
@@ -404,25 +409,21 @@ async function loadDayArchive(archives) {
     document.getElementById('last-update').textContent = timestamp;
 }
 
-// Countdown to next update (runs every 4h from 12:46 AM CST)
+// Countdown to next update (runs every 4 hours from last run)
+let lastRunTimestamp = null; // Will be set when we fetch trends
+
 function startCountdown() {
-    // Cron anchor: 1772781960000 ms = 01:26 UTC = 7:26 PM CST (previous day)
-    // Actually: 1772781960000 = March 6, 2026 01:26:00 UTC = March 5, 2026 7:26 PM CST
-    // Runs every 4 hours: 1:26, 5:26, 9:26, 13:26, 17:26, 21:26 CST
-    const ANCHOR_MS = 1772781960000;
     const INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 hours
     
     function getNextUpdate() {
-        const now = Date.now();
-        
-        // Calculate how many intervals have passed since anchor
-        const elapsed = now - ANCHOR_MS;
-        const intervalsPassed = Math.floor(elapsed / INTERVAL_MS);
-        
-        // Next run is after the current interval
-        const nextRunMs = ANCHOR_MS + ((intervalsPassed + 1) * INTERVAL_MS);
-        
-        return new Date(nextRunMs);
+        if (lastRunTimestamp) {
+            // Use actual last run time + 4 hours
+            const lastRun = new Date(lastRunTimestamp);
+            return new Date(lastRun.getTime() + INTERVAL_MS);
+        }
+        // Fallback: if no timestamp yet, return a time far in future
+        // (will be corrected once fetchTrends runs)
+        return new Date(Date.now() + INTERVAL_MS);
     }
     
     let nextUpdate = getNextUpdate();
@@ -432,6 +433,7 @@ function startCountdown() {
         const diff = nextUpdate - now;
         
         if (diff <= 0) {
+            // Refresh next update time
             nextUpdate = getNextUpdate();
             return;
         }
