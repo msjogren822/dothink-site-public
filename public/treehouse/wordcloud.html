@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treehouse Word Cloud</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        :root {
+            --bg: #0d0d1a;
+            --text: #eee;
+            --accent: #ff6b6b;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        .close-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,107,107,0.2);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 100;
+        }
+        .close-btn:hover {
+            background: var(--accent);
+            color: var(--bg);
+        }
+        .title {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: var(--text);
+            font-size: 18px;
+            z-index: 100;
+        }
+        .hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.4);
+            font-size: 12px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">🌐 Orbital Word Cloud • Drag to rotate • Scroll to zoom</div>
+    <button class="close-btn" onclick="window.close()">✕ Close</button>
+    <div class="hint">Click words to see count</div>
+    <div id="canvas-container"></div>
+
+    <script>
+        let keywords = [];
+        let word3D = [];
+        let font;
+        let rotX = 0, rotY = 0;
+        let zoom = 1;
+        let isDragging = false;
+        let lastMouseX, lastMouseY;
+        let hoveredWord = null;
+        
+        const COLORS = [
+            '#ff6b6b', '#4ecdc4', '#ffe66d', '#95e1d3', 
+            '#f38181', '#aa96da', '#fcbad3', '#a8d8ea'
+        ];
+        
+        function setup() {
+            const canvas = createCanvas(windowWidth, windowHeight, WEBGL);
+            canvas.parent('canvas-container');
+            
+            // Fetch keywords from analytics
+            fetch('/.netlify/functions/treehouse-analytics')
+                .then(res => res.json())
+                .then(data => {
+                    keywords = data.topKeywords || [];
+                    createWordObjects();
+                })
+                .catch(err => {
+                    console.error('Failed to load keywords:', err);
+                });
+            
+            textSize(16);
+            textAlign(CENTER, CENTER);
+        }
+        
+        function createWordObjects() {
+            const maxCount = keywords.length > 0 ? keywords[0].count : 1;
+            
+            keywords.forEach((kw, i) => {
+                const angle1 = random(TWO_PI);
+                const angle2 = random(-PI/3, PI/3);
+                const radius = random(100, 350);
+                
+                const x = radius * cos(angle1) * cos(angle2);
+                const y = radius * sin(angle2);
+                const z = radius * sin(angle1) * cos(angle2);
+                
+                const size = map(kw.count, 1, maxCount, 12, 64);
+                
+                word3D.push({
+                    word: kw.word,
+                    count: kw.count,
+                    x: x, y: y, z: z,
+                    size: size,
+                    color: color(random(COLORS))
+                });
+            });
+        }
+        
+        function draw() {
+            background(13, 13, 26);
+            
+            if (keywords.length === 0) {
+                fill(255);
+                textAlign(CENTER, CENTER);
+                text('Loading...', 0, 0);
+                return;
+            }
+            
+            // Enable mouse interaction
+            orbitControl(2, 2, 0.1);
+            
+            // Draw words
+            hoveredWord = null;
+            
+            word3D.forEach(w => {
+                push();
+                translate(w.x, w.y, w.z);
+                
+                // Billboarding - face camera
+                // Simple approach: just draw, p5's default works decently
+                
+                // Size based on zoom
+                const s = w.size * min(1, zoom);
+                
+                fill(w.color);
+                noStroke();
+                textSize(s);
+                textStyle(BOLD);
+                
+                // Make text always face the camera
+                // Simple billboarding
+                text(w.word, 0, 0);
+                pop();
+            });
+            
+            // Draw connecting lines between nearby words
+            stroke(255, 30);
+            strokeWeight(0.5);
+            for (let i = 0; i < word3D.length; i++) {
+                for (let j = i + 1; j < word3D.length; j++) {
+                    const d = dist3D(word3D[i], word3D[j]);
+                    if (d < 120) {
+                        const alpha = map(d, 0, 120, 40, 0);
+                        stroke(255, alpha);
+                        line(word3D[i].x, word3D[i].y, word3D[i].z,
+                             word3D[j].x, word3D[j].y, word3D[j].z);
+                    }
+                }
+            }
+        }
+        
+        function dist3D(a, b) {
+            return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2) + pow(a.z - b.z, 2));
+        }
+        
+        function mouseWheel(event) {
+            zoom -= event.delta * 0.001;
+            zoom = constrain(zoom, 0.3, 3);
+            return false;
+        }
+        
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+    </script>
+</body>
+</html>
