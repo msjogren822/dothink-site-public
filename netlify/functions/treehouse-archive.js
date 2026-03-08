@@ -63,7 +63,7 @@ exports.handler = async function(event, context) {
     }
     
     const response = {
-      _meta: { generatedAt: timestamp, runId: row.id },
+      _meta: { generatedAt: timestamp, runId: row.id, runAt: row.created_at },
       trends: [
         {
           title: row.scout_title,

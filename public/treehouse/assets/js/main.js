@@ -250,6 +250,11 @@ function loadArchive(dbId) {
             const trends = data.trends || data;
             const timestamp = (data._meta && data._meta.generatedAt) || 'Archive';
             
+            // Update countdown to use this archive's time
+            if (data._meta && data._meta.runAt) {
+                lastRunTimestamp = data._meta.runAt;
+            }
+            
             console.log('Archive loaded, trends count:', trends.length);
             
             // Get list of URLs from archived trends
@@ -336,6 +341,13 @@ async function handleDateSelect(dateStr) {
 async function loadDayArchive(archives) {
     const allTrends = [];
     const timestamps = [];
+    
+    // Update countdown to use the most recent run from this day
+    // (archives are sorted newest first)
+    if (archives.length > 0) {
+        // We'll update this after we fetch the first archive's data
+        // For now, just use the label as a fallback
+    }
     
     for (const arch of archives) {
         try {
