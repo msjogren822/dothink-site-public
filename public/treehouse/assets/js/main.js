@@ -406,30 +406,29 @@ async function loadDayArchive(archives) {
 
 // Countdown to next update (runs every 4h from 12:46 AM CST)
 function startCountdown() {
+    // Cron anchor: 1772781960000 ms = 01:26 UTC = 7:26 PM CST (previous day)
+    // Actually: 1772781960000 = March 6, 2026 01:26:00 UTC = March 5, 2026 7:26 PM CST
+    // Runs every 4 hours: 1:26, 5:26, 9:26, 13:26, 17:26, 21:26 CST
+    const ANCHOR_MS = 1772781960000;
+    const INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 hours
+    
     function getNextUpdate() {
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMin = now.getMinutes();
+        const now = Date.now();
         
-        // Next run is at :26 minutes, every 4 hours (from cron anchor)
-        // Calculate hours: 0, 4, 8, 12, 16, 20
-        let nextHour = Math.ceil(currentHour / 4) * 4;
+        // Calculate how many intervals have passed since anchor
+        const elapsed = now - ANCHOR_MS;
+        const intervalsPassed = Math.floor(elapsed / INTERVAL_MS);
         
-        const next = new Date(now);
-        next.setHours(nextHour, 26, 0, 0);
+        // Next run is after the current interval
+        const nextRunMs = ANCHOR_MS + ((intervalsPassed + 1) * INTERVAL_MS);
         
-        // If we've passed that time or it's too close, add 4 hours
-        if (next < now || (nextHour === currentHour && currentMin >= 26)) {
-            next.setHours(next.getHours() + 4);
-        }
-        
-        return next;
+        return new Date(nextRunMs);
     }
     
     let nextUpdate = getNextUpdate();
     
     function update() {
-        const now = new Date();
+        const now = Date.now();
         const diff = nextUpdate - now;
         
         if (diff <= 0) {
