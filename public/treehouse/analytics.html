@@ -230,11 +230,19 @@
         const fallback = [
             {word:'ai',count:20},{word:'claude',count:12},{word:'gpt',count:18},{word:'security',count:8},{word:'verge',count:6},{word:'downloads',count:4},{word:'pentagon',count:3}
         ];
+        
         wordcloudP5 = new p5(function(p) {
             let keywords = [];
             let words3d = [];
+            let loadedFont = null;
+            
+            p.preload = function() {
+                loadedFont = p.loadFont('https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/examples/fonts/AnonymousPro-Regular.ttf');
+            };
+            
             p.setup = function() { 
                 p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL); 
+                if (loadedFont) p.textFont(loadedFont);
                 p.fetchKeywords(); 
             };
             p.fetchKeywords = function() {
@@ -254,7 +262,6 @@
                 const maxCount = keywords.length>0?keywords[0].count:1;
                 words3d = [];
                 const colors = ['#ff6b6b','#4ecdc4','#ffe66d','#95e1d3','#aa96da','#fcbad3','#a8d8ea','#ff9a9e'];
-                // Distribute in a 3D sphere
                 keywords.forEach((kw,i)=>{
                     const phi = Math.acos(-1 + (2*i)/keywords.length);
                     const theta = Math.sqrt(keywords.length*Math.PI) * phi;
@@ -271,22 +278,17 @@
                 });
             }
             p.draw = function(){ 
-                p.background(30,32,40); // dark gray
+                p.background(30,32,40);
                 if(!words3d.length){ 
                     p.fill(255); p.textAlign(p.CENTER,p.CENTER); p.textSize(18); p.text('Loading...',0,0); 
                     return; 
                 }
-                // Enable orbit controls - drag to rotate, scroll to zoom
                 p.orbitControl(2,2,0.1);
-                // Auto-rotate slowly
                 p.rotateY(p.frameCount * 0.003);
-                // Draw words as billboards (always face camera)
                 words3d.forEach(w=>{
                     p.push();
                     p.translate(w.x, w.y, w.z);
-                    // Billboarding: rotate to face camera
-                    p.rotateY(-p.frameCount * 0.003); // counteract scene rotation
-                    // Glow effect
+                    p.rotateY(-p.frameCount * 0.003);
                     p.noStroke();
                     for(let g=2; g>0; g--){
                         p.fill(p.red(p.color(w.color)), p.green(p.color(w.color)), p.blue(p.color(w.color)), 25);
@@ -295,7 +297,6 @@
                         p.textAlign(p.CENTER,p.CENTER);
                         p.text(w.word, 0, 0);
                     }
-                    // Main text
                     p.fill(w.color);
                     p.textSize(w.size);
                     p.textStyle(p.BOLD);
@@ -303,7 +304,6 @@
                     p.text(w.word, 0, 0);
                     p.pop();
                 });
-                // Draw connecting lines between nearby words
                 p.stroke(255, 15);
                 p.strokeWeight(0.5);
                 for(let i=0; i<words3d.length; i++){
