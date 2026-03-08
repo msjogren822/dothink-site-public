@@ -226,11 +226,10 @@
         
         wordcloudP5 = new p5(function(p) {
             let keywords = [];
-            let words = [];
-            let angle = 0;
+            let wordTextures = [];
             
             p.setup = function() { 
-                p.createCanvas(p.windowWidth, p.windowHeight); // 2D mode - reliable
+                p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
                 p.fetchKeywords(); 
             };
             p.fetchKeywords = function() {
@@ -238,94 +237,89 @@
                     .then(r=>r.json())
                     .then(d=>{ 
                         keywords = (d.topKeywords || fallback).slice(0,30);
-                        createWords(); 
+                        createWordTextures(); 
                     })
                     .catch(e=>{ 
                         keywords = fallback.slice(0,30); 
-                        createWords(); 
+                        createWordTextures(); 
                     });
             };
-            function createWords(){
+            
+            function createWordTextures() {
                 const maxCount = keywords.length>0?keywords[0].count:1;
-                words = [];
                 const colors = ['#ff6b6b','#4ecdc4','#ffe66d','#95e1d3','#aa96da','#fcbad3','#a8d8ea','#ff9a9e'];
-                // Spiral layout with varying depths
-                keywords.forEach((kw,i)=>{
-                    const t = i/keywords.length;
-                    const ang = t * p.TWO_PI * 2.5;
-                    const r = 60 + t * Math.min(p.width,p.height) * 0.4;
-                    // Fake depth: closer words are bigger and brighter
-                    const depth = 1 - t; // 1 = front, 0 = back
-                    const x = p.width/2 + Math.cos(ang) * r;
-                    const y = p.height/2 + Math.sin(ang) * r * 0.7;
-                    words.push({
-                        word:kw.word, count:kw.count,
-                        x:x, y:y,
-                        depth: depth, // for z-ordering
-                        size: p.map(kw.count,1,maxCount,12,64) * (0.5 + depth*0.5),
-                        color: colors[i%colors.length]
+                
+                keywords.forEach((kw,i) => {
+                    const size = p.map(kw.count,1,maxCount,14,48);
+                    // Create off-screen canvas for this word
+                    const txt = p.createGraphics(200, 60);
+                    txt.background(0,0); // transparent
+                    txt.noStroke();
+                    // Glow
+                    for(let g=2; g>0; g--){
+                        txt.fill(p.red(p.color(colors[i%colors.length])), p.green(p.color(colors[i%colors.length])), p.blue(p.color(colors[i%colors.length])), 30);
+                        txt.textSize(size + g*8);
+                        txt.textStyle(p.BOLD);
+                        txt.textAlign(p.CENTER,p.CENTER);
+                        txt.text(kw.word, 100, 30);
+                    }
+                    // Main text
+                    txt.fill(colors[i%colors.length]);
+                    txt.textSize(size);
+                    txt.textStyle(p.BOLD);
+                    txt.textAlign(p.CENTER,p.CENTER);
+                    txt.text(kw.word, 100, 30);
+                    // Count
+                    txt.fill(255, 200);
+                    txt.textSize(size * 0.4);
+                    txt.text(kw.count, 100, 48);
+                    
+                    // 3D position on sphere
+                    const phi = Math.acos(-1 + (2*i)/keywords.length);
+                    const theta = Math.sqrt(keywords.length*Math.PI) * phi;
+                    const radius = 250;
+                    
+                    wordTextures.push({
+                        tex: txt,
+                        x: radius * Math.cos(theta) * Math.sin(phi),
+                        y: radius * Math.sin(theta) * Math.sin(phi),
+                        z: radius * Math.cos(phi),
+                        size: size * 2
                     });
                 });
-                // Sort by depth so front words draw last
-                words.sort((a,b) => a.depth - b.depth);
             }
+            
             p.draw = function(){ 
-                p.background(40,44,52);
-                if(!words.length){ 
-                    p.fill(255); p.textAlign(p.CENTER,p.CENTER); p.textSize(18); p.text('Loading...',p.width/2,p.height/2); 
+                p.background(30,32,40);
+                if(!wordTextures.length){ 
+                    p.fill(255); p.textAlign(p.CENTER,p.CENTER); p.textSize(18); p.text('Loading...',0,0); 
                     return; 
                 }
+                p.orbitControl(2,2,0.1);
+                p.rotateY(p.frameCount * 0.002);
                 
-                // Draw connections
-                p.stroke(255, 20);
-                p.strokeWeight(1);
-                for(let i=0; i<words.length; i++){
-                    for(let j=i+1; j<words.length; j++){
-                        const d = p.dist(words[i].x,words[i].y,words[j].x,words[j].y);
-                        if(d < 80){
-                            p.stroke(255, p.map(d,0,80,40,0));
-                            p.line(words[i].x,words[i].y,words[j].x,words[j].y);
+                wordTextures.forEach(w=>{
+                    p.push();
+                    p.translate(w.x, w.y, w.z);
+                    p.rotateY(-p.frameCount * 0.002); // billboard
+                    p.texture(w.tex);
+                    p.noStroke();
+                    p.plane(w.size, w.size * 0.3);
+                    p.pop();
+                });
+                
+                // Connections
+                p.stroke(255, 15);
+                p.strokeWeight(0.5);
+                for(let i=0; i<wordTextures.length; i++){
+                    for(let j=i+1; j<wordTextures.length; j++){
+                        const d = p.dist(wordTextures[i].x,wordTextures[i].y,wordTextures[i].z, wordTextures[j].x,wordTextures[j].y,wordTextures[j].z);
+                        if(d < 100){
+                            p.stroke(255, p.map(d,0,100,30,0));
+                            p.line(wordTextures[i].x,wordTextures[i].y,wordTextures[i].z, wordTextures[j].x,wordTextures[j].y,wordTextures[j].z);
                         }
                     }
                 }
-                
-                // Draw words (sorted by depth - front draws last)
-                words.forEach(w=>{
-                    // Depth-based opacity
-                    const alpha = 100 + w.depth * 155;
-                    const sz = w.size;
-                    
-                    // Glow
-                    p.noStroke();
-                    for(let g=3; g>0; g--){
-                        const c = p.color(w.color);
-                        p.fill(p.red(c), p.green(c), p.blue(c), 20);
-                        p.textSize(sz + g*6);
-                        p.textStyle(p.BOLD);
-                        p.textAlign(p.CENTER,p.CENTER);
-                        p.text(w.word, w.x, w.y);
-                    }
-                    // Main
-                    const c = p.color(w.color);
-                    p.fill(p.red(c), p.green(c), p.blue(c), alpha);
-                    p.textSize(sz);
-                    p.textStyle(p.BOLD);
-                    p.textAlign(p.CENTER,p.CENTER);
-                    p.text(w.word, w.x, w.y);
-                    
-                    // Count
-                    p.fill(255, alpha * 0.7);
-                    p.textSize(sz * 0.35);
-                    p.textStyle(p.NORMAL);
-                    p.text(w.count, w.x, w.y + sz*0.7);
-                });
-                
-                // Rotate entire cloud slowly
-                angle += 0.003;
-            };
-            p.mouseDragged = function(){ 
-                angle += (p.mouseX - p.pmouseX) * 0.01; 
-                return false; 
             };
             p.windowResized = function(){ p.resizeCanvas(p.windowWidth, p.windowHeight); };
         }, 'wordcloud-canvas');
