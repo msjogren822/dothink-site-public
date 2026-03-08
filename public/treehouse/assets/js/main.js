@@ -427,6 +427,8 @@ let lastRunTimestamp = null; // Will be set when we fetch trends
 function startCountdown() {
     const INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 hours
     
+    let lastRunTimestampCache = null;
+    
     function getNextUpdate() {
         if (lastRunTimestamp) {
             // Use actual last run time + 4 hours
@@ -441,6 +443,12 @@ function startCountdown() {
     let nextUpdate = getNextUpdate();
     
     function update() {
+        // Recalculate if lastRunTimestamp changed (e.g., user selected different archive)
+        if (lastRunTimestamp !== lastRunTimestampCache) {
+            lastRunTimestampCache = lastRunTimestamp;
+            nextUpdate = getNextUpdate();
+        }
+        
         const now = Date.now();
         const diff = nextUpdate - now;
         
