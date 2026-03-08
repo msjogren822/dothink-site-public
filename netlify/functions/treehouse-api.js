@@ -23,15 +23,15 @@ exports.handler = async function(event, context) {
     
     const row = latest[0];
     
-    // Convert UTC to CST for display
+    // Convert UTC to CST/CDT for display (handles DST automatically)
     const date = new Date(row.created_at);
-    date.setHours(date.getHours() - 6);
     const timestamp = date.toLocaleString('en-US', { 
       month: 'short', 
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
+      timeZone: 'America/Chicago'
     });
     
     // Normalize Scout's View: ensure signature field exists

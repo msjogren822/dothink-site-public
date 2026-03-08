@@ -48,17 +48,16 @@ exports.handler = async function(event, context) {
       }
     }
     
-    // Build archive list - convert UTC to CST (UTC-6)
+    // Build archive list - convert UTC to CST/CDT (handles DST automatically)
     const archives = rows.map(row => {
       const date = new Date(row.created_at);
-      // Convert from UTC to CST (America/Chicago is UTC-6)
-      date.setHours(date.getHours() - 6);
       const label = date.toLocaleString('en-US', { 
         month: 'short', 
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
-        hour12: true
+        hour12: true,
+        timeZone: 'America/Chicago'
       });
       return {
         file: `trends-${row.id}.json`,
