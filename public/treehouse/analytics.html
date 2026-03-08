@@ -295,8 +295,9 @@
                     p.fill(255); p.textAlign(p.CENTER,p.CENTER); p.textSize(18); p.text('Loading...',0,0); 
                     return; 
                 }
-                // Enable orbit with scroll zoom
-                p.orbitControl(3, 3, 0.1);
+                // Orbit with zoom - face biggest word (index 0) toward camera
+                p.rotateY(-p.PI * 0.3); // initial rotation to face viewer
+                p.orbitControl(2, 2, 0.05);
                 p.rotateY(p.frameCount * 0.001);
                 
                 wordTextures.forEach(w=>{
