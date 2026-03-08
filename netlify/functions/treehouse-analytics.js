@@ -64,9 +64,16 @@ exports.handler = async function(event, context) {
         if (t) {
           allTopics.push(t);
           
-          // Count sources (normalize name - title case)
+          // Count sources (normalize name - handle special cases like LessWrong, The Block)
           const rawSource = t.source || 'Unknown';
-          const source = rawSource.trim().replace(/\b\w/g, c => c.toUpperCase());
+          let source = rawSource.trim();
+          // Known exceptions
+          const lower = source.toLowerCase();
+          if (lower === 'lesswrong') source = 'LessWrong';
+          else if (lower === 'theblock' || lower === 'the block') source = 'The Block';
+          else if (lower === 'techradar') source = 'TechRadar';
+          else if (lower === 'techcrunch') source = 'TechCrunch';
+          else source = source.replace(/\b\w/g, c => c.toUpperCase());
           sourceCount[source] = (sourceCount[source] || 0) + 1;
         }
       });
