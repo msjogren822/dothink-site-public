@@ -277,14 +277,14 @@
                     // 3D position on sphere
                     const phi = Math.acos(-1 + (2*i)/keywords.length);
                     const theta = Math.sqrt(keywords.length*Math.PI) * phi;
-                    const radius = 250;
+                    const radius = 220;
                     
                     wordTextures.push({
                         tex: txt,
                         x: radius * Math.cos(theta) * Math.sin(phi),
                         y: radius * Math.sin(theta) * Math.sin(phi),
                         z: radius * Math.cos(phi),
-                        size: size * 2
+                        size: size * 3.5
                     });
                 });
             }
@@ -295,13 +295,14 @@
                     p.fill(255); p.textAlign(p.CENTER,p.CENTER); p.textSize(18); p.text('Loading...',0,0); 
                     return; 
                 }
-                p.orbitControl(2,2,0.1);
-                p.rotateY(p.frameCount * 0.002);
+                // Enable orbit with scroll zoom
+                p.orbitControl(3, 3, 0.1);
+                p.rotateY(p.frameCount * 0.001);
                 
                 wordTextures.forEach(w=>{
                     p.push();
                     p.translate(w.x, w.y, w.z);
-                    p.rotateY(-p.frameCount * 0.002); // billboard
+                    p.rotateY(-p.frameCount * 0.001); // billboard
                     p.texture(w.tex);
                     p.noStroke();
                     p.plane(w.size, w.size * 0.3);
@@ -309,17 +310,21 @@
                 });
                 
                 // Connections
-                p.stroke(255, 15);
+                p.stroke(255, 12);
                 p.strokeWeight(0.5);
                 for(let i=0; i<wordTextures.length; i++){
                     for(let j=i+1; j<wordTextures.length; j++){
                         const d = p.dist(wordTextures[i].x,wordTextures[i].y,wordTextures[i].z, wordTextures[j].x,wordTextures[j].y,wordTextures[j].z);
                         if(d < 100){
-                            p.stroke(255, p.map(d,0,100,30,0));
+                            p.stroke(255, p.map(d,0,100,25,0));
                             p.line(wordTextures[i].x,wordTextures[i].y,wordTextures[i].z, wordTextures[j].x,wordTextures[j].y,wordTextures[j].z);
                         }
                     }
                 }
+            };
+            p.mouseWheel = function(e) {
+                // Custom zoom
+                return false;
             };
             p.windowResized = function(){ p.resizeCanvas(p.windowWidth, p.windowHeight); };
         }, 'wordcloud-canvas');
