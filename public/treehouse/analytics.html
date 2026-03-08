@@ -193,7 +193,7 @@
         loadAnalytics();
     </script>
     
-    <!-- Wordcloud modal (2D) + Experiment 1 test -->
+    <!-- Wordcloud modal (3D WEBGL) + Experiment 1 test -->
     <div id="wordcloud-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1000;">
         <button onclick="closeWordcloud();" style="position:absolute; top:20px; right:20px; background:#ff6b6b; border:none; color:white; padding:10px 20px; cursor:pointer; border-radius:4px; z-index:1100;">✕ Close</button>
         <div id="wordcloud-canvas" style="width:100%; height:100%;"></div>
@@ -208,51 +208,115 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
     <script>
-    // Wordcloud modal controls
-    function closeWordcloud() { document.getElementById('wordcloud-modal').style.display = 'none'; }
-    function openWordcloud() { document.getElementById('wordcloud-modal').style.display = 'block'; if (!window.wordcloudLoaded) { window.wordcloudLoaded = true; startWordcloud(); } }
+    // Wordcloud modal controls - 3D WEBGL version
+    let wordcloudP5 = null;
+    function closeWordcloud() { 
+        document.getElementById('wordcloud-modal').style.display = 'none'; 
+        // Remove p5 instance to prevent mouse state leak
+        if (wordcloudP5) { 
+            wordcloudP5.remove(); 
+            wordcloudP5 = null; 
+            window.wordcloudLoaded = false; 
+        }
+    }
+    function openWordcloud() { 
+        document.getElementById('wordcloud-modal').style.display = 'block'; 
+        if (!wordcloudP5) { 
+            startWordcloud(); 
+        } 
+    }
 
     function startWordcloud() {
-        // fallback data
         const fallback = [
-            {word:'ai', count:20},{word:'claude',count:12},{word:'gpt',count:18},{word:'security',count:8},{word:'verge',count:6},{word:'downloads',count:4},{word:'pentagon',count:3}
+            {word:'ai',count:20},{word:'claude',count:12},{word:'gpt',count:18},{word:'security',count:8},{word:'verge',count:6},{word:'downloads',count:4},{word:'pentagon',count:3}
         ];
-        new p5(function(p) {
+        wordcloudP5 = new p5(function(p) {
             let keywords = [];
-            let words = [];
-            let angle = 0;
-            p.setup = function() { p.createCanvas(p.windowWidth, p.windowHeight); p.fetchKeywords(); };
+            let words3d = [];
+            p.setup = function() { 
+                p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL); 
+                p.fetchKeywords(); 
+            };
             p.fetchKeywords = function() {
                 fetch('/.netlify/functions/treehouse-analytics')
                     .then(r=>r.json())
-                    .then(d=>{ keywords = d.topKeywords || fallback; createWords(); })
-                    .catch(e=>{ console.warn('analytics fetch failed, using fallback', e); keywords = fallback; createWords(); });
+                    .then(d=>{ 
+                        keywords = (d.topKeywords || fallback).slice(0,30); // limit to 30
+                        createWords3D(); 
+                    })
+                    .catch(e=>{ 
+                        console.warn('analytics fetch failed, using fallback', e); 
+                        keywords = fallback.slice(0,30); 
+                        createWords3D(); 
+                    });
             };
-            function createWords(){
+            function createWords3D(){
                 const maxCount = keywords.length>0?keywords[0].count:1;
-                words = [];
-                const colors = ['#ff6b6b','#4ecdc4','#ffe66d','#95e1d3','#aa96da','#fcbad3'];
+                words3d = [];
+                const colors = ['#ff6b6b','#4ecdc4','#ffe66d','#95e1d3','#aa96da','#fcbad3','#a8d8ea','#ff9a9e'];
+                // Distribute in a 3D sphere
                 keywords.forEach((kw,i)=>{
-                    const t = i/keywords.length; const ang = t*p.TWO_PI*2; const r = 80 + t*Math.min(p.width,p.height)*0.35;
-                    const x = Math.cos(ang)*r, y = Math.sin(ang)*r*0.6;
-                    words.push({word:kw.word,count:kw.count,x:x,y:y,size:p.map(kw.count,1,maxCount,14,64),color:colors[i%colors.length]});
+                    const phi = Math.acos(-1 + (2*i)/keywords.length);
+                    const theta = Math.sqrt(keywords.length*Math.PI) * phi;
+                    const radius = 250;
+                    const x = radius * Math.cos(theta) * Math.sin(phi);
+                    const y = radius * Math.sin(theta) * Math.sin(phi);
+                    const z = radius * Math.cos(phi);
+                    words3d.push({
+                        word:kw.word, count:kw.count,
+                        x:x, y:y, z:z,
+                        size:p.map(kw.count,1,maxCount,12,48),
+                        color:colors[i%colors.length]
+                    });
                 });
             }
-            p.draw = function(){ p.background(240); // light background per request
-                if(!words.length){ p.fill(0); p.textAlign(p.CENTER,p.CENTER); p.textSize(18); p.text('Loading...',p.width/2,p.height/2); return; }
-                p.push(); p.translate(p.width/2,p.height/2); p.rotate(angle); angle+=0.002;
-                words.forEach(w=>{
-                    p.push(); p.translate(w.x,w.y);
-                    for(let g=3; g>0; g--){ p.noStroke(); p.fill(p.red(p.color(w.color)),p.green(p.color(w.color)),p.blue(p.color(w.color)),20); p.textSize(w.size+g*4); p.textStyle(p.BOLD); p.textAlign(p.CENTER,p.CENTER); p.text(w.word,0,0);} 
-                    p.fill(w.color); p.textSize(w.size); p.textStyle(p.BOLD); p.textAlign(p.CENTER,p.CENTER); p.text(w.word,0,0);
-                    p.fill(0,140); p.textSize(w.size*0.35); p.textStyle(p.NORMAL); p.text(w.count,0,w.size*0.7);
+            p.draw = function(){ 
+                p.background(30,32,40); // dark gray
+                if(!words3d.length){ 
+                    p.fill(255); p.textAlign(p.CENTER,p.CENTER); p.textSize(18); p.text('Loading...',0,0); 
+                    return; 
+                }
+                // Enable orbit controls - drag to rotate, scroll to zoom
+                p.orbitControl(2,2,0.1);
+                // Auto-rotate slowly
+                p.rotateY(p.frameCount * 0.003);
+                // Draw words as billboards (always face camera)
+                words3d.forEach(w=>{
+                    p.push();
+                    p.translate(w.x, w.y, w.z);
+                    // Billboarding: rotate to face camera
+                    p.rotateY(-p.frameCount * 0.003); // counteract scene rotation
+                    // Glow effect
+                    p.noStroke();
+                    for(let g=2; g>0; g--){
+                        p.fill(p.red(p.color(w.color)), p.green(p.color(w.color)), p.blue(p.color(w.color)), 25);
+                        p.textSize(w.size + g*5);
+                        p.textStyle(p.BOLD);
+                        p.textAlign(p.CENTER,p.CENTER);
+                        p.text(w.word, 0, 0);
+                    }
+                    // Main text
+                    p.fill(w.color);
+                    p.textSize(w.size);
+                    p.textStyle(p.BOLD);
+                    p.textAlign(p.CENTER,p.CENTER);
+                    p.text(w.word, 0, 0);
                     p.pop();
                 });
-                p.pop();
+                // Draw connecting lines between nearby words
+                p.stroke(255, 15);
+                p.strokeWeight(0.5);
+                for(let i=0; i<words3d.length; i++){
+                    for(let j=i+1; j<words3d.length; j++){
+                        const d = p.dist(words3d[i].x,words3d[i].y,words3d[i].z, words3d[j].x,words3d[j].y,words3d[j].z);
+                        if(d < 100){
+                            p.stroke(255, p.map(d,0,100,30,0));
+                            p.line(words3d[i].x,words3d[i].y,words3d[i].z, words3d[j].x,words3d[j].y,words3d[j].z);
+                        }
+                    }
+                }
             };
-            p.windowResized = function(){ p.resizeCanvas(p.windowWidth,p.windowHeight); };
-            p.mouseDragged = function(){ angle += (p.mouseX - p.pmouseX)*0.01; return false; };
-            p.mouseWheel = function(e){ return false; };
+            p.windowResized = function(){ p.resizeCanvas(p.windowWidth, p.windowHeight); };
         }, 'wordcloud-canvas');
     }
 
