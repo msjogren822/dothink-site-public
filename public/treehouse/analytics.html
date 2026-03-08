@@ -277,14 +277,14 @@
                     // 3D position on sphere
                     const phi = Math.acos(-1 + (2*i)/keywords.length);
                     const theta = Math.sqrt(keywords.length*Math.PI) * phi;
-                    const radius = 220;
+                    const radius = 200;
                     
                     wordTextures.push({
                         tex: txt,
                         x: radius * Math.cos(theta) * Math.sin(phi),
                         y: radius * Math.sin(theta) * Math.sin(phi),
                         z: radius * Math.cos(phi),
-                        size: size * 3.5
+                        size: size * 4.5
                     });
                 });
             }
@@ -302,7 +302,7 @@
                 wordTextures.forEach(w=>{
                     p.push();
                     p.translate(w.x, w.y, w.z);
-                    p.rotateY(-p.frameCount * 0.001); // billboard
+                    p.rotateY(-p.frameCount * 0.001 + p.PI); // billboard + flip
                     p.texture(w.tex);
                     p.noStroke();
                     p.plane(w.size, w.size * 0.3);
