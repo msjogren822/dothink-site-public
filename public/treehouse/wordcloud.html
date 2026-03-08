@@ -6,227 +6,146 @@
     <title>Treehouse Word Cloud</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
     <style>
-        :root {
-            --bg: #0d0d1a;
-            --text: #eee;
-            --accent: #ff6b6b;
-        }
-        body {
-            margin: 0;
-            padding: 0;
-            background: var(--bg);
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        #canvas-container {
-            width: 100vw;
-            height: 100vh;
-        }
+        body { margin: 0; padding: 0; overflow: hidden; }
+        #canvas-container { width: 100vw; height: 100vh; }
         .close-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(255,107,107,0.2);
-            color: #ff6b6b;
-            border: 1px solid #ff6b6b;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            z-index: 100;
-        }
-        .close-btn:hover {
-            background: #ff6b6b;
-            color: #0d0d1a;
+            position: fixed; top: 20px; right: 20px;
+            background: #ff6b6b; border: none; color: white;
+            padding: 10px 20px; cursor: pointer; border-radius: 4px; z-index: 100;
         }
         .title {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            color: #eee;
-            font-size: 18px;
-            z-index: 100;
-        }
-        .hint {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(255,255,255,0.4);
-            font-size: 12px;
-            z-index: 100;
+            position: fixed; top: 20px; left: 20px;
+            color: #eee; font-size: 18px; font-family: sans-serif; z-index: 100;
         }
     </style>
 </head>
 <body>
-    <div class="title">🌐 Orbital Word Cloud • Drag to rotate • Scroll to zoom</div>
+    <div class="title">🌐 Orbital Word Cloud</div>
     <button class="close-btn" onclick="window.close()">✕ Close</button>
-    <div class="hint">Drag to rotate • Scroll to zoom</div>
     <div id="canvas-container"></div>
 
     <script>
+    new p5(function(p) {
         let keywords = [];
-        let wordObjects = [];
-        let angleX = 0, angleY = 0;
-        let targetAngleX = 0, targetAngleY = 0;
-        let scale = 1;
-        let isDragging = false;
-        let lastX, lastY;
+        let words = [];
+        let angle = 0;
         
-        const COLORS = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#95e1d3', '#f38181', '#aa96da', '#fcbad3', '#a8d8ea', '#ff9a9e', '#a1c4fd'];
-        
-        function setup() {
-            const canvas = createCanvas(windowWidth, windowHeight);
-            canvas.parent('canvas-container');
+        p.setup = function() {
+            p.createCanvas(p.windowWidth, p.windowHeight);
             
-            fetch('/.netlify/functions/treehouse-analytics')
-                .then(res => res.json())
-                .then(data => {
-                    keywords = data.topKeywords || [];
-                    initWordObjects();
-                })
-                .catch(err => console.error('Failed to load keywords:', err));
-        }
+            p.fetch = function() {
+                return fetch('/.netlify/functions/treehouse-analytics')
+                    .then(res => res.json())
+                    .then(data => {
+                        keywords = data.topKeywords || [];
+                        createWords();
+                    })
+                    .catch(err => console.error(err));
+            };
+            
+            p.fetch();
+        };
         
-        function initWordObjects() {
+        function createWords() {
             const maxCount = keywords.length > 0 ? keywords[0].count : 1;
-            const centerX = width / 2;
-            const centerY = height / 2;
+            const colors = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#95e1d3', '#aa96da', '#fcbad3'];
             
-            // Spiral distribution
             keywords.forEach((kw, i) => {
-                const t = i / keywords.length;
-                const angle = t * TWO_PI * 3; // 3 full rotations
-                const radius = 50 + t * min(width, height) * 0.35;
+                const angle2 = (i / keywords.length) * p.TWO_PI * 2;
+                const radius = 80 + (i / keywords.length) * 200;
                 
-                const x = centerX + cos(angle) * radius;
-                const y = centerY + sin(angle) * radius * 0.6; // flattened for better fit
-                
-                const size = map(kw.count, 1, maxCount, 12, 72);
-                
-                wordObjects.push({
+                words.push({
                     word: kw.word,
                     count: kw.count,
-                    x: x,
-                    y: y,
-                    baseX: x,
-                    baseY: y,
-                    size: size,
-                    color: COLORS[i % COLORS.length],
-                    rotation: random(-0.1, 0.1)
+                    x: p.cos(angle2) * radius,
+                    y: p.sin(angle2) * radius,
+                    size: p.map(kw.count, 1, maxCount, 14, 64),
+                    color: colors[i % colors.length]
                 });
             });
         }
         
-        function draw() {
-            background(40, 44, 52); // Dark grey background
+        p.draw = function() {
+            p.background(40, 44, 52);
             
             if (keywords.length === 0) {
-                fill(255);
-                textAlign(CENTER, CENTER);
-                textSize(24);
-                text('Loading...', width/2, height/2);
+                p.fill(255);
+                p.textSize(24);
+                p.textAlign(p.CENTER, p.CENTER);
+                p.text('Loading...', p.width/2, p.height/2);
                 return;
             }
             
-            // Smooth rotation
-            angleX += (targetAngleX - angleX) * 0.1;
-            angleY += (targetAngleY - angleY) * 0.1;
+            p.push();
+            p.translate(p.width/2, p.height/2);
+            p.rotate(angle);
+            angle += 0.003;
             
-            push();
-            translate(width/2, height/2);
-            scale(scale);
-            translate(-width/2, -height/2);
+            words.forEach(w => {
+                p.push();
+                p.translate(w.x, w.y);
+                
+                // Glow
+                p.noStroke();
+                for (let g = 3; g > 0; g--) {
+                    p.fill(p.red(p.color(w.color)), p.green(p.color(w.color)), p.blue(p.color(w.color)), 25);
+                    p.textSize(w.size + g * 4);
+                    p.textStyle(p.BOLD);
+                    p.textAlign(p.CENTER, p.CENTER);
+                    p.text(w.word, 0, 0);
+                }
+                
+                // Main text
+                p.fill(w.color);
+                p.textSize(w.size);
+                p.textStyle(p.BOLD);
+                p.textAlign(p.CENTER, p.CENTER);
+                p.text(w.word, 0, 0);
+                
+                // Count
+                p.fill(255, 180);
+                p.textSize(w.size * 0.35);
+                p.textStyle(p.NORMAL);
+                p.text(w.count, 0, w.size * 0.7);
+                
+                p.pop();
+            });
             
-            // Draw connections between nearby words
-            stroke(255, 20);
-            strokeWeight(1);
-            for (let i = 0; i < wordObjects.length; i++) {
-                for (let j = i + 1; j < wordObjects.length; j++) {
-                    const d = dist(wordObjects[i].x, wordObjects[i].y, wordObjects[j].x, wordObjects[j].y);
-                    if (d < 100) {
-                        const alpha = map(d, 0, 100, 30, 0);
-                        stroke(255, alpha);
-                        line(wordObjects[i].x, wordObjects[i].y, wordObjects[j].x, wordObjects[j].y);
+            p.pop();
+            
+            // Draw connections
+            p.stroke(255, 25);
+            p.strokeWeight(1);
+            for (let i = 0; i < words.length; i++) {
+                for (let j = i + 1; j < words.length; j++) {
+                    const d = p.dist(words[i].x, words[i].y, words[j].x, words[j].y);
+                    if (d < 80) {
+                        const alpha = p.map(d, 0, 80, 40, 0);
+                        p.stroke(255, alpha);
+                        const cx = p.width/2, cy = p.height/2;
+                        const ax = cx + words[i].x * p.cos(angle) - words[i].y * p.sin(angle);
+                        const ay = cy + words[i].x * p.sin(angle) + words[i].y * p.cos(angle);
+                        const bx = cx + words[j].x * p.cos(angle) - words[j].y * p.sin(angle);
+                        const by = cy + words[j].x * p.sin(angle) + words[j].y * p.cos(angle);
+                        p.line(ax, ay, bx, by);
                     }
                 }
             }
-            
-            // Draw words
-            wordObjects.forEach(w => {
-                // Apply rotation around center
-                const cx = width / 2;
-                const cy = height / 2;
-                const dx = w.x - cx;
-                const dy = w.y - cy;
-                
-                const rx = cx + dx * cos(angleX) - dy * sin(angleX);
-                const ry = cy + dx * sin(angleX) + dy * cos(angleX);
-                
-                // Glow effect
-                noStroke();
-                
-                // Draw glow
-                for (let g = 3; g > 0; g--) {
-                    fill(red(color(w.color)), green(color(w.color)), blue(color(w.color)), 20);
-                    textSize(w.size + g * 4);
-                    textAlign(CENTER, CENTER);
-                    textStyle(BOLD);
-                    text(w.word, rx, ry);
-                }
-                
-                // Draw main text
-                fill(w.color);
-                textSize(w.size);
-                textAlign(CENTER, CENTER);
-                textStyle(BOLD);
-                text(w.word, rx, ry);
-                
-                // Draw count below
-                fill(255, 150);
-                textSize(w.size * 0.35);
-                textStyle(NORMAL);
-                text(w.count, rx, ry + w.size * 0.7);
-            });
-            
-            pop();
-        }
+        };
         
-        function mousePressed() {
-            isDragging = true;
-            lastX = mouseX;
-            lastY = mouseY;
-        }
+        p.windowResized = function() {
+            p.resizeCanvas(p.windowWidth, p.windowHeight);
+        };
         
-        function mouseReleased() {
-            isDragging = false;
-        }
-        
-        function mouseDragged() {
-            if (isDragging) {
-                const dx = mouseX - lastX;
-                const dy = mouseY - lastY;
-                targetAngleX += dx * 0.01;
-                targetAngleY += dy * 0.01;
-                lastX = mouseX;
-                lastY = mouseY;
-            }
+        p.mouseDragged = function() {
+            angle += (p.mouseX - p.pmouseX) * 0.01;
             return false;
-        }
+        };
         
-        function mouseWheel(event) {
-            scale -= event.delta * 0.001;
-            scale = constrain(scale, 0.3, 3);
+        p.mouseWheel = function(event) {
             return false;
-        }
-        
-        function windowResized() {
-            resizeCanvas(windowWidth, windowHeight);
-            // Reinitialize positions on resize
-            if (wordObjects.length > 0) {
-                initWordObjects();
-            }
-        }
+        };
+    }, 'canvas-container');
     </script>
 </body>
 </html>
