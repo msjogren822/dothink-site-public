@@ -192,5 +192,48 @@
         
         loadAnalytics();
     </script>
+    
+    <!-- Experiment 1: P5.js Test Modal -->
+    <div id="exp1-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000;">
+        <button onclick="document.getElementById('exp1-modal').style.display='none'" style="position:absolute; top:20px; right:20px; background:#ff6b6b; border:none; color:white; padding:10px 20px; cursor:pointer; border-radius:4px;">✕ Close</button>
+        <div id="exp1-canvas" style="width:100%; height:100%;"></div>
+    </div>
+    <a href="#" onclick="openExp1(); return false;" style="margin-left:1rem;">🧪 Experiment 1</a>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script>
+    function openExp1() {
+        document.getElementById('exp1-modal').style.display = 'block';
+        if (!window.exp1Loaded) {
+            window.exp1Loaded = true;
+            new p5(function(p) {
+                p.setup = function() {
+                    p.createCanvas(p.windowWidth, p.windowHeight);
+                };
+                p.draw = function() {
+                    p.background(40, 44, 52);
+                    p.fill(255);
+                    p.noStroke();
+                    p.textSize(32);
+                    p.textAlign(p.CENTER, p.CENTER);
+                    p.text('🧪 P5.js is working!', p.width/2, p.height/2);
+                    
+                    // Rotating cube
+                    p.push();
+                    p.translate(p.width/2, p.height/2 + 80);
+                    p.rotateX(p.frameCount * 0.01);
+                    p.rotateY(p.frameCount * 0.01);
+                    p.stroke(255, 100);
+                    p.noFill();
+                    p.box(60);
+                    p.pop();
+                };
+                p.windowResized = function() {
+                    p.resizeCanvas(p.windowWidth, p.windowHeight);
+                };
+            }, 'exp1-canvas');
+        }
+    }
+    </script>
 </body>
 </html>
