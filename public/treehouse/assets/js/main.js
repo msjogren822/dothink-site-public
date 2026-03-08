@@ -250,11 +250,7 @@ function loadArchive(dbId) {
             const trends = data.trends || data;
             const timestamp = (data._meta && data._meta.generatedAt) || 'Archive';
             
-            // Update countdown to use this archive's time
-            if (data._meta && data._meta.runAt) {
-                lastRunTimestamp = data._meta.runAt;
-            }
-            
+            // Note: We don't update lastRunTimestamp here - countdown stays fixed to latest run
             console.log('Archive loaded, trends count:', trends.length);
             
             // Get list of URLs from archived trends
@@ -424,37 +420,37 @@ async function loadDayArchive(archives) {
 // Countdown to next update (runs every 4 hours from last run)
 let lastRunTimestamp = null; // Will be set when we fetch trends
 
+// Countdown to next update (set once at page load from latest run, stays constant)
 function startCountdown() {
     const INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 hours
     
-    let lastRunTimestampCache = null;
+    let nextUpdate = null;
     
-    function getNextUpdate() {
-        if (lastRunTimestamp) {
-            // Use actual last run time + 4 hours
+    function initCountdown() {
+        if (lastRunTimestamp && !nextUpdate) {
+            // Use actual last run time + 4 hours (set once at page load)
             const lastRun = new Date(lastRunTimestamp);
-            return new Date(lastRun.getTime() + INTERVAL_MS);
+            nextUpdate = new Date(lastRun.getTime() + INTERVAL_MS);
         }
-        // Fallback: if no timestamp yet, return a time far in future
-        // (will be corrected once fetchTrends runs)
-        return new Date(Date.now() + INTERVAL_MS);
     }
     
-    let nextUpdate = getNextUpdate();
-    
     function update() {
-        // Recalculate if lastRunTimestamp changed (e.g., user selected different archive)
-        if (lastRunTimestamp !== lastRunTimestampCache) {
-            lastRunTimestampCache = lastRunTimestamp;
-            nextUpdate = getNextUpdate();
+        // Initialize on first call after lastRunTimestamp is set
+        if (!nextUpdate) {
+            initCountdown();
         }
+        
+        if (!nextUpdate) return;
         
         const now = Date.now();
         const diff = nextUpdate - now;
         
         if (diff <= 0) {
-            // Refresh next update time
-            nextUpdate = getNextUpdate();
+            // Past time - just show 0
+            const el = document.getElementById('countdown');
+            if (el) {
+                el.innerHTML = `<span style="color: #ff6b6b; font-weight: bold;">⏱️ 0h 0m 0s</span>`;
+            }
             return;
         }
         
@@ -468,6 +464,8 @@ function startCountdown() {
         }
     }
     
+    // Wait a moment for fetchTrends to set lastRunTimestamp
+    setTimeout(initCountdown, 500);
     update();
     setInterval(update, 1000);
 }
