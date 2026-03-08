@@ -25,13 +25,13 @@ exports.handler = async function(event, context) {
     
     // Convert UTC to CST for display
     const date = new Date(row.created_at);
+    date.setHours(date.getHours() - 6);
     const timestamp = date.toLocaleString('en-US', { 
       month: 'short', 
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true,
-      timeZone: 'America/Chicago'
+      hour12: true
     });
     
     // Normalize Scout's View: ensure signature field exists
