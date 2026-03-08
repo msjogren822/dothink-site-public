@@ -411,15 +411,15 @@ function startCountdown() {
         const currentHour = now.getHours();
         const currentMin = now.getMinutes();
         
-        // Next run is at :46 minutes, every 4 hours
+        // Next run is at :26 minutes, every 4 hours (from cron anchor)
         // Calculate hours: 0, 4, 8, 12, 16, 20
         let nextHour = Math.ceil(currentHour / 4) * 4;
         
         const next = new Date(now);
-        next.setHours(nextHour, 46, 0, 0);
+        next.setHours(nextHour, 26, 0, 0);
         
         // If we've passed that time or it's too close, add 4 hours
-        if (next < now || (nextHour === currentHour && currentMin >= 46)) {
+        if (next < now || (nextHour === currentHour && currentMin >= 26)) {
             next.setHours(next.getHours() + 4);
         }
         
