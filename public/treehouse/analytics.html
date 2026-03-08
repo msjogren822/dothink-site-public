@@ -227,10 +227,19 @@
         wordcloudP5 = new p5(function(p) {
             let keywords = [];
             let wordTextures = [];
+            let manualAngle = 0;
+            let lastMouse = 0;
             
             p.setup = function() { 
                 p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
                 p.fetchKeywords(); 
+            };
+            
+            p.mousePressed = function() { lastMouse = p.mouseX; };
+            p.mouseDragged = function() {
+                manualAngle += (p.mouseX - lastMouse) * 0.01;
+                lastMouse = p.mouseX;
+                return false;
             };
             p.fetchKeywords = function() {
                 fetch('/.netlify/functions/treehouse-analytics')
@@ -299,15 +308,16 @@
                     p.fill(255); p.textAlign(p.CENTER,p.CENTER); p.textSize(18); p.text('Loading...',0,0); 
                     return; 
                 }
-                // Orbit with zoom - face biggest word (index 0) toward camera
-                p.rotateY(-p.PI * 0.3); // initial rotation to face viewer
+                // Combine base rotation + manual offset + auto-spin
+                let totalAngle = p.frameCount * 0.001 + manualAngle;
+                p.rotateY(-p.PI * 0.3);
                 p.orbitControl(2, 2, 0.05);
-                p.rotateY(p.frameCount * 0.001);
+                p.rotateY(totalAngle);
                 
                 wordTextures.forEach(w=>{
                     p.push();
                     p.translate(w.x, w.y, w.z);
-                    p.rotateY(-p.frameCount * 0.001 + p.PI); // billboard + flip
+                    p.rotateY(-totalAngle + p.PI); // billboard + flip
                     p.texture(w.tex);
                     p.noStroke();
                     p.plane(w.size, w.size * 0.3);
