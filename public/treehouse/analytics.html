@@ -234,26 +234,32 @@
         wordcloudP5 = new p5(function(p) {
             let keywords = [];
             let words3d = [];
-            let loadedFont = null;
-            
-            p.preload = function() {
-                loadedFont = p.loadFont('https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/examples/fonts/AnonymousPro-Regular.ttf');
-            };
+            let fontReady = false;
             
             p.setup = function() { 
                 p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL); 
-                if (loadedFont) p.textFont(loadedFont);
+                // Try to load font asynchronously, draw anyway without it
+                try {
+                    p.loadFont('https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/examples/fonts/AnonymousPro-Regular.ttf', 
+                        function(loadedFont) { 
+                            p.textFont(loadedFont); 
+                            fontReady = true; 
+                        },
+                        function() { 
+                            fontReady = true; // use default
+                        }
+                    );
+                } catch(e) { fontReady = true; }
                 p.fetchKeywords(); 
             };
             p.fetchKeywords = function() {
                 fetch('/.netlify/functions/treehouse-analytics')
                     .then(r=>r.json())
                     .then(d=>{ 
-                        keywords = (d.topKeywords || fallback).slice(0,30); // limit to 30
+                        keywords = (d.topKeywords || fallback).slice(0,30);
                         createWords3D(); 
                     })
                     .catch(e=>{ 
-                        console.warn('analytics fetch failed, using fallback', e); 
                         keywords = fallback.slice(0,30); 
                         createWords3D(); 
                     });
@@ -295,13 +301,13 @@
                         p.textSize(w.size + g*5);
                         p.textStyle(p.BOLD);
                         p.textAlign(p.CENTER,p.CENTER);
-                        p.text(w.word, 0, 0);
+                        if(fontReady) p.text(w.word, 0, 0);
                     }
                     p.fill(w.color);
                     p.textSize(w.size);
                     p.textStyle(p.BOLD);
                     p.textAlign(p.CENTER,p.CENTER);
-                    p.text(w.word, 0, 0);
+                    if(fontReady) p.text(w.word, 0, 0);
                     p.pop();
                 });
                 p.stroke(255, 15);
