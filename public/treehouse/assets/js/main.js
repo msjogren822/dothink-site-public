@@ -550,69 +550,10 @@ function startCountdown() {
     setInterval(update, 1000);
 }
 
-// Comments: fetch + submit
-async function loadComments() {
-    try {
-        const res = await fetch('/.netlify/functions/treehouse-comments');
-        if (!res.ok) throw new Error('Comments API unavailable');
-        const comments = await res.json();
-        const list = document.getElementById('comment-list');
-        list.innerHTML = '';
-        if (!comments || comments.length === 0) {
-            list.innerHTML = '<p>No comments yet — be the first!</p>';
-            return;
-        }
-        comments.forEach(c => {
-            const div = document.createElement('div');
-            div.className = 'comment';
-            div.style.padding = '0.5rem';
-            div.style.borderBottom = '1px solid var(--border)';
-            div.innerHTML = `<strong>${escapeHtml(c.name || 'Anonymous')}</strong> <span style="color:var(--text-light); font-size:0.9em;">• ${new Date(c.created_at).toLocaleString()}</span><p style="margin:0.3rem 0 0 0;">${escapeHtml(c.message)}</p>`;
-            list.appendChild(div);
-        });
-    } catch (e) {
-        console.error('Comment load error:', e);
-        const list = document.getElementById('comment-list');
-        list.innerHTML = '<p>Unable to load comments.</p>';
-    }
-}
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>"']/g, function(m) { return ({'&':'&','<':'<','>':'>','"':'"',"'":"'"})[m]; });
-}
-
-// Submit comment handler
-async function handleCommentSubmit(e) {
-    e.preventDefault();
-    const form = e.target;
-    const name = document.getElementById('comment-name').value.trim();
-    const message = document.getElementById('comment-message').value.trim();
-    if (!message) return;
-    try {
-        const res = await fetch('/.netlify/functions/treehouse-comments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: name || null, message })
-        });
-        if (!res.ok) throw new Error('Failed to post');
-        document.getElementById('comment-message').value = '';
-        document.getElementById('comment-name').value = '';
-        showToast('Thanks! Comment pending review 💬', form);
-    } catch (e) {
-        console.error('Comment submit error:', e);
-        showToast('Couldn\'t post — try again?', form);
-    }
-}
-
 // Auto-load on page load - show current trends by default, not archive
 document.addEventListener('DOMContentLoaded', async () => {
     await populateArchiveDropdown();
     startCountdown();
     // Load current trends first (not archive)
     fetchTrends();
-    // Comments
-    loadComments();
-    const form = document.getElementById('comment-form');
-    if (form) form.addEventListener('submit', handleCommentSubmit);
 });
