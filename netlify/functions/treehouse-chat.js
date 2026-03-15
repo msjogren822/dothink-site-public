@@ -19,14 +19,24 @@ exports.handler = async (event, context) => {
 };
 
 async function handleSend(event, context) {
-    const { message, userToken } = JSON.parse(event.body || '{}');
+    let body = event.body || '{}';
+    let message, userToken;
+    try {
+        ({ message, userToken } = JSON.parse(body));
+    } catch (e) {
+        return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON: ' + e.message }) };
+    }
     
     if (!message || !userToken) {
-        return { statusCode: 400, body: JSON.stringify({ error: 'Missing message or userToken' }) };
+        return { statusCode: 400, body: JSON.stringify({ error: 'Missing message or userToken', received: { message, userToken } }) };
     }
     
     const client = new Client(NEON_CONN);
-    await client.connect();
+    try {
+        await client.connect();
+    } catch (e) {
+        return { statusCode: 500, body: JSON.stringify({ error: 'DB connect failed: ' + e.message }) };
+    }
     
     try {
         // Check if busy
