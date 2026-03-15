@@ -190,18 +190,29 @@
             }
         }
         
-        function login() {
+        async function login() {
             const password = document.getElementById('password').value;
-            // Simple client-side check (in production, verify server-side)
-            if (password === 'treehouse123') {
-                localStorage.setItem(ADMIN_KEY, 'true');
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('admin-content').style.display = 'block';
-                document.getElementById('logout-btn').style.display = 'block';
-                loadSources();
-            } else {
+            // Server-side verification
+            try {
+                const res = await fetch('/.netlify/functions/treehouse-admin-auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    localStorage.setItem(ADMIN_KEY, 'true');
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('admin-content').style.display = 'block';
+                    document.getElementById('logout-btn').style.display = 'block';
+                    loadSources();
+                } else {
+                    document.getElementById('login-error').style.display = 'block';
+                    document.getElementById('login-error').textContent = 'Invalid password';
+                }
+            } catch (e) {
                 document.getElementById('login-error').style.display = 'block';
-                document.getElementById('login-error').textContent = 'Invalid password';
+                document.getElementById('login-error').textContent = 'Error verifying password';
             }
         }
         
