@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@google/generative-ai": "^0.17.1",
+    "@netlify/functions": "^2.6.0",
     "@netlify/neon": "^0.1.0",
     "@supabase/supabase-js": "^2.38.0",
-    "sharp": "^0.32.6",
-    "@google/generative-ai": "^0.17.1",
-    "@netlify/functions": "^2.6.0"
+    "pg": "^8.20.0",
+    "sharp": "^0.32.6"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
