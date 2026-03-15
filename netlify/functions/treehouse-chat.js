@@ -1,6 +1,6 @@
 const { Client } = require('pg');
 
-const NEON_CONN = process.env.NEON_CONN || "postgresql://neondb_owner:npg_wIpnKWdbFV31@ep-muddy-pond-adpxp82u-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require";
+const NEON_CONN = process.env.NEON_CONN;
 const DISCORD_CHANNEL_ID = "1300111966144041014"; // #general
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 
