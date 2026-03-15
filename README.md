@@ -4,7 +4,10 @@ This is mostly just a sandbox site. I have made sandbox sites since the 90s but 
 The main landing page is here. It's kind of a general "me" page.
 https://www.dothink.in/
 
-## Project
+## Projects
+- [Treehouse projet - Hot Web Trends](https://www.dothink.in/treehouse/).
+  `public/treehouse`
+  
 - [$DOGify your image - experiment for X people](https://www.dothink.in/dogify.html)  
   `public/dogify.html`
 
