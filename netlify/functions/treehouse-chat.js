@@ -1,6 +1,6 @@
 const { Client } = require('pg');
 
-const NEON_CONN = process.env.NEON_CONN;
+const NEON_CONN = process.env.NETLIFY_DATABASE_URL || process.env.NEON_CONN;
 const DISCORD_CHANNEL_ID = "1300111966144041014"; // #general
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 
@@ -19,6 +19,10 @@ exports.handler = async (event, context) => {
 };
 
 async function handleSend(event, context) {
+    if (!NEON_CONN) {
+        return { statusCode: 500, body: JSON.stringify({ error: 'Missing NETLIFY_DATABASE_URL env var' }) };
+    }
+    
     let body = event.body || '{}';
     let message, userToken;
     try {
