@@ -45,7 +45,7 @@ async function handleSend(event, context) {
         
         if (state && state.is_busy) {
             // Check if same user
-            if (state.current_user === userToken) {
+            if (state."current_user" === userToken) {
                 // Same user, allow continue
             } else {
                 // Different user, busy
@@ -64,7 +64,7 @@ async function handleSend(event, context) {
             UPDATE treehouse_chat_state 
             SET is_busy = TRUE, 
                 conversation_start = NOW(), 
-                current_user = $1,
+                "current_user" = $1,
                 updated_at = NOW()
             WHERE id = 1
         `, [userToken]);
@@ -143,10 +143,10 @@ async function handlePoll(event, context) {
             (Date.now() - new Date(state.conversation_start).getTime()) > timeoutMs;
         
         // If timed out or different user, clear busy
-        if (isTimedOut || (state && state.current_user !== userToken)) {
+        if (isTimedOut || (state && state."current_user" !== userToken)) {
             await client.query(`
                 UPDATE treehouse_chat_state 
-                SET is_busy = FALSE, current_user = NULL, updated_at = NOW()
+                SET is_busy = FALSE, "current_user" = NULL, updated_at = NOW()
                 WHERE id = 1
             `);
         }
@@ -168,7 +168,7 @@ async function handlePoll(event, context) {
             body: JSON.stringify({
                 hasResponse: false,
                 isBusy: state ? state.is_busy : false,
-                isMyConversation: state && state.current_user === userToken,
+                isMyConversation: state && state."current_user" === userToken,
                 timedOut: isTimedOut
             })
         };
