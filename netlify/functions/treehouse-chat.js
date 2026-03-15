@@ -1,6 +1,6 @@
 const { Client } = require('pg');
 
-const NEON_CONN = process.env.NETLIFY_DATABASE_URL || process.env.NEON_CONN;
+const NEON_CONN = process.env.NETLIFY_DATABASE_URL || process.env.NETLIFY_DATABASE_URL_UNPOOLED || process.env.NEON_CONN;
 const DISCORD_CHANNEL_ID = "1300111966144041014"; // #general
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 
