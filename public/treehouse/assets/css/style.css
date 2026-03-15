@@ -37,12 +37,12 @@ h1 {
     -webkit-text-fill-color: transparent;
     color: inherit;
     background-clip: text;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.3em;
 }
 
-h1::first-letter {
+h1 .emoji { 
     -webkit-text-fill-color: initial;
 }
 
