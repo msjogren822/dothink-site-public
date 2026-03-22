@@ -5,7 +5,7 @@ const { neon } = require('@netlify/neon');
 const sql = neon();
 
 // Admin password from environment variable
-const ADMIN_PASSWORD = process.env.TREEHOUSE_ADMIN || 'treehouse123';
+const ADMIN_PASSWORD = process.env.TREEHOUSE_ADMIN;
 
 async function ensureTable() {
   try {
