@@ -178,7 +178,12 @@
 
     <script>
         const ADMIN_KEY = 'treehouse_admin_key';
+        const ADMIN_PASS_KEY = 'treehouse_admin_pass';
         let sources = [];
+        
+        function getStoredPassword() {
+            return localStorage.getItem(ADMIN_PASS_KEY) || '';
+        }
         
         function checkAuth() {
             const key = localStorage.getItem(ADMIN_KEY);
@@ -202,6 +207,7 @@
                 const data = await res.json();
                 if (data.success) {
                     localStorage.setItem(ADMIN_KEY, 'true');
+                    localStorage.setItem(ADMIN_PASS_KEY, password);
                     document.getElementById('login-screen').style.display = 'none';
                     document.getElementById('admin-content').style.display = 'block';
                     document.getElementById('logout-btn').style.display = 'block';
@@ -218,6 +224,7 @@
         
         function logout() {
             localStorage.removeItem(ADMIN_KEY);
+            localStorage.removeItem(ADMIN_PASS_KEY);
             location.reload();
         }
         
@@ -257,7 +264,7 @@
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'X-Admin-Password': 'TR33H0USE-4DM1N'
+                    'X-Admin-Password': getStoredPassword()
                 },
                 body: JSON.stringify({ name, url })
             });
@@ -279,7 +286,7 @@
                 method: 'PUT',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'X-Admin-Password': 'TR33H0USE-4DM1N'
+                    'X-Admin-Password': getStoredPassword()
                 },
                 body: JSON.stringify(body)
             });
@@ -290,7 +297,7 @@
             
             await fetch(`/.netlify/functions/treehouse-sources?id=${id}`, {
                 method: 'DELETE',
-                headers: { 'X-Admin-Password': 'TR33H0USE-4DM1N' }
+                headers: { 'X-Admin-Password': getStoredPassword() }
             });
             
             loadSources();
