@@ -110,7 +110,7 @@ function displayTrends(trends, timestamp, votes = {}) {
         `;
         list.appendChild(li);
     });
-    loadScoutView(trends);
+    loadScoutView(trends, votes);
     document.getElementById('last-update').textContent = timestamp;
 }
 
@@ -219,10 +219,20 @@ function showToast(message, targetEl, duration = 4500) {
 }
 
 // Load Scout's View from data
-function loadScoutView(data) {
+function loadScoutView(data, votes = {}) {
     // Scout's View is identified by having a signature field
     const scoutEntry = data.find(item => item.signature && item.signature.includes("Scout"));
     const scoutEl = document.getElementById('scout-comment');
+    
+    // Use special key for Scout's View voting
+    const scoutUrlKey = '__scout_view__';
+    const v = votes[scoutUrlKey] || { up: 0, down: 0 };
+    const userVote = userVotes[scoutUrlKey];
+    
+    // Style for voted buttons
+    const upStyle = userVote === 'up' ? 'opacity:1; filter:grayscale(0);' : (userVote ? 'opacity:0.3;' : '');
+    const downStyle = userVote === 'down' ? 'opacity:1; filter:grayscale(0);' : (userVote ? 'opacity:0.3;' : '');
+    
     if (scoutEntry) {
         // If desc already ends with the signature, strip it to avoid duplication
         let desc = scoutEntry.desc || '';
@@ -230,9 +240,79 @@ function loadScoutView(data) {
         if (desc.endsWith(sig)) {
             desc = desc.slice(0, -sig.length).trim();
         }
-        scoutEl.innerHTML = desc + '<br><br><em style="font-size: 0.85em; color: var(--text-light);">' + sig + '</em>';
+        // Add voting buttons to Scout's View
+        scoutEl.innerHTML = `
+            <div style="display:flex; align-items:flex-start; gap:0.5rem;">
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    <button type="button" onclick="voteScoutView('up', this)" title="thumbs up" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${upStyle}">👍</button>
+                    <span style="font-size:0.8em; text-align:center;">${v.up}</span>
+                    <button type="button" onclick="voteScoutView('down', this)" title="thumbs down" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; ${downStyle}">👎</button>
+                    <span style="font-size:0.8em; text-align:center;">${v.down}</span>
+                </div>
+                <div>
+                    ${desc}<br><br><em style="font-size: 0.85em; color: var(--text-light);">${sig}</em>
+                </div>
+            </div>
+        `;
     } else {
-        scoutEl.textContent = "No Scout's View for this archive.";
+        scoutEl.innerHTML = `
+            <div style="display:flex; align-items:flex-start; gap:0.5rem;">
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    <button type="button" onclick="voteScoutView('up', this)" title="thumbs up" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; opacity:0.3;">👍</button>
+                    <span style="font-size:0.8em; text-align:center;">0</span>
+                    <button type="button" onclick="voteScoutView('down', this)" title="thumbs down" style="background:none; border:none; cursor:pointer; padding:0; font-size:1.1em; opacity:0.3;">👎</button>
+                    <span style="font-size:0.8em; text-align:center;">0</span>
+                </div>
+                <div>No Scout's View for this archive.</div>
+            </div>
+        `;
+    }
+}
+
+// Vote on Scout's View
+async function voteScoutView(vote, btnElement) {
+    if (!currentRunId) {
+        showToast('Cannot vote - no run ID', btnElement);
+        return;
+    }
+    const userToken = getUserToken();
+    const scoutUrlKey = '__scout_view__';
+    console.log('Voting on Scout View:', vote, 'run:', currentRunId);
+    try {
+        const res = await fetch('/.netlify/functions/treehouse-votes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                trend_url: scoutUrlKey, 
+                vote: vote, 
+                user_token: userToken,
+                run_id: currentRunId
+            })
+        });
+        
+        if (res.status === 409) {
+            const data = await res.json();
+            showToast(`Already voted ${data.existingVote === 'up' ? '👍' : '👎'} on this!`, btnElement);
+            return;
+        }
+        
+        if (!res.ok) {
+            const data = await res.json();
+            showToast(data.error || 'Oops! Something went wrong', btnElement);
+            return;
+        }
+        
+        // Refresh the view
+        if (currentDbId === 'day' && currentDayArchives) {
+            loadDayArchive(currentDayArchives);
+        } else if (currentDbId) {
+            loadArchive(currentDbId);
+        } else {
+            fetchTrends();
+        }
+    } catch (e) {
+        console.error('Vote failed:', e);
+        showToast('Connection issue — try again?', btnElement);
     }
 }
 
@@ -413,7 +493,7 @@ async function loadDayArchive(archives) {
     };
     
     displayTrends(combinedData.trends, timestamp, combinedVotes);
-    loadScoutView(combinedData.trends);
+    loadScoutView(combinedData.trends, combinedVotes);
     document.getElementById('last-update').textContent = timestamp;
 }
 
@@ -470,69 +550,10 @@ function startCountdown() {
     setInterval(update, 1000);
 }
 
-// Comments: fetch + submit
-async function loadComments() {
-    try {
-        const res = await fetch('/.netlify/functions/treehouse-comments');
-        if (!res.ok) throw new Error('Comments API unavailable');
-        const comments = await res.json();
-        const list = document.getElementById('comment-list');
-        list.innerHTML = '';
-        if (!comments || comments.length === 0) {
-            list.innerHTML = '<p>No comments yet — be the first!</p>';
-            return;
-        }
-        comments.forEach(c => {
-            const div = document.createElement('div');
-            div.className = 'comment';
-            div.style.padding = '0.5rem';
-            div.style.borderBottom = '1px solid var(--border)';
-            div.innerHTML = `<strong>${escapeHtml(c.name || 'Anonymous')}</strong> <span style="color:var(--text-light); font-size:0.9em;">• ${new Date(c.created_at).toLocaleString()}</span><p style="margin:0.3rem 0 0 0;">${escapeHtml(c.message)}</p>`;
-            list.appendChild(div);
-        });
-    } catch (e) {
-        console.error('Comment load error:', e);
-        const list = document.getElementById('comment-list');
-        list.innerHTML = '<p>Unable to load comments.</p>';
-    }
-}
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>"']/g, function(m) { return ({'&':'&','<':'<','>':'>','"':'"',"'":"'"})[m]; });
-}
-
-// Submit comment handler
-async function handleCommentSubmit(e) {
-    e.preventDefault();
-    const form = e.target;
-    const name = document.getElementById('comment-name').value.trim();
-    const message = document.getElementById('comment-message').value.trim();
-    if (!message) return;
-    try {
-        const res = await fetch('/.netlify/functions/treehouse-comments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: name || null, message })
-        });
-        if (!res.ok) throw new Error('Failed to post');
-        document.getElementById('comment-message').value = '';
-        document.getElementById('comment-name').value = '';
-        showToast('Thanks! Comment pending review 💬', form);
-    } catch (e) {
-        console.error('Comment submit error:', e);
-        showToast('Couldn\'t post — try again?', form);
-    }
-}
-
 // Auto-load on page load - show current trends by default, not archive
 document.addEventListener('DOMContentLoaded', async () => {
     await populateArchiveDropdown();
     startCountdown();
     // Load current trends first (not archive)
     fetchTrends();
-    // Comments
-    loadComments();
-    const form = document.getElementById('comment-form');
-    if (form) form.addEventListener('submit', handleCommentSubmit);
 });
