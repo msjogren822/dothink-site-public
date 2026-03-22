@@ -193,7 +193,7 @@
         function login() {
             const password = document.getElementById('password').value;
             // Simple client-side check (in production, verify server-side)
-            if (password === 'treehouse123') {
+            if (password === 'TR33H0USE-4DM1N') {
                 localStorage.setItem(ADMIN_KEY, 'true');
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('admin-content').style.display = 'block';
@@ -246,7 +246,7 @@
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'X-Admin-Password': 'treehouse123'
+                    'X-Admin-Password': 'TR33H0USE-4DM1N'
                 },
                 body: JSON.stringify({ name, url })
             });
@@ -268,7 +268,7 @@
                 method: 'PUT',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'X-Admin-Password': 'treehouse123'
+                    'X-Admin-Password': 'TR33H0USE-4DM1N'
                 },
                 body: JSON.stringify(body)
             });
@@ -279,7 +279,7 @@
             
             await fetch(`/.netlify/functions/treehouse-sources?id=${id}`, {
                 method: 'DELETE',
-                headers: { 'X-Admin-Password': 'treehouse123' }
+                headers: { 'X-Admin-Password': 'TR33H0USE-4DM1N' }
             });
             
             loadSources();
