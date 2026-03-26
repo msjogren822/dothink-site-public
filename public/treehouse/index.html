@@ -77,14 +77,14 @@
 
     <script src="assets/js/main.js"></script>
     <script>
-        // Fetch random Wikipedia article
+        // Fetch pre-computed wikichunk from our function (updated every 4h)
         async function fetchQuote() {
             try {
-                const res = await fetch('https://en.wikipedia.org/api/rest_v1/page/random/summary');
+                const res = await fetch('/.netlify/functions/treehouse-wikichunk');
                 if (!res.ok) throw new Error('API unavailable');
                 const data = await res.json();
-                document.getElementById('quote').innerHTML = 
-                    `<a href="${data.content_urls.desktop.page}" target="_blank" style="color: inherit; text-decoration: none;">📚 ${data.title}</a><br><span style="font-size: 0.9em; color: var(--text-light);">${data.extract || 'Click to explore...'}</span>`;
+                document.getElementById('quote').innerHTML =
+                    `<a href="${data.url}" target="_blank" style="color: inherit; text-decoration: none;">📚 ${data.title}</a><br><span style="font-size: 0.9em; color: var(--text-light);">${data.extract || 'Click to explore...'}</span>`;
             } catch(e) {
                 document.getElementById('quote').textContent = "Take a break — stretch your legs! 🚶";
             }
