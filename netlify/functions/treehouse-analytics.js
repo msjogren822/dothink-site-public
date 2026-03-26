@@ -27,7 +27,10 @@ function extractKeywords(topics) {
     if (!topic) return;
     
     // Combine title and summary for keyword extraction
-    const text = ((topic.title || '') + ' ' + (topic.summary || topic.desc || '')).toLowerCase();
+    let text = ((topic.title || '') + ' ' + (topic.summary || topic.desc || '')).toLowerCase();
+    
+    // Normalize known multi-word phrases before tokenizing
+    text = text.replace(/\bless\s+wrong\b/g, 'lesswrong');
     
     // Split on non-alphanumeric chars
     const words = text.split(/[^a-z0-9]+/).filter(w => w.length > 2);
@@ -64,13 +67,13 @@ exports.handler = async function(event, context) {
         if (t) {
           allTopics.push(t);
           
-          // Count sources (normalize name - handle special cases like LessWrong, The Block)
+          // Count sources (normalize name - handle LessWrong variants, The Block, etc.)
           const rawSource = t.source || 'Unknown';
           let source = rawSource.trim();
-          // Known exceptions
-          const lower = source.toLowerCase();
+          // Normalize variations
+          const lower = source.toLowerCase().replace(/\s+/g, '');  // strip all spaces first
           if (lower === 'lesswrong') source = 'LessWrong';
-          else if (lower === 'theblock' || lower === 'the block') source = 'The Block';
+          else if (lower === 'theblock') source = 'The Block';
           else if (lower === 'techradar') source = 'TechRadar';
           else if (lower === 'techcrunch') source = 'TechCrunch';
           else source = source.replace(/\b\w/g, c => c.toUpperCase());
