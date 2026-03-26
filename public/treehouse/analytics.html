@@ -205,12 +205,13 @@
     let wordcloudP5 = null;
     function closeWordcloud() { 
         document.getElementById('wordcloud-modal').style.display = 'none'; 
-        // Remove p5 instance to prevent mouse state leak
+        // Remove p5 instance and reset state
         if (wordcloudP5) { 
             wordcloudP5.remove(); 
             wordcloudP5 = null; 
             window.wordcloudLoaded = false; 
         }
+        // State vars are recreated on next open — no need to reset here
     }
     function openWordcloud() { 
         document.getElementById('wordcloud-modal').style.display = 'block'; 
@@ -227,18 +228,33 @@
         wordcloudP5 = new p5(function(p) {
             let keywords = [];
             let wordTextures = [];
-            let manualAngle = 0;
-            let lastMouse = 0;
+            // Full 3D rotation: rotX = vertical drag, rotY = horizontal drag
+            let rotX = 0, rotY = 0;
+            let lastMouseX = 0, lastMouseY = 0;
+            // Camera offset for zoom-through effect
+            let cameraZ = 0;
+            // Sphere radius (needs to be large for dramatic zoom)
+            const RADIUS = 600;
             
             p.setup = function() { 
                 p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
                 p.fetchKeywords(); 
             };
             
-            p.mousePressed = function() { lastMouse = p.mouseX; };
+            p.mousePressed = function() { 
+                lastMouseX = p.mouseX; 
+                lastMouseY = p.mouseY;
+            };
             p.mouseDragged = function() {
-                manualAngle += (p.mouseX - lastMouse) * 0.005;
-                lastMouse = p.mouseX;
+                rotY += (p.mouseX - lastMouseX) * 0.005;
+                rotX += (p.mouseY - lastMouseY) * 0.005;
+                lastMouseX = p.mouseX;
+                lastMouseY = p.mouseY;
+            };
+            // Scroll wheel zooms through the sphere (camera moves along z-axis)
+            p.mouseWheel = function(e) {
+                cameraZ += e.delta * 0.5;
+                cameraZ = p.constrain(cameraZ, -RADIUS * 0.9, RADIUS * 4);
             };
             p.fetchKeywords = function() {
                 fetch('/.netlify/functions/treehouse-analytics')
@@ -283,20 +299,15 @@
                     txt.text(kw.count, 100, 48);
                     
                     // 3D position on sphere - Fibonacci distribution
-                    // Index 0 ends up at the "bottom", so rotate to face camera
                     const phi = Math.acos(-1 + (2*i)/keywords.length);
                     const theta = Math.sqrt(keywords.length*Math.PI) * phi;
-                    const radius = 200;
-                    
-                    // For index 0, rotate to front
-                    const initialYOffset = (i === 0) ? -100 : 0;
                     
                     wordTextures.push({
                         tex: txt,
-                        x: radius * Math.cos(theta) * Math.sin(phi),
-                        y: radius * Math.sin(theta) * Math.sin(phi) + initialYOffset,
-                        z: radius * Math.cos(phi),
-                        size: size * 4.5
+                        x: RADIUS * Math.cos(theta) * Math.sin(phi),
+                        y: RADIUS * Math.sin(theta) * Math.sin(phi),
+                        z: RADIUS * Math.cos(phi),
+                        size: size * 8  // bigger planes since sphere is larger
                     });
                 });
             }
@@ -307,17 +318,25 @@
                     p.fill(255); p.textAlign(p.CENTER,p.CENTER); p.textSize(18); p.text('Loading...',0,0); 
                     return; 
                 }
-                // Auto-spin + manual drag. NO orbitControl — it conflicts with manual rotation state.
-                let totalAngle = p.frameCount * 0.001 + manualAngle;
-                p.rotateY(-p.PI * 0.3);  // tilt scene toward camera
-                p.rotateY(totalAngle);    // spin
+                // Auto-spin + full 3D manual rotation
+                let autoAngle = p.frameCount * 0.001;
+                let totalRotX = rotX;
+                let totalRotY = autoAngle + rotY;
+                
+                // Camera moves along z-axis for zoom-through effect
+                // Objects with z < cameraZ are "behind" the camera → disappear
+                p.translate(0, 0, cameraZ);
+                
+                // Tilt slightly toward viewer, then apply full rotation
+                p.rotateX(totalRotX);
+                p.rotateY(totalRotY);
                 
                 wordTextures.forEach((w,i)=>{
                     p.push();
                     p.translate(w.x, w.y, w.z);
-                    // Billboard: undo the sphere rotation so text always faces camera
-                    p.rotateY(-totalAngle);
-                    // Small z-offset per word to reduce z-fighting between planes
+                    // Billboard: undo both rotations so text always faces camera
+                    p.rotateY(-totalRotY);
+                    p.rotateX(-totalRotX);
                     p.translate(0, 0, 0.5 * (i % 3));
                     p.texture(w.tex);
                     p.noStroke();
