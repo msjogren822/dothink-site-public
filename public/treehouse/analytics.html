@@ -237,9 +237,8 @@
             
             p.mousePressed = function() { lastMouse = p.mouseX; };
             p.mouseDragged = function() {
-                manualAngle += (p.mouseX - lastMouse) * 0.01;
+                manualAngle += (p.mouseX - lastMouse) * 0.005;
                 lastMouse = p.mouseX;
-                return false;
             };
             p.fetchKeywords = function() {
                 fetch('/.netlify/functions/treehouse-analytics')
@@ -308,16 +307,18 @@
                     p.fill(255); p.textAlign(p.CENTER,p.CENTER); p.textSize(18); p.text('Loading...',0,0); 
                     return; 
                 }
-                // Combine base rotation + manual offset + auto-spin
+                // Auto-spin + manual drag. NO orbitControl — it conflicts with manual rotation state.
                 let totalAngle = p.frameCount * 0.001 + manualAngle;
-                p.rotateY(-p.PI * 0.3);
-                p.orbitControl(2, 2, 0.05);
-                p.rotateY(totalAngle);
+                p.rotateY(-p.PI * 0.3);  // tilt scene toward camera
+                p.rotateY(totalAngle);    // spin
                 
-                wordTextures.forEach(w=>{
+                wordTextures.forEach((w,i)=>{
                     p.push();
                     p.translate(w.x, w.y, w.z);
-                    p.rotateY(-totalAngle + p.PI); // billboard + flip
+                    // Billboard: undo the sphere rotation so text always faces camera
+                    p.rotateY(-totalAngle);
+                    // Small z-offset per word to reduce z-fighting between planes
+                    p.translate(0, 0, 0.5 * (i % 3));
                     p.texture(w.tex);
                     p.noStroke();
                     p.plane(w.size, w.size * 0.3);
