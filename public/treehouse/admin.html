@@ -143,6 +143,16 @@
         .col-cat { flex: 0 0 140px; }
         .col-enabled { flex: 0 0 50px; }
         .col-actions { flex: 0 0 80px; }
+        .save-indicator {
+            font-size: 0.7rem; color: var(--success); opacity: 0; transition: opacity 0.3s;
+            min-width: 60px; text-align: center;
+        }
+        .save-indicator.show { opacity: 1; }
+        .btn-disabled {
+            padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: 4px;
+            background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.3);
+            border: none; cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -166,7 +176,7 @@
         <!-- Categories section -->
         <div class="section">
             <h2>🏷️ Categories</h2>
-            <p style="color: var(--text-light); margin-bottom: 1rem; font-size: 0.9rem;">Add or remove categories. Categories with sources assigned cannot be deleted.</p>
+            <p style="color: var(--text-light); margin-bottom: 1rem; font-size: 0.9rem;">Add or remove categories. Categories with sources assigned are marked non-deletable.</p>
 
             <div class="inline-form" style="margin-bottom: 1rem;">
                 <input type="text" id="new-cat-name" placeholder="New category name (e.g., SCIENCE)">
@@ -207,6 +217,7 @@
         const ADMIN_PASS_KEY = 'treehouse_admin_pass';
         let sources = [];
         let categories = [];
+        let catSourceCount = {};
         let currentFilter = 'all';
 
         function getStoredPassword() { return localStorage.getItem(ADMIN_PASS_KEY) || ''; }
@@ -257,6 +268,10 @@
             ]);
             sources = await srcRes.json();
             categories = await catRes.json();
+            // Count sources per category
+            catSourceCount = {};
+            for (const c of categories) { catSourceCount[c.name] = 0; }
+            for (const s of sources) { if (catSourceCount[s.category] !== undefined) catSourceCount[s.category]++; }
             renderCategoryList();
             renderFilterBar();
             renderSourceForm();
@@ -271,8 +286,11 @@
             }
             el.innerHTML = categories.map(c => `
                 <div class="category-row">
-                    <span style="flex:1; font-weight:500;">${escapeHtml(c.name)}</span>
-                    <button class="btn btn-danger btn-small" onclick="deleteCategory(${c.id})" title="Delete category">✕ Delete</button>
+                    <span style="flex:1; font-weight:500;">${escapeHtml(c.name)} <span style="color:var(--text-light);font-size:0.75rem;">(${catSourceCount[c.name] || 0} sources)</span></span>
+                    ${catSourceCount[c.name] > 0
+                        ? '<button class="btn-disabled" disabled title="Has sources assigned">✕ Delete</button>'
+                        : '<button class="btn btn-danger btn-small" onclick="deleteCategory(' + c.id + ')" title="Delete category">✕ Delete</button>'
+                    }
                 </div>
             `).join('');
         }
@@ -313,6 +331,7 @@
                     </select>
                     <input type="checkbox" ${s.enabled ? 'checked' : ''} class="col-enabled" onchange="updateSource(${s.id}, 'enabled', this.checked)">
                     <button class="btn btn-danger btn-small col-actions" onclick="deleteSource(${s.id})">Delete</button>
+                    <span class="save-indicator" id="save-${s.id}">Saved!</span>
                 </div>
             `).join('');
         }
@@ -337,18 +356,11 @@
 
         async function deleteCategory(id) {
             if (!confirm('Delete this category?')) return;
-            const res = await fetch(`/-.netlify/functions/treehouse-categories?id=${id}`, {
+            await fetch(`/.netlify/functions/treehouse-categories?id=${id}`, {
                 method: 'DELETE',
                 headers: { 'X-Admin-Password': getStoredPassword() }
             });
-            const data = await res.json().catch(() => ({}));
-            if (res.status === 409) {
-                alert(data.error || 'Category is in use by one or more sources. Reassign them first.');
-            } else if (res.ok) {
-                loadData();
-            } else {
-                alert(data.error || 'Error deleting category');
-            }
+            loadData();
         }
 
         async function addSource() {
@@ -376,6 +388,20 @@
                 headers: { 'Content-Type': 'application/json', 'X-Admin-Password': getStoredPassword() },
                 body: JSON.stringify({ id, [field]: value })
             });
+            // Update local data so counts refresh
+            const src = sources.find(s => s.id === id);
+            if (src) {
+                const oldCat = src.category;
+                src[field] = value;
+                if (field === 'category') {
+                    if (catSourceCount[oldCat] !== undefined) catSourceCount[oldCat]--;
+                    if (catSourceCount[value] !== undefined) catSourceCount[value]++;
+                    renderCategoryList();
+                }
+            }
+            // Flash saved indicator
+            const ind = document.getElementById('save-' + id);
+            if (ind) { ind.classList.add('show'); setTimeout(() => ind.classList.remove('show'), 1500); }
         }
 
         async function deleteSource(id) {
