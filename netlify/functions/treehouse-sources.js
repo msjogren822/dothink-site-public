@@ -182,5 +182,69 @@ exports.handler = async function(event, context) {
     return { statusCode: 200, headers, body: JSON.stringify(rows) };
   }
 
+  // Legacy POST /sources (no resource path)
+  if (event.httpMethod === 'POST' && !event.resource) {
+    if (!authenticate(event.headers)) {
+      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
+    }
+    let body = event.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch(e) { body = {}; }
+    }
+    const { name, url, enabled, category } = body;
+    if (!name || !url) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing name or url' }) };
+    }
+    const cats = await sql`SELECT name FROM treehouse_categories ORDER BY sort_order`;
+    const validCatNames = cats.map(r => r.name);
+    const cat = validCatNames.includes(category) ? category : validCatNames[0];
+    const result = await sql`INSERT INTO treehouse_sources (name, url, enabled, category) VALUES (${name}, ${url}, ${enabled !== false}, ${cat}) RETURNING id, name, url, enabled, category`;
+    return { statusCode: 201, headers, body: JSON.stringify({ ok: true, source: result[0] }) };
+  }
+
+
+  // Legacy PUT /sources (no resource path)
+  if (event.httpMethod === 'PUT' && !event.resource) {
+    if (!authenticate(event.headers)) {
+      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
+    }
+    let body = event.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch(e) { body = {}; }
+    }
+    const { id, name, url, enabled, category } = body;
+    if (!id) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
+    }
+    const updates = [];
+    if (name !== undefined) updates.push(sql`name = ${name}`);
+    if (url !== undefined) updates.push(sql`url = ${url}`);
+    if (enabled !== undefined) updates.push(sql`enabled = ${enabled}`);
+    if (category !== undefined) {
+      const cats = await sql`SELECT name FROM treehouse_categories ORDER BY sort_order`;
+      const validCatNames = cats.map(r => r.name);
+      const cat = validCatNames.includes(category) ? category : validCatNames[0];
+      updates.push(sql`category = ${cat}`);
+    }
+    if (updates.length > 0) {
+      await sql`UPDATE treehouse_sources SET ${updates} WHERE id = ${parseInt(id)}`;
+    }
+    return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
+  }
+
+  // Legacy DELETE /sources (no resource path)
+  if (event.httpMethod === 'DELETE' && !event.resource) {
+    if (!authenticate(event.headers)) {
+      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
+    }
+    const params = new URLSearchParams(event.queryStringParameters);
+    const id = params.get('id');
+    if (!id) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
+    }
+    await sql`DELETE FROM treehouse_sources WHERE id = ${parseInt(id)}`;
+    return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
+  }
+
   return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 };
