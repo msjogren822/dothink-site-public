@@ -156,10 +156,10 @@ exports.handler = async function(event, context) {
       updates.push({ col: sql.unsafe('category'), val: cat });
     }
     if (updates.length > 0) {
-      // Build SET clause: each 'col = $N' uses sql.unsafe for the identifier
-      const setParts = updates.map((u, i) => sql`${u.col} = $${i + 1}`);
-      const whereId = parseInt(id);
-      await sql`UPDATE treehouse_sources SET ${setParts} WHERE id = ${whereId}`;
+      // Use sql.query() for full control: inline column names via sql.unsafe(), parametrize values
+      const vals = updates.map(u => u.val);
+      const setClause = updates.map((u, i) => `${u.col.sql} = $${i + 1}`).join(', ');
+      await sql.query(`UPDATE treehouse_sources SET ${setClause} WHERE id = $${vals.length + 1}`, [...vals, parseInt(id)]);
     }
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
   }
@@ -230,9 +230,10 @@ exports.handler = async function(event, context) {
       updates.push({ col: sql.unsafe('category'), val: cat });
     }
     if (updates.length > 0) {
-      const setParts = updates.map((u, i) => sql`${u.col} = $${i + 1}`);
-      const whereId = parseInt(id);
-      await sql`UPDATE treehouse_sources SET ${setParts} WHERE id = ${whereId}`;
+      // Use sql.query() for full control: inline column names via sql.unsafe(), parametrize values
+      const vals = updates.map(u => u.val);
+      const setClause = updates.map((u, i) => `${u.col.sql} = $${i + 1}`).join(', ');
+      await sql.query(`UPDATE treehouse_sources SET ${setClause} WHERE id = $${vals.length + 1}`, [...vals, parseInt(id)]);
     }
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
   }
