@@ -34,28 +34,14 @@
         }
         .back-link { font-size: 0.9rem; }
 
-        #login-screen {
-            max-width: 400px;
-            margin: 100px auto;
-            text-align: center;
-        }
+        #login-screen { display: none; max-width: 400px; margin: 100px auto; text-align: center; }
         #login-screen input {
-            padding: 0.75rem;
-            margin: 0.5rem;
-            border-radius: 4px;
-            border: 1px solid var(--border);
-            background: var(--bg-card);
-            color: var(--text);
-            width: 200px;
+            padding: 0.75rem; margin: 0.5rem; border-radius: 4px; border: 1px solid var(--border);
+            background: var(--bg-card); color: var(--text); width: 200px;
         }
         #login-screen button {
-            padding: 0.75rem 1.5rem;
-            border-radius: 4px;
-            border: none;
-            background: var(--accent);
-            color: white;
-            cursor: pointer;
-            margin: 0.5rem;
+            padding: 0.75rem 1.5rem; border-radius: 4px; border: none;
+            background: var(--accent); color: white; cursor: pointer; margin: 0.5rem;
         }
 
         #admin-content { display: none; }
@@ -67,7 +53,7 @@
             margin-bottom: 1.5rem;
         }
 
-        .source-list {
+        .source-list, .category-list {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
@@ -81,22 +67,30 @@
             border-radius: 6px;
             flex-wrap: wrap;
         }
-        .source-row input {
-            padding: 0.5rem;
-            border-radius: 4px;
-            border: 1px solid var(--border);
-            background: var(--bg);
-            color: var(--text);
+        .category-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+        }
+        .source-row input, .source-row select {
+            padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text);
         }
         .source-row input[type="text"] { flex: 1; min-width: 150px; }
         .source-row input[type="checkbox"] { width: auto; }
-        .source-name { min-width: 120px; font-weight: 500; }
+        .source-row select { min-width: 140px; }
+
+        select.category-select {
+            padding: 0.4rem; border-radius: 4px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text); font-size: 0.8rem; min-width: 140px;
+        }
+
         .btn {
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            font-size: 0.85rem;
+            padding: 0.5rem 1rem; border-radius: 4px; border: none;
+            cursor: pointer; font-size: 0.85rem;
         }
         .btn-primary { background: var(--accent); color: white; }
         .btn-danger { background: #ef4444; color: white; }
@@ -104,62 +98,50 @@
         .btn-small { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 
         .form-row {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
+            display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;
         }
         .form-row input, .form-row select {
-            padding: 0.75rem;
-            border-radius: 4px;
-            border: 1px solid var(--border);
-            background: var(--bg);
-            color: var(--text);
+            padding: 0.75rem; border-radius: 4px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text);
         }
         .form-row input { flex: 1; }
         .form-row select { min-width: 160px; }
-
-        select.category-select {
-            padding: 0.4rem;
-            border-radius: 4px;
-            border: 1px solid var(--border);
-            background: var(--bg);
-            color: var(--text);
-            font-size: 0.8rem;
-            min-width: 160px;
+        .inline-form {
+            display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;
         }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-light);
-        }
-
-        .error {
-            background: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-            padding: 0.75rem;
-            border-radius: 4px;
-            margin: 1rem 0;
-        }
+        .inline-form input { padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+        .inline-form input[type="text"] { width: 200px; }
 
         .category-badge {
-            display: inline-block;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            min-width: 80px;
-            text-align: center;
+            display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px;
+            font-size: 0.7rem; font-weight: 600; min-width: 80px; text-align: center;
         }
         .badge-gen-tech { background: rgba(59,130,246,0.3); color: #93c5fd; }
         .badge-crypto { background: rgba(245,158,11,0.3); color: #fcd34d; }
         .badge-stuff { background: rgba(34,197,94,0.3); color: #86efac; }
+        .badge-custom { background: rgba(168,85,247,0.3); color: #d8b4fe; }
 
-        .col-name { min-width: 130px; flex: 0 0 130px; }
+        .filter-bar { margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .filter-btn {
+            padding: 0.3rem 0.8rem; border-radius: 4px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text); cursor: pointer; font-size: 0.8rem;
+        }
+        .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        .loading { text-align: center; padding: 2rem; color: var(--text-light); }
+        .error {
+            background: rgba(239, 68, 68, 0.2); color: #ef4444;
+            padding: 0.75rem; border-radius: 4px; margin: 1rem 0;
+        }
+        .info {
+            background: rgba(59,130,246,0.15); color: #93c5fd;
+            padding: 0.75rem; border-radius: 4px; margin: 0.5rem 0; font-size: 0.85rem;
+        }
+
+        .col-name { min-width: 120px; flex: 0 0 120px; }
         .col-url { flex: 1; min-width: 180px; }
-        .col-cat { flex: 0 0 160px; }
-        .col-enabled { flex: 0 0 60px; }
+        .col-cat { flex: 0 0 140px; }
+        .col-enabled { flex: 0 0 50px; }
         .col-actions { flex: 0 0 80px; }
     </style>
 </head>
@@ -172,7 +154,6 @@
         <button id="logout-btn" class="btn btn-small" style="display:none;">Logout</button>
     </div>
 
-    <!-- Login screen -->
     <div id="login-screen">
         <h2>Admin Login</h2>
         <input type="password" id="password" placeholder="Password">
@@ -181,33 +162,35 @@
         <p id="login-error" class="error" style="display:none;"></p>
     </div>
 
-    <!-- Admin content -->
     <div id="admin-content">
+        <!-- Categories section -->
+        <div class="section">
+            <h2>🏷️ Categories</h2>
+            <p style="color: var(--text-light); margin-bottom: 1rem; font-size: 0.9rem;">Add or remove categories. Categories with sources assigned cannot be deleted.</p>
+
+            <div class="inline-form" style="margin-bottom: 1rem;">
+                <input type="text" id="new-cat-name" placeholder="New category name (e.g., SCIENCE)">
+                <button onclick="addCategory()" class="btn btn-success">Add Category</button>
+            </div>
+            <div id="category-list" class="category-list">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Sources section -->
         <div class="section">
             <h2>📰 Scrape Sources</h2>
-            <p style="color: var(--text-light); margin-bottom: 1rem;">Manage the URLs scraped for trends. Set category and enable/disable without deleting.</p>
+            <p style="color: var(--text-light); margin-bottom: 1rem; font-size: 0.9rem;">Manage URLs scraped for trends. Category and enabled state can be changed inline.</p>
 
-            <!-- Add new source -->
             <div class="form-row">
                 <input type="text" id="new-name" placeholder="Source name (e.g., The Verge)">
                 <input type="text" id="new-url" placeholder="URL (e.g., https://theverge.com)">
-                <select id="new-category" class="category-select">
-                    <option value="GENERAL TECH">GENERAL TECH</option>
-                    <option value="CRYPTO/ALT">CRYPTO/ALT</option>
-                    <option value="STUFF THAT LOOKS GOOD">STUFF THAT LOOKS GOOD</option>
+                <select id="new-category" class="category-select" style="min-width:160px;">
                 </select>
                 <button onclick="addSource()" class="btn btn-success">Add Source</button>
             </div>
 
-            <!-- Category filter -->
-            <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <button class="btn btn-small" onclick="filterCategory('all')" id="filter-all" style="background: var(--accent); color: white;">All</button>
-                <button class="btn btn-small" onclick="filterCategory('GENERAL TECH')" id="filter-GENERAL TECH">GENERAL TECH</button>
-                <button class="btn btn-small" onclick="filterCategory('CRYPTO/ALT')" id="filter-CRYPTO/ALT">CRYPTO/ALT</button>
-                <button class="btn btn-small" onclick="filterCategory('STUFF THAT LOOKS GOOD')" id="filter-STUFF THAT LOOKS GOOD">STUFF THAT LOOKS GOOD</button>
-            </div>
-
-            <!-- Source list -->
+            <div class="filter-bar" id="filter-bar"></div>
             <div id="source-list" class="source-list">
                 <div class="loading">Loading sources...</div>
             </div>
@@ -223,27 +206,17 @@
         const ADMIN_KEY = 'treehouse_admin_key';
         const ADMIN_PASS_KEY = 'treehouse_admin_pass';
         let sources = [];
+        let categories = [];
         let currentFilter = 'all';
 
-        const CATEGORIES = ['GENERAL TECH', 'CRYPTO/ALT', 'STUFF THAT LOOKS GOOD'];
-
-        function getStoredPassword() {
-            return localStorage.getItem(ADMIN_PASS_KEY) || '';
-        }
-
-        function getBadgeClass(cat) {
-            if (cat === 'CRYPTO/ALT') return 'badge-crypto';
-            if (cat === 'STUFF THAT LOOKS GOOD') return 'badge-stuff';
-            return 'badge-gen-tech';
-        }
+        function getStoredPassword() { return localStorage.getItem(ADMIN_PASS_KEY) || ''; }
 
         function checkAuth() {
-            const key = localStorage.getItem(ADMIN_KEY);
-            if (key) {
+            if (localStorage.getItem(ADMIN_KEY)) {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('admin-content').style.display = 'block';
                 document.getElementById('logout-btn').style.display = 'block';
-                loadSources();
+                loadData();
             }
         }
 
@@ -262,14 +235,12 @@
                     document.getElementById('login-screen').style.display = 'none';
                     document.getElementById('admin-content').style.display = 'block';
                     document.getElementById('logout-btn').style.display = 'block';
-                    loadSources();
+                    loadData();
                 } else {
                     document.getElementById('login-error').style.display = 'block';
-                    document.getElementById('login-error').textContent = 'Invalid password';
                 }
             } catch (e) {
                 document.getElementById('login-error').style.display = 'block';
-                document.getElementById('login-error').textContent = 'Error verifying password';
             }
         }
 
@@ -279,41 +250,66 @@
             location.reload();
         }
 
-        async function loadSources() {
-            const res = await fetch('/.netlify/functions/treehouse-sources');
-            sources = await res.json();
+        async function loadData() {
+            const [srcRes, catRes] = await Promise.all([
+                fetch('/.netlify/functions/treehouse-sources'),
+                fetch('/.netlify/functions/treehouse-categories')
+            ]);
+            sources = await srcRes.json();
+            categories = await catRes.json();
+            renderCategoryList();
+            renderFilterBar();
+            renderSourceForm();
             renderSources();
         }
 
-        function filterCategory(cat) {
-            currentFilter = cat;
-            document.querySelectorAll('[id^="filter-"]').forEach(btn => {
-                btn.style.background = '';
-                btn.style.color = '';
-            });
-            const btn = document.getElementById('filter-' + (cat === 'all' ? 'all' : cat));
-            if (btn) {
-                btn.style.background = 'var(--accent)';
-                btn.style.color = 'white';
+        function renderCategoryList() {
+            const el = document.getElementById('category-list');
+            if (categories.length === 0) {
+                el.innerHTML = '<p style="color: var(--text-light);">No categories yet.</p>';
+                return;
             }
+            el.innerHTML = categories.map(c => `
+                <div class="category-row">
+                    <span style="flex:1; font-weight:500;">${escapeHtml(c.name)}</span>
+                    <button class="btn btn-danger btn-small" onclick="deleteCategory(${c.id})" title="Delete category">✕ Delete</button>
+                </div>
+            `).join('');
+        }
+
+        function renderFilterBar() {
+            const bar = document.getElementById('filter-bar');
+            let html = `<button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">All</button>`;
+            for (const c of categories) {
+                html += `<button class="filter-btn ${currentFilter === c.name ? 'active' : ''}" onclick="setFilter('${escapeHtml(c.name)}')">${escapeHtml(c.name)}</button>`;
+            }
+            bar.innerHTML = html;
+        }
+
+        function renderSourceForm() {
+            const sel = document.getElementById('new-category');
+            sel.innerHTML = categories.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
+        }
+
+        function setFilter(name) {
+            currentFilter = name;
+            renderFilterBar();
             renderSources();
         }
 
         function renderSources() {
             const el = document.getElementById('source-list');
             const filtered = currentFilter === 'all' ? sources : sources.filter(s => s.category === currentFilter);
-
             if (filtered.length === 0) {
                 el.innerHTML = '<p style="color: var(--text-light);">No sources in this category.</p>';
                 return;
             }
-
             el.innerHTML = filtered.map(s => `
                 <div class="source-row">
                     <input type="text" value="${escapeHtml(s.name)}" class="col-name" onchange="updateSource(${s.id}, 'name', this.value)">
                     <input type="text" value="${escapeHtml(s.url)}" class="col-url" onchange="updateSource(${s.id}, 'url', this.value)">
                     <select class="category-select col-cat" onchange="updateSource(${s.id}, 'category', this.value)">
-                        ${CATEGORIES.map(c => `<option value="${c}" ${s.category === c ? 'selected' : ''}>${c}</option>`).join('')}
+                        ${categories.map(c => `<option value="${escapeHtml(c.name)}" ${s.category === c.name ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
                     </select>
                     <input type="checkbox" ${s.enabled ? 'checked' : ''} class="col-enabled" onchange="updateSource(${s.id}, 'enabled', this.checked)">
                     <button class="btn btn-danger btn-small col-actions" onclick="deleteSource(${s.id})">Delete</button>
@@ -321,62 +317,79 @@
             `).join('');
         }
 
+        async function addCategory() {
+            const name = document.getElementById('new-cat-name').value.trim();
+            if (!name) { alert('Enter a category name'); return; }
+            const res = await fetch('/.netlify/functions/treehouse-categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Admin-Password': getStoredPassword() },
+                body: JSON.stringify({ name })
+            });
+            if (res.status === 409) {
+                alert('Category already exists');
+            } else if (res.ok) {
+                document.getElementById('new-cat-name').value = '';
+                loadData();
+            } else {
+                alert('Error adding category');
+            }
+        }
+
+        async function deleteCategory(id) {
+            if (!confirm('Delete this category?')) return;
+            const res = await fetch(`/-.netlify/functions/treehouse-categories?id=${id}`, {
+                method: 'DELETE',
+                headers: { 'X-Admin-Password': getStoredPassword() }
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.status === 409) {
+                alert(data.error || 'Category is in use by one or more sources. Reassign them first.');
+            } else if (res.ok) {
+                loadData();
+            } else {
+                alert(data.error || 'Error deleting category');
+            }
+        }
+
         async function addSource() {
             const name = document.getElementById('new-name').value.trim();
             const url = document.getElementById('new-url').value.trim();
             const category = document.getElementById('new-category').value;
-
-            if (!name || !url) {
-                alert('Please enter both name and URL');
-                return;
-            }
-
+            if (!name || !url) { alert('Enter both name and URL'); return; }
             const res = await fetch('/.netlify/functions/treehouse-sources', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Admin-Password': getStoredPassword()
-                },
+                headers: { 'Content-Type': 'application/json', 'X-Admin-Password': getStoredPassword() },
                 body: JSON.stringify({ name, url, category })
             });
-
             if (res.ok) {
                 document.getElementById('new-name').value = '';
                 document.getElementById('new-url').value = '';
-                loadSources();
+                loadData();
             } else {
                 alert('Error adding source');
             }
         }
 
         async function updateSource(id, field, value) {
-            const body = { id };
-            body[field] = value;
-
             await fetch('/.netlify/functions/treehouse-sources', {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Admin-Password': getStoredPassword()
-                },
-                body: JSON.stringify(body)
+                headers: { 'Content-Type': 'application/json', 'X-Admin-Password': getStoredPassword() },
+                body: JSON.stringify({ id, [field]: value })
             });
         }
 
         async function deleteSource(id) {
             if (!confirm('Delete this source?')) return;
-
             await fetch(`/.netlify/functions/treehouse-sources?id=${id}`, {
                 method: 'DELETE',
                 headers: { 'X-Admin-Password': getStoredPassword() }
             });
-
-            loadSources();
+            loadData();
         }
 
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[m]);
+            return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
         }
 
         document.getElementById('logout-btn').onclick = logout;
