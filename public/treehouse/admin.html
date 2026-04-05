@@ -33,8 +33,7 @@
             align-items: center;
         }
         .back-link { font-size: 0.9rem; }
-        
-        /* Login screen */
+
         #login-screen {
             max-width: 400px;
             margin: 100px auto;
@@ -58,17 +57,16 @@
             cursor: pointer;
             margin: 0.5rem;
         }
-        
-        /* Admin content (hidden by default) */
+
         #admin-content { display: none; }
-        
+
         .section {
             background: var(--bg-card);
             padding: 1.5rem;
             border-radius: 8px;
             margin-bottom: 1.5rem;
         }
-        
+
         .source-list {
             display: flex;
             flex-direction: column;
@@ -77,10 +75,11 @@
         .source-row {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.75rem;
             padding: 0.75rem;
             background: rgba(255,255,255,0.03);
             border-radius: 6px;
+            flex-wrap: wrap;
         }
         .source-row input {
             padding: 0.5rem;
@@ -89,7 +88,7 @@
             background: var(--bg);
             color: var(--text);
         }
-        .source-row input[type="text"] { flex: 1; }
+        .source-row input[type="text"] { flex: 1; min-width: 150px; }
         .source-row input[type="checkbox"] { width: auto; }
         .source-name { min-width: 120px; font-weight: 500; }
         .btn {
@@ -103,27 +102,39 @@
         .btn-danger { background: #ef4444; color: white; }
         .btn-success { background: var(--success); color: #000; }
         .btn-small { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
-        
+
         .form-row {
             display: flex;
             gap: 0.5rem;
             margin-bottom: 1rem;
+            flex-wrap: wrap;
         }
-        .form-row input {
-            flex: 1;
+        .form-row input, .form-row select {
             padding: 0.75rem;
             border-radius: 4px;
             border: 1px solid var(--border);
             background: var(--bg);
             color: var(--text);
         }
-        
+        .form-row input { flex: 1; }
+        .form-row select { min-width: 160px; }
+
+        select.category-select {
+            padding: 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.8rem;
+            min-width: 160px;
+        }
+
         .loading {
             text-align: center;
             padding: 2rem;
             color: var(--text-light);
         }
-        
+
         .error {
             background: rgba(239, 68, 68, 0.2);
             color: #ef4444;
@@ -131,6 +142,25 @@
             border-radius: 4px;
             margin: 1rem 0;
         }
+
+        .category-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            min-width: 80px;
+            text-align: center;
+        }
+        .badge-gen-tech { background: rgba(59,130,246,0.3); color: #93c5fd; }
+        .badge-crypto { background: rgba(245,158,11,0.3); color: #fcd34d; }
+        .badge-stuff { background: rgba(34,197,94,0.3); color: #86efac; }
+
+        .col-name { min-width: 130px; flex: 0 0 130px; }
+        .col-url { flex: 1; min-width: 180px; }
+        .col-cat { flex: 0 0 160px; }
+        .col-enabled { flex: 0 0 60px; }
+        .col-actions { flex: 0 0 80px; }
     </style>
 </head>
 <body>
@@ -141,7 +171,7 @@
         </div>
         <button id="logout-btn" class="btn btn-small" style="display:none;">Logout</button>
     </div>
-    
+
     <!-- Login screen -->
     <div id="login-screen">
         <h2>Admin Login</h2>
@@ -150,26 +180,39 @@
         <button onclick="login()" class="btn btn-primary">Login</button>
         <p id="login-error" class="error" style="display:none;"></p>
     </div>
-    
+
     <!-- Admin content -->
     <div id="admin-content">
         <div class="section">
             <h2>📰 Scrape Sources</h2>
-            <p style="color: var(--text-light); margin-bottom: 1rem;">Manage the URLs that are scraped for trends. Enable/disable sources without deleting them.</p>
-            
+            <p style="color: var(--text-light); margin-bottom: 1rem;">Manage the URLs scraped for trends. Set category and enable/disable without deleting.</p>
+
             <!-- Add new source -->
             <div class="form-row">
                 <input type="text" id="new-name" placeholder="Source name (e.g., The Verge)">
                 <input type="text" id="new-url" placeholder="URL (e.g., https://theverge.com)">
+                <select id="new-category" class="category-select">
+                    <option value="GENERAL TECH">GENERAL TECH</option>
+                    <option value="CRYPTO/ALT">CRYPTO/ALT</option>
+                    <option value="STUFF THAT LOOKS GOOD">STUFF THAT LOOKS GOOD</option>
+                </select>
                 <button onclick="addSource()" class="btn btn-success">Add Source</button>
             </div>
-            
+
+            <!-- Category filter -->
+            <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn btn-small" onclick="filterCategory('all')" id="filter-all" style="background: var(--accent); color: white;">All</button>
+                <button class="btn btn-small" onclick="filterCategory('GENERAL TECH')" id="filter-GENERAL TECH">GENERAL TECH</button>
+                <button class="btn btn-small" onclick="filterCategory('CRYPTO/ALT')" id="filter-CRYPTO/ALT">CRYPTO/ALT</button>
+                <button class="btn btn-small" onclick="filterCategory('STUFF THAT LOOKS GOOD')" id="filter-STUFF THAT LOOKS GOOD">STUFF THAT LOOKS GOOD</button>
+            </div>
+
             <!-- Source list -->
             <div id="source-list" class="source-list">
                 <div class="loading">Loading sources...</div>
             </div>
         </div>
-        
+
         <div class="section">
             <h2>📊 Analytics</h2>
             <p><a href="analytics.html" target="_blank">View Analytics →</a></p>
@@ -180,11 +223,20 @@
         const ADMIN_KEY = 'treehouse_admin_key';
         const ADMIN_PASS_KEY = 'treehouse_admin_pass';
         let sources = [];
-        
+        let currentFilter = 'all';
+
+        const CATEGORIES = ['GENERAL TECH', 'CRYPTO/ALT', 'STUFF THAT LOOKS GOOD'];
+
         function getStoredPassword() {
             return localStorage.getItem(ADMIN_PASS_KEY) || '';
         }
-        
+
+        function getBadgeClass(cat) {
+            if (cat === 'CRYPTO/ALT') return 'badge-crypto';
+            if (cat === 'STUFF THAT LOOKS GOOD') return 'badge-stuff';
+            return 'badge-gen-tech';
+        }
+
         function checkAuth() {
             const key = localStorage.getItem(ADMIN_KEY);
             if (key) {
@@ -194,10 +246,9 @@
                 loadSources();
             }
         }
-        
+
         async function login() {
             const password = document.getElementById('password').value;
-            // Server-side verification
             try {
                 const res = await fetch('/.netlify/functions/treehouse-admin-auth', {
                     method: 'POST',
@@ -221,54 +272,74 @@
                 document.getElementById('login-error').textContent = 'Error verifying password';
             }
         }
-        
+
         function logout() {
             localStorage.removeItem(ADMIN_KEY);
             localStorage.removeItem(ADMIN_PASS_KEY);
             location.reload();
         }
-        
+
         async function loadSources() {
             const res = await fetch('/.netlify/functions/treehouse-sources');
             sources = await res.json();
             renderSources();
         }
-        
+
+        function filterCategory(cat) {
+            currentFilter = cat;
+            document.querySelectorAll('[id^="filter-"]').forEach(btn => {
+                btn.style.background = '';
+                btn.style.color = '';
+            });
+            const btn = document.getElementById('filter-' + (cat === 'all' ? 'all' : cat));
+            if (btn) {
+                btn.style.background = 'var(--accent)';
+                btn.style.color = 'white';
+            }
+            renderSources();
+        }
+
         function renderSources() {
             const el = document.getElementById('source-list');
-            if (sources.length === 0) {
-                el.innerHTML = '<p style="color: var(--text-light);">No sources yet. Add one above!</p>';
+            const filtered = currentFilter === 'all' ? sources : sources.filter(s => s.category === currentFilter);
+
+            if (filtered.length === 0) {
+                el.innerHTML = '<p style="color: var(--text-light);">No sources in this category.</p>';
                 return;
             }
-            
-            el.innerHTML = sources.map(s => `
+
+            el.innerHTML = filtered.map(s => `
                 <div class="source-row">
-                    <input type="text" value="${escapeHtml(s.name)}" onchange="updateSource(${s.id}, 'name', this.value)">
-                    <input type="text" value="${escapeHtml(s.url)}" onchange="updateSource(${s.id}, 'url', this.value)">
-                    <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="updateSource(${s.id}, 'enabled', this.checked)">
-                    <button class="btn btn-danger btn-small" onclick="deleteSource(${s.id})">Delete</button>
+                    <input type="text" value="${escapeHtml(s.name)}" class="col-name" onchange="updateSource(${s.id}, 'name', this.value)">
+                    <input type="text" value="${escapeHtml(s.url)}" class="col-url" onchange="updateSource(${s.id}, 'url', this.value)">
+                    <select class="category-select col-cat" onchange="updateSource(${s.id}, 'category', this.value)">
+                        ${CATEGORIES.map(c => `<option value="${c}" ${s.category === c ? 'selected' : ''}>${c}</option>`).join('')}
+                    </select>
+                    <input type="checkbox" ${s.enabled ? 'checked' : ''} class="col-enabled" onchange="updateSource(${s.id}, 'enabled', this.checked)">
+                    <button class="btn btn-danger btn-small col-actions" onclick="deleteSource(${s.id})">Delete</button>
                 </div>
             `).join('');
         }
-        
+
         async function addSource() {
             const name = document.getElementById('new-name').value.trim();
             const url = document.getElementById('new-url').value.trim();
-            
+            const category = document.getElementById('new-category').value;
+
             if (!name || !url) {
                 alert('Please enter both name and URL');
                 return;
             }
-            
+
             const res = await fetch('/.netlify/functions/treehouse-sources', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'X-Admin-Password': getStoredPassword()
                 },
-                body: JSON.stringify({ name, url })
+                body: JSON.stringify({ name, url, category })
             });
-            
+
             if (res.ok) {
                 document.getElementById('new-name').value = '';
                 document.getElementById('new-url').value = '';
@@ -277,40 +348,38 @@
                 alert('Error adding source');
             }
         }
-        
+
         async function updateSource(id, field, value) {
             const body = { id };
             body[field] = value;
-            
+
             await fetch('/.netlify/functions/treehouse-sources', {
                 method: 'PUT',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'X-Admin-Password': getStoredPassword()
                 },
                 body: JSON.stringify(body)
             });
         }
-        
+
         async function deleteSource(id) {
             if (!confirm('Delete this source?')) return;
-            
+
             await fetch(`/.netlify/functions/treehouse-sources?id=${id}`, {
                 method: 'DELETE',
                 headers: { 'X-Admin-Password': getStoredPassword() }
             });
-            
+
             loadSources();
         }
-        
+
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/[&<>"']/g, m => ({'&':'&','<':'<','>':'>','"':'"',"'":"'"})[m]);
+            return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[m]);
         }
-        
+
         document.getElementById('logout-btn').onclick = logout;
-        
-        // Check auth on load
         checkAuth();
     </script>
 </body>

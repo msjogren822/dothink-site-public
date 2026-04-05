@@ -1,0 +1,31 @@
+# Don't commit
+.venv/
+node_modules/
+*.pyc
+__pycache__/
+*.log
+tmp/
+temp/
+.env
+*.tmp
+
+# Playwright profile — huge and machine-specific
+scout-google-account/playwright-profile/
+
+# Neon DB credentials
+neon_db_creds.json
+
+# Any file with credentials
+*.pem
+*.key
+
+# Staging area — files to delete, not to commit
+old-disregard/
+
+# OpenClaw config — machine-specific
+.openclaw/
+
+# Private system configs — intentionally untracked
+# Add files here you want to version-control (templates, scripts, etc.)
+# Keep actual keys and credentials OUT of this folder
+private/
