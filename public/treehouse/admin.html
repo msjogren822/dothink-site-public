@@ -383,25 +383,41 @@
         }
 
         async function updateSource(id, field, value) {
-            await fetch('/.netlify/functions/treehouse-sources', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Admin-Password': getStoredPassword() },
-                body: JSON.stringify({ id, [field]: value })
-            });
-            // Update local data so counts refresh
-            const src = sources.find(s => s.id === id);
-            if (src) {
-                const oldCat = src.category;
-                src[field] = value;
-                if (field === 'category') {
-                    if (catSourceCount[oldCat] !== undefined) catSourceCount[oldCat]--;
-                    if (catSourceCount[value] !== undefined) catSourceCount[value]++;
-                    renderCategoryList();
+            const body = { id };
+            body[field] = value;
+            try {
+                const res = await fetch('/.netlify/functions/treehouse-sources', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-Admin-Password': getStoredPassword() },
+                    body: JSON.stringify(body)
+                });
+
+                if (!res.ok) {
+                    const txt = await res.text().catch(() => res.statusText);
+                    alert('Save failed: ' + res.status + ' ' + txt);
+                    loadData();
+                    return;
                 }
+
+                // Update local data so counts refresh
+                const src = sources.find(s => s.id === id);
+                if (src) {
+                    const oldCat = src.category;
+                    src[field] = value;
+                    if (field === 'category') {
+                        if (catSourceCount[oldCat] !== undefined) catSourceCount[oldCat]--;
+                        if (catSourceCount[value] !== undefined) catSourceCount[value]++;
+                        renderCategoryList();
+                    }
+                }
+
+                // Flash saved indicator
+                const ind = document.getElementById('save-' + id);
+                if (ind) { ind.classList.add('show'); setTimeout(() => ind.classList.remove('show'), 1500); }
+            } catch (e) {
+                alert('Network error saving: ' + e.message);
+                loadData();
             }
-            // Flash saved indicator
-            const ind = document.getElementById('save-' + id);
-            if (ind) { ind.classList.add('show'); setTimeout(() => ind.classList.remove('show'), 1500); }
         }
 
         async function deleteSource(id) {
