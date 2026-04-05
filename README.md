@@ -11,7 +11,7 @@ https://www.dothink.in/
 - [$DOGify your image - experiment for X people](https://www.dothink.in/dogify.html)  
   `public/dogify.html`
 
-## Recent Experiments
+## Recent Experiments in DB connectivity through Netlify
 - [Neon DB connectivity](https://www.dothink.in/neon-test.html)  
   `public/neon-test.html`
 - [Supabase DB connectivity](https://www.dothink.in/supatest.html)  
