@@ -146,17 +146,20 @@ exports.handler = async function(event, context) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
     }
     const updates = [];
-    if (name !== undefined) updates.push(sql`name = ${name}`);
-    if (url !== undefined) updates.push(sql`url = ${url}`);
-    if (enabled !== undefined) updates.push(sql`enabled = ${enabled}`);
+    if (name !== undefined) updates.push({ col: sql.unsafe('name'), val: name });
+    if (url !== undefined) updates.push({ col: sql.unsafe('url'), val: url });
+    if (enabled !== undefined) updates.push({ col: sql.unsafe('enabled'), val: enabled });
     if (category !== undefined) {
       const cats = await sql`SELECT name FROM treehouse_categories ORDER BY sort_order`;
       const validCatNames = cats.map(r => r.name);
       const cat = validCatNames.includes(category) ? category : validCatNames[0];
-      updates.push(sql`category = ${cat}`);
+      updates.push({ col: sql.unsafe('category'), val: cat });
     }
     if (updates.length > 0) {
-      await sql`UPDATE treehouse_sources SET ${updates} WHERE id = ${parseInt(id)}`;
+      // Build SET clause: each 'col = $N' uses sql.unsafe for the identifier
+      const setParts = updates.map((u, i) => sql`${u.col} = $${i + 1}`);
+      const whereId = parseInt(id);
+      await sql`UPDATE treehouse_sources SET ${setParts} WHERE id = ${whereId}`;
     }
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
   }
@@ -217,17 +220,19 @@ exports.handler = async function(event, context) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
     }
     const updates = [];
-    if (name !== undefined) updates.push(sql`name = ${name}`);
-    if (url !== undefined) updates.push(sql`url = ${url}`);
-    if (enabled !== undefined) updates.push(sql`enabled = ${enabled}`);
+    if (name !== undefined) updates.push({ col: sql.unsafe('name'), val: name });
+    if (url !== undefined) updates.push({ col: sql.unsafe('url'), val: url });
+    if (enabled !== undefined) updates.push({ col: sql.unsafe('enabled'), val: enabled });
     if (category !== undefined) {
       const cats = await sql`SELECT name FROM treehouse_categories ORDER BY sort_order`;
       const validCatNames = cats.map(r => r.name);
       const cat = validCatNames.includes(category) ? category : validCatNames[0];
-      updates.push(sql`category = ${cat}`);
+      updates.push({ col: sql.unsafe('category'), val: cat });
     }
     if (updates.length > 0) {
-      await sql`UPDATE treehouse_sources SET ${updates} WHERE id = ${parseInt(id)}`;
+      const setParts = updates.map((u, i) => sql`${u.col} = $${i + 1}`);
+      const whereId = parseInt(id);
+      await sql`UPDATE treehouse_sources SET ${setParts} WHERE id = ${whereId}`;
     }
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
   }
