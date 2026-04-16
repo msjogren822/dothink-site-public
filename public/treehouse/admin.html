@@ -195,6 +195,7 @@
             <div class="form-row">
                 <input type="text" id="new-name" placeholder="Source name (e.g., The Verge)">
                 <input type="text" id="new-url" placeholder="URL (e.g., https://theverge.com)">
+                <label style="font-size:0.8rem;white-space:nowrap;"><input type="checkbox" id="new-rss"> RSS</label>
                 <select id="new-category" class="category-select" style="min-width:160px;">
                 </select>
                 <button onclick="addSource()" class="btn btn-success">Add Source</button>
@@ -332,7 +333,8 @@
                     <select class="category-select col-cat" onchange="updateSource(${s.id}, 'category', this.value)">
                         ${categories.map(c => `<option value="${escapeHtml(c.name)}" ${s.category === c.name ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
                     </select>
-                    <input type="checkbox" ${s.enabled ? 'checked' : ''} class="col-enabled" onchange="updateSource(${s.id}, 'enabled', this.checked)">
+                    <input type="checkbox" ${s.enabled ? 'checked' : ''} class="col-enabled" onchange="updateSource(${s.id}, 'enabled', this.checked)" title="Enabled">
+                    <input type="checkbox" ${s.is_rss ? 'checked' : ''} class="col-rss" onchange="updateSource(${s.id}, 'is_rss', this.checked)" title="RSS feed">
                     <button class="btn btn-danger btn-small col-actions" onclick="deleteSource(${s.id})">Delete</button>
                     <span class="save-indicator" id="save-${s.id}">Saved!</span>
                 </div>
@@ -370,11 +372,12 @@
             const name = document.getElementById('new-name').value.trim();
             const url = document.getElementById('new-url').value.trim();
             const category = document.getElementById('new-category').value;
+            const is_rss = document.getElementById('new-rss').checked;
             if (!name || !url) { alert('Enter both name and URL'); return; }
             const res = await fetch('/.netlify/functions/treehouse-sources', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Admin-Password': getStoredPassword() },
-                body: JSON.stringify({ name, url, category })
+                body: JSON.stringify({ name, url, category, is_rss })
             });
             if (res.ok) {
                 document.getElementById('new-name').value = '';

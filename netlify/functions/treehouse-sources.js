@@ -16,11 +16,12 @@ async function ensureTables() {
       url TEXT NOT NULL,
       enabled BOOLEAN DEFAULT true,
       category TEXT DEFAULT 'GENERAL TECH',
+      is_rss BOOLEAN DEFAULT false,
       created_at TIMESTAMP DEFAULT NOW()
     )`;
     await sql`CREATE TABLE IF NOT EXISTS treehouse_categories (
       id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL UNIQUE,
+      name TEXT UNIQUE NOT NULL,
       sort_order INTEGER DEFAULT 0
     )`;
     // Seed default categories if empty
@@ -36,6 +37,45 @@ async function ensureTables() {
 function authenticate(headers) {
   const auth = headers['authorization'] || headers['x-admin-password'];
   return auth === ADMIN_PASSWORD;
+}
+
+async function getValidCategory(category) {
+  const cats = await sql`SELECT name FROM treehouse_categories ORDER BY sort_order`;
+  const validCatNames = cats.map(r => r.name);
+  return validCatNames.includes(category) ? category : validCatNames[0];
+}
+
+async function upsertSource(id, { name, url, enabled, category, is_rss }) {
+  const updates = [];
+  const vals = [];
+  let paramIdx = 1;
+
+  if (name !== undefined) {
+    updates.push(`name = $${paramIdx++}`);
+    vals.push(name);
+  }
+  if (url !== undefined) {
+    updates.push(`url = $${paramIdx++}`);
+    vals.push(url);
+  }
+  if (enabled !== undefined) {
+    updates.push(`enabled = $${paramIdx++}`);
+    vals.push(enabled);
+  }
+  if (category !== undefined) {
+    const cat = await getValidCategory(category);
+    updates.push(`category = $${paramIdx++}`);
+    vals.push(cat);
+  }
+  if (is_rss !== undefined) {
+    updates.push(`is_rss = $${paramIdx++}`);
+    vals.push(is_rss === true);
+  }
+
+  if (updates.length > 0) {
+    vals.push(parseInt(id));
+    await sql.query(`UPDATE treehouse_sources SET ${updates.join(', ')} WHERE id = $${paramIdx}`, vals);
+  }
 }
 
 exports.handler = async function(event, context) {
@@ -66,15 +106,12 @@ exports.handler = async function(event, context) {
       return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
     }
     let body = event.body;
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch(e) { body = {}; }
-    }
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch(e) { body = {}; } }
     const { name } = body;
     if (!name || !name.trim()) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing category name' }) };
     }
     const catName = name.trim();
-    // Check for duplicate
     const existing = await sql`SELECT id FROM treehouse_categories WHERE name = ${catName}`;
     if (existing.length > 0) {
       return { statusCode: 409, headers, body: JSON.stringify({ error: 'Category already exists' }) };
@@ -94,7 +131,6 @@ exports.handler = async function(event, context) {
     if (!id) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
     }
-    // Check if any sources use this category
     const used = await sql`SELECT COUNT(*) FROM treehouse_sources WHERE category = (SELECT name FROM treehouse_categories WHERE id = ${parseInt(id)})`;
     if (used[0].count > 0) {
       return { statusCode: 409, headers, body: JSON.stringify({ error: `Category is used by ${used[0].count} source(s). Reassign them first.` }) };
@@ -105,9 +141,12 @@ exports.handler = async function(event, context) {
 
   // ---- SOURCES ----
 
+  const SOURCE_COLS = 'id, name, url, enabled, category, is_rss, created_at';
+  const SOURCE_RETURN = 'id, name, url, enabled, category, is_rss, created_at';
+
   // GET: list all sources (no auth required)
   if (event.httpMethod === 'GET' && event.resource === '/sources') {
-    const rows = await sql`SELECT id, name, url, enabled, category, created_at FROM treehouse_sources ORDER BY category, name`;
+    const rows = await sql`SELECT ${sql.unsafe(SOURCE_COLS)} FROM treehouse_sources ORDER BY category, name`;
     return { statusCode: 200, headers, body: JSON.stringify(rows) };
   }
 
@@ -117,18 +156,15 @@ exports.handler = async function(event, context) {
       return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
     }
     let body = event.body;
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch(e) { body = {}; }
-    }
-    const { name, url, enabled, category } = body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch(e) { body = {}; } }
+    const { name, url, enabled, category, is_rss } = body;
     if (!name || !url) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing name or url' }) };
     }
-    // Get valid categories
-    const cats = await sql`SELECT name FROM treehouse_categories ORDER BY sort_order`;
-    const validCatNames = cats.map(r => r.name);
-    const cat = validCatNames.includes(category) ? category : validCatNames[0];
-    const result = await sql`INSERT INTO treehouse_sources (name, url, enabled, category) VALUES (${name}, ${url}, ${enabled !== false}, ${cat}) RETURNING id, name, url, enabled, category`;
+    const cat = await getValidCategory(category);
+    const result = await sql`INSERT INTO treehouse_sources (name, url, enabled, category, is_rss)
+      VALUES (${name}, ${url}, ${enabled !== false}, ${cat}, ${is_rss === true})
+      RETURNING ${sql.unsafe(SOURCE_RETURN)}`;
     return { statusCode: 201, headers, body: JSON.stringify({ ok: true, source: result[0] }) };
   }
 
@@ -138,29 +174,12 @@ exports.handler = async function(event, context) {
       return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
     }
     let body = event.body;
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch(e) { body = {}; }
-    }
-    const { id, name, url, enabled, category } = body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch(e) { body = {}; } }
+    const { id } = body;
     if (!id) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
     }
-    const updates = [];
-    if (name !== undefined) updates.push({ col: sql.unsafe('name'), val: name });
-    if (url !== undefined) updates.push({ col: sql.unsafe('url'), val: url });
-    if (enabled !== undefined) updates.push({ col: sql.unsafe('enabled'), val: enabled });
-    if (category !== undefined) {
-      const cats = await sql`SELECT name FROM treehouse_categories ORDER BY sort_order`;
-      const validCatNames = cats.map(r => r.name);
-      const cat = validCatNames.includes(category) ? category : validCatNames[0];
-      updates.push({ col: sql.unsafe('category'), val: cat });
-    }
-    if (updates.length > 0) {
-      // Use sql.query() for full control: inline column names via sql.unsafe(), parametrize values
-      const vals = updates.map(u => u.val);
-      const setClause = updates.map((u, i) => `${u.col.sql} = $${i + 1}`).join(', ');
-      await sql.query(`UPDATE treehouse_sources SET ${setClause} WHERE id = $${vals.length + 1}`, [...vals, parseInt(id)]);
-    }
+    await upsertSource(id, body);
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
   }
 
@@ -181,7 +200,7 @@ exports.handler = async function(event, context) {
   // Legacy fallback: old REST style without resource path
   // GET sources list
   if (event.httpMethod === 'GET' && !event.resource) {
-    const rows = await sql`SELECT id, name, url, enabled, category, created_at FROM treehouse_sources ORDER BY category, name`;
+    const rows = await sql`SELECT ${sql.unsafe(SOURCE_COLS)} FROM treehouse_sources ORDER BY category, name`;
     return { statusCode: 200, headers, body: JSON.stringify(rows) };
   }
 
@@ -191,20 +210,17 @@ exports.handler = async function(event, context) {
       return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
     }
     let body = event.body;
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch(e) { body = {}; }
-    }
-    const { name, url, enabled, category } = body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch(e) { body = {}; } }
+    const { name, url, enabled, category, is_rss } = body;
     if (!name || !url) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing name or url' }) };
     }
-    const cats = await sql`SELECT name FROM treehouse_categories ORDER BY sort_order`;
-    const validCatNames = cats.map(r => r.name);
-    const cat = validCatNames.includes(category) ? category : validCatNames[0];
-    const result = await sql`INSERT INTO treehouse_sources (name, url, enabled, category) VALUES (${name}, ${url}, ${enabled !== false}, ${cat}) RETURNING id, name, url, enabled, category`;
+    const cat = await getValidCategory(category);
+    const result = await sql`INSERT INTO treehouse_sources (name, url, enabled, category, is_rss)
+      VALUES (${name}, ${url}, ${enabled !== false}, ${cat}, ${is_rss === true})
+      RETURNING ${sql.unsafe(SOURCE_RETURN)}`;
     return { statusCode: 201, headers, body: JSON.stringify({ ok: true, source: result[0] }) };
   }
-
 
   // Legacy PUT /sources (no resource path)
   if (event.httpMethod === 'PUT' && !event.resource) {
@@ -212,29 +228,12 @@ exports.handler = async function(event, context) {
       return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
     }
     let body = event.body;
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch(e) { body = {}; }
-    }
-    const { id, name, url, enabled, category } = body;
+    if (typeof body === 'string') { try { body = JSON.parse(body); } catch(e) { body = {}; } }
+    const { id } = body;
     if (!id) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
     }
-    const updates = [];
-    if (name !== undefined) updates.push({ col: sql.unsafe('name'), val: name });
-    if (url !== undefined) updates.push({ col: sql.unsafe('url'), val: url });
-    if (enabled !== undefined) updates.push({ col: sql.unsafe('enabled'), val: enabled });
-    if (category !== undefined) {
-      const cats = await sql`SELECT name FROM treehouse_categories ORDER BY sort_order`;
-      const validCatNames = cats.map(r => r.name);
-      const cat = validCatNames.includes(category) ? category : validCatNames[0];
-      updates.push({ col: sql.unsafe('category'), val: cat });
-    }
-    if (updates.length > 0) {
-      // Use sql.query() for full control: inline column names via sql.unsafe(), parametrize values
-      const vals = updates.map(u => u.val);
-      const setClause = updates.map((u, i) => `${u.col.sql} = $${i + 1}`).join(', ');
-      await sql.query(`UPDATE treehouse_sources SET ${setClause} WHERE id = $${vals.length + 1}`, [...vals, parseInt(id)]);
-    }
+    await upsertSource(id, body);
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
   }
 
