@@ -5,6 +5,129 @@ let currentDbId = null; // null = current trends, number = archive ID, 'day' = d
 let currentRunId = null; // The DB ID of the current run for voting
 let currentDayArchives = null; // Store archives array when viewing a day
 
+const VOTE_REASON_OPTIONS = {
+    up: [
+        { reason: 'insightful', label: '🧠 Insightful' },
+        { reason: 'useful', label: '🛠️ Useful' },
+        { reason: 'hot', label: '🔥 Hot' }
+    ],
+    down: [
+        { reason: 'boring', label: '🥱 Boring' },
+        { reason: 'duplicate', label: '🪞 Duplicate' },
+        { reason: 'clickbait', label: '🎣 Clickbait' }
+    ]
+};
+
+let _reasonToastTimer = null;
+let _reasonToastHandlerInstalled = false;
+const _reasonPrompted = new Set(); // `${runId}|${trendUrl}`
+
+function _hideToast() {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.style.display = 'none';
+}
+
+async function setVoteReason({ runId, trendUrl, userToken, reason }) {
+    try {
+        const res = await fetch('/.netlify/functions/treehouse-votes', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_token: userToken,
+                run_id: runId,
+                trend_url: trendUrl,
+                reason
+            })
+        });
+        return res.ok;
+    } catch (e) {
+        return false;
+    }
+}
+
+function showReasonPrompt({ vote, runId, trendUrl, userToken, anchorEl }) {
+    if (!VOTE_REASON_OPTIONS[vote]) return;
+
+    const key = `${runId}|${trendUrl}`;
+    if (_reasonPrompted.has(key)) return;
+    _reasonPrompted.add(key);
+
+    const toast = document.getElementById('toast');
+    const msgEl = document.getElementById('toast-message');
+    if (!toast || !msgEl) return;
+
+    if (_reasonToastTimer) {
+        clearTimeout(_reasonToastTimer);
+        _reasonToastTimer = null;
+    }
+
+    const chips = VOTE_REASON_OPTIONS[vote]
+        .map(o => `<button type="button" data-reason="${o.reason}" style="border:1px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.08); color:#fff; padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:600; font-size:13px; margin-right:8px;">${o.label}</button>`)
+        .join('');
+
+    msgEl.innerHTML = `
+        <span style="font-weight:700; margin-right:10px;">Why?</span>
+        <span data-reason-wrap="1" data-vote="${vote}" data-runid="${runId}" data-trendurl="${encodeURIComponent(trendUrl)}" data-usertoken="${encodeURIComponent(userToken)}">${chips}</span>
+        <button type="button" data-dismiss="1" title="Dismiss" style="margin-left:6px; border:none; background:transparent; color:rgba(255,255,255,0.75); cursor:pointer; font-size:18px; line-height:1;">×</button>
+    `;
+
+    // Allow chips to wrap if needed.
+    toast.style.whiteSpace = 'normal';
+
+    if (anchorEl && anchorEl.getBoundingClientRect) {
+        const rect = anchorEl.getBoundingClientRect();
+        toast.style.left = (rect.left + rect.width / 2) + 'px';
+        toast.style.top = (rect.bottom + 10) + 'px';
+        toast.style.bottom = 'auto';
+        toast.style.transform = 'translateX(-50%)';
+    } else {
+        toast.style.left = '50%';
+        toast.style.top = 'auto';
+        toast.style.bottom = '20px';
+        toast.style.transform = 'translateX(-50%)';
+    }
+
+    toast.style.display = 'block';
+
+    if (!_reasonToastHandlerInstalled) {
+        _reasonToastHandlerInstalled = true;
+        toast.addEventListener('click', async (e) => {
+            const target = e.target;
+            if (!target) return;
+
+            const dismissBtn = target.closest && target.closest('[data-dismiss="1"]');
+            if (dismissBtn) {
+                _hideToast();
+                return;
+            }
+
+            const btn = target.closest && target.closest('button[data-reason]');
+            if (!btn) return;
+
+            const reason = btn.getAttribute('data-reason');
+            const wrap = toast.querySelector('[data-reason-wrap="1"]');
+            if (!wrap) return;
+
+            const r = wrap.getAttribute('data-runid');
+            const url = decodeURIComponent(wrap.getAttribute('data-trendurl') || '');
+            const tok = decodeURIComponent(wrap.getAttribute('data-usertoken') || '');
+
+            _hideToast();
+            if (!reason || !r || !url || !tok) return;
+
+            const ok = await setVoteReason({ runId: parseInt(r, 10), trendUrl: url, userToken: tok, reason });
+            if (ok) {
+                showToast('Saved', null, 1200);
+            }
+        });
+    }
+
+    _reasonToastTimer = setTimeout(() => {
+        _hideToast();
+    }, 4500);
+}
+
 // Get or create user token for duplicate prevention
 function getUserToken() {
     let token = localStorage.getItem('treehouse_user_token');
@@ -33,16 +156,26 @@ async function fetchTrends() {
             if (data._meta && data._meta.runAt) {
                 lastRunTimestamp = data._meta.runAt;
             }
-            
-            // Extract run_id from the response (returned as dbId in the _meta or we can get it from headers)
-            // For now, we'll fetch the latest ID from archives
-            await fetchLatestRunId();
-            
-            // Fetch votes for this specific run
-            const { votes, userVotes: uv } = await fetchVotesForRun(currentRunId);
-            userVotes = uv || {};
-            
-            displayTrends(trends, timestamp, votes);
+
+            // Render immediately; hydrate runId/votes afterward to reduce perceived latency.
+            displayTrends(trends, timestamp, {});
+
+            // Prefer runId returned by the API; fall back to archives if missing.
+            if (data._meta && data._meta.runId) {
+                currentRunId = data._meta.runId;
+            } else {
+                try {
+                    await fetchLatestRunId();
+                } catch (e) { /* ignore */ }
+            }
+
+            // Fetch votes for this specific run in the background and re-render when ready.
+            (async () => {
+                const { votes, userVotes: uv } = await fetchVotesForRun(currentRunId);
+                userVotes = uv || {};
+                displayTrends(trends, timestamp, votes || {});
+            })().catch(() => {});
+
             return;
         }
     } catch (e) {
@@ -161,17 +294,17 @@ async function voteTrend(trendUrl, vote, btnElement) {
         });
         
         console.log('Vote response:', res.status);
-        
-        if (res.status === 409) {
-            const data = await res.json();
-            showToast(`Already voted ${data.existingVote === 'up' ? '👍' : '👎'} on this!`, btnElement);
-            return;
-        }
-        
+
         if (!res.ok) {
             const data = await res.json();
             showToast(data.error || 'Oops! Something went wrong', btnElement);
             return;
+        }
+
+        const result = await res.json().catch(() => ({}));
+        if (!result.cleared) {
+            // Optional: ask for a reason without blocking the UI.
+            showReasonPrompt({ vote, runId: currentRunId, trendUrl: decodedUrl, userToken, anchorEl: btnElement });
         }
         
         // Refresh the correct view (current, archive, or day)
@@ -192,6 +325,12 @@ async function voteTrend(trendUrl, vote, btnElement) {
 function showToast(message, targetEl, duration = 4500) {
     const toast = document.getElementById('toast');
     const msgEl = document.getElementById('toast-message');
+
+    if (_reasonToastTimer) {
+        clearTimeout(_reasonToastTimer);
+        _reasonToastTimer = null;
+    }
+
     msgEl.textContent = message;
     
     // Reset styles to default centered position
@@ -289,17 +428,17 @@ async function voteScoutView(vote, btnElement) {
                 run_id: currentRunId
             })
         });
-        
-        if (res.status === 409) {
-            const data = await res.json();
-            showToast(`Already voted ${data.existingVote === 'up' ? '👍' : '👎'} on this!`, btnElement);
-            return;
-        }
-        
+
         if (!res.ok) {
             const data = await res.json();
             showToast(data.error || 'Oops! Something went wrong', btnElement);
             return;
+        }
+
+        const result = await res.json().catch(() => ({}));
+        if (!result.cleared) {
+            // Optional reason prompt for Scout's View (uses special URL key).
+            showReasonPrompt({ vote, runId: currentRunId, trendUrl: scoutUrlKey, userToken, anchorEl: btnElement });
         }
         
         // Refresh the view
@@ -552,7 +691,7 @@ function startCountdown() {
 
 // Auto-load on page load - show current trends by default, not archive
 document.addEventListener('DOMContentLoaded', async () => {
-    await populateArchiveDropdown();
+    populateArchiveDropdown();
     startCountdown();
     // Load current trends first (not archive)
     fetchTrends();
