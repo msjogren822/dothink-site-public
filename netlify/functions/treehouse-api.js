@@ -8,7 +8,7 @@ exports.handler = async function(event, context) {
   try {
     // Get the latest entry
     const latest = await sql`
-      SELECT scout_title, scout_desc, scout_signature, topics, created_at
+      SELECT id, scout_title, scout_desc, scout_signature, topics, created_at
       FROM treehouse_trends
       ORDER BY created_at DESC
       LIMIT 1
