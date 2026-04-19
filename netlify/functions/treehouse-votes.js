@@ -4,6 +4,17 @@ const { neon } = require('@netlify/neon');
 
 const sql = neon();
 
+const ALLOWED_REASONS = new Set([
+  // 👍 reasons
+  'insightful',
+  'useful',
+  'hot',
+  // 👎 reasons
+  'boring',
+  'duplicate',
+  'clickbait',
+]);
+
 async function ensureTables() {
   // Check if old schema exists (without run_id) and migrate
   try {
@@ -27,15 +38,19 @@ async function ensureTables() {
     await sql`CREATE TABLE IF NOT EXISTS treehouse_trend_votes (run_id INTEGER NOT NULL, trend_url TEXT NOT NULL, upvotes INTEGER DEFAULT 0, downvotes INTEGER DEFAULT 0, PRIMARY KEY(run_id, trend_url))`;
   } catch (e) { /* ignore */ }
   try {
-    await sql`CREATE TABLE IF NOT EXISTS treehouse_user_votes (id SERIAL PRIMARY KEY, user_token TEXT NOT NULL, run_id INTEGER NOT NULL, trend_url TEXT NOT NULL, vote TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW(), UNIQUE(user_token, run_id, trend_url))`;
+    await sql`CREATE TABLE IF NOT EXISTS treehouse_user_votes (id SERIAL PRIMARY KEY, user_token TEXT NOT NULL, run_id INTEGER NOT NULL, trend_url TEXT NOT NULL, vote TEXT NOT NULL, reason TEXT, reason_set_at TIMESTAMP, created_at TIMESTAMP DEFAULT NOW(), UNIQUE(user_token, run_id, trend_url))`;
   } catch (e) { /* ignore */ }
+
+  // Best-effort additive migration for existing tables.
+  try { await sql`ALTER TABLE treehouse_user_votes ADD COLUMN IF NOT EXISTS reason TEXT`; } catch (e) { /* ignore */ }
+  try { await sql`ALTER TABLE treehouse_user_votes ADD COLUMN IF NOT EXISTS reason_set_at TIMESTAMP`; } catch (e) { /* ignore */ }
 }
 
 exports.handler = async function(event, context) {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type'
   };
 
@@ -86,6 +101,57 @@ exports.handler = async function(event, context) {
       
       return { statusCode: 200, headers, body: JSON.stringify({ votes, userVotes }) };
     }
+
+    // PUT: set a reason for an existing user vote (does NOT change counts)
+    if (event.httpMethod === 'PUT') {
+      let body = event.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch (e) { body = {}; }
+      }
+
+      const { user_token, trend_url, run_id, reason } = body;
+      const targetUrl = trend_url;
+      const runId = run_id;
+
+      if (!user_token) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing user_token' }) };
+      }
+
+      if (!runId) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing run_id' }) };
+      }
+
+      if (!targetUrl) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing trend_url' }) };
+      }
+
+      const runIdInt = parseInt(runId, 10);
+      if (Number.isNaN(runIdInt)) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid run_id' }) };
+      }
+
+      const normalizedReason = (typeof reason === 'string' ? reason.trim() : '');
+      if (!ALLOWED_REASONS.has(normalizedReason)) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'Invalid reason', allowed: Array.from(ALLOWED_REASONS) })
+        };
+      }
+
+      const updated = await sql`
+        UPDATE treehouse_user_votes
+        SET reason = ${normalizedReason}, reason_set_at = NOW()
+        WHERE user_token = ${user_token} AND run_id = ${runIdInt} AND trend_url = ${targetUrl}
+        RETURNING vote, reason, reason_set_at
+      `;
+
+      if (!updated || updated.length === 0) {
+        return { statusCode: 404, headers, body: JSON.stringify({ error: 'Vote not found' }) };
+      }
+
+      return { statusCode: 200, headers, body: JSON.stringify({ ok: true, ...updated[0] }) };
+    }
     
     // POST: vote on a trend
     if (event.httpMethod === 'POST') {
@@ -117,7 +183,14 @@ exports.handler = async function(event, context) {
       if (existing.length > 0) {
         const prevVote = existing[0].vote;
         if (prevVote === vote) {
-          return { statusCode: 409, headers, body: JSON.stringify({ error: 'Already voted', existingVote: prevVote }) };
+          // Toggle off: second click on the same vote clears it.
+          await sql`DELETE FROM treehouse_user_votes WHERE user_token = ${user_token} AND run_id = ${runIdInt} AND trend_url = ${targetUrl}`;
+          if (vote === 'up') {
+            await sql`UPDATE treehouse_trend_votes SET upvotes = GREATEST(upvotes - 1, 0) WHERE run_id = ${runIdInt} AND trend_url = ${targetUrl}`;
+          } else if (vote === 'down') {
+            await sql`UPDATE treehouse_trend_votes SET downvotes = GREATEST(downvotes - 1, 0) WHERE run_id = ${runIdInt} AND trend_url = ${targetUrl}`;
+          }
+          return { statusCode: 200, headers, body: JSON.stringify({ ok: true, cleared: true, from: prevVote }) };
         }
         // Switch vote
         const change = vote === 'up' ? 1 : -1;
