@@ -5,7 +5,7 @@ The main landing page is here. It's kind of a general "me" page.
 https://www.dothink.in/
 
 ## Projects
-- [Treehouse projet - Hot Web Trends](https://www.dothink.in/treehouse/).
+- [Treehouse projet - Hot Web Trends](https://www.dothink.in/treehouse/)  
   `public/treehouse`
   
 - [$DOGify your image - experiment for X people](https://www.dothink.in/dogify.html)  
