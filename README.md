@@ -5,11 +5,11 @@ The main landing page is here. It's kind of a general "me" page.
 https://www.dothink.in/
 
 ## Projects
-- [Treehouse projet - Scout's News Grab](https://www.dothink.in/treehouse/)
-- [Treehouse projet - WordPress sync](https://162.243.166.51/) 
+- [5/10/26 - Treehouse projet - Scout's News Grab](https://www.dothink.in/treehouse/)  
+  - [Treehouse projet - WordPress sync](https://162.243.166.51/)  
   `public/treehouse`
   
-- [$DOGify your image - experiment for X people](https://www.dothink.in/dogify.html)  
+- [8/24/25 - $DOGify your image - experiment for X people](https://www.dothink.in/dogify.html)  
   `public/dogify.html`
 
 ## Recent Experiments in DB connectivity through Netlify
