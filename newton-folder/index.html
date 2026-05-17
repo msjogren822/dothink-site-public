@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Newton's Cradle (prototype)</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="desk">
+      <header class="masthead">
+        <div>
+          <div class="kicker">Prototype</div>
+          <h1>Newton’s Cradle</h1>
+          <p class="sub">
+            Drag a ball to pull it back, then release. Drag the frame to rotate the view.
+          </p>
+        </div>
+      </header>
+
+      <section class="stage" aria-label="Newton’s cradle canvas">
+        <canvas id="cradle" aria-label="Newton’s cradle animation"></canvas>
+        <div class="hint">
+          Tip: Click/tap and drag a ball. Buttons “kick” one side for quick testing.
+        </div>
+      </section>
+
+      <footer class="tie" aria-hidden="true"></footer>
+    </main>
+
+    <script src="./newton-cradle.js"></script>
+  </body>
+</html>

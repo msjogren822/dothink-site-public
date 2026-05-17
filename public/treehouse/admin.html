@@ -112,15 +112,6 @@
         .inline-form input { padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
         .inline-form input[type="text"] { width: 200px; }
 
-        .category-badge {
-            display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px;
-            font-size: 0.7rem; font-weight: 600; min-width: 80px; text-align: center;
-        }
-        .badge-gen-tech { background: rgba(59,130,246,0.3); color: #93c5fd; }
-        .badge-crypto { background: rgba(245,158,11,0.3); color: #fcd34d; }
-        .badge-stuff { background: rgba(34,197,94,0.3); color: #86efac; }
-        .badge-custom { background: rgba(168,85,247,0.3); color: #d8b4fe; }
-
         .filter-bar { margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .filter-btn {
             padding: 0.3rem 0.8rem; border-radius: 4px; border: 1px solid var(--border);
@@ -132,10 +123,6 @@
         .error {
             background: rgba(239, 68, 68, 0.2); color: #ef4444;
             padding: 0.75rem; border-radius: 4px; margin: 1rem 0;
-        }
-        .info {
-            background: rgba(59,130,246,0.15); color: #93c5fd;
-            padding: 0.75rem; border-radius: 4px; margin: 0.5rem 0; font-size: 0.85rem;
         }
 
         .col-name { min-width: 120px; flex: 0 0 120px; }
@@ -153,6 +140,35 @@
             background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.3);
             border: none; cursor: not-allowed;
         }
+
+        .toggle-row {
+            display: flex; align-items: center; gap: 1rem; padding: 1rem;
+            background: rgba(255,255,255,0.03); border-radius: 6px; margin-bottom: 0.75rem;
+        }
+        .toggle-row label {
+            font-size: 0.9rem; font-weight: 500; flex: 1;
+        }
+        .toggle-status {
+            font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: 600;
+        }
+        .toggle-status.on { background: rgba(74,222,128,0.2); color: #4ade80; }
+        .toggle-status.off { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+        /* Toggle switch */
+        .switch {
+            position: relative; display: inline-block; width: 48px; height: 26px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333; transition: 0.3s; border-radius: 26px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px;
+            background-color: white; transition: 0.3s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #4ade80; }
+        input:checked + .slider:before { transform: translateX(22px); }
     </style>
 </head>
 <body>
@@ -173,6 +189,22 @@
     </div>
 
     <div id="admin-content">
+        <!-- Settings section -->
+        <div class="section">
+            <h2>⚙️ Publishing Settings</h2>
+            <div class="toggle-row">
+                <label for="wp-toggle">WordPress Publishing</label>
+                <span id="wp-status" class="toggle-status on">ON</span>
+                <label class="switch">
+                    <input type="checkbox" id="wp-toggle" onchange="toggleWpPublishing(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <p style="color: var(--text-light); font-size: 0.85rem;">
+                When ON, every trends run posts content to WordPress and generates a featured image. When OFF, trends are still collected and saved to Neon but WordPress posting and image generation are skipped.
+            </p>
+        </div>
+
         <!-- Categories section -->
         <div class="section">
             <h2>🏷️ Categories</h2>
@@ -218,6 +250,7 @@
         const ADMIN_PASS_KEY = 'treehouse_admin_pass';
         let sources = [];
         let categories = [];
+        let settings = {};
         let catSourceCount = {};
         let currentFilter = 'all';
 
@@ -266,20 +299,51 @@
         }
 
         async function loadData() {
-            const [srcRes, catRes] = await Promise.all([
+            const [srcRes, catRes, settingsRes] = await Promise.all([
                 fetch('/.netlify/functions/treehouse-sources'),
-                fetch('/.netlify/functions/treehouse-categories')
+                fetch('/.netlify/functions/treehouse-categories'),
+                fetch('/.netlify/functions/treehouse-settings')
             ]);
             sources = await srcRes.json();
             categories = await catRes.json();
-            // Count sources per category
+            try { settings = await settingsRes.json(); } catch(e) { settings = {}; }
+
             catSourceCount = {};
             for (const c of categories) { catSourceCount[c.name] = 0; }
             for (const s of sources) { if (catSourceCount[s.category] !== undefined) catSourceCount[s.category]++; }
+
+            renderWpToggle();
             renderCategoryList();
             renderFilterBar();
             renderSourceForm();
             renderSources();
+        }
+
+        function renderWpToggle() {
+            const wpEnabled = settings['wp_publishing_enabled'] !== 'false';
+            document.getElementById('wp-toggle').checked = wpEnabled;
+            document.getElementById('wp-status').textContent = wpEnabled ? 'ON' : 'OFF';
+            document.getElementById('wp-status').className = 'toggle-status ' + (wpEnabled ? 'on' : 'off');
+        }
+
+        async function toggleWpPublishing(enabled) {
+            try {
+                const res = await fetch('/.netlify/functions/treehouse-settings', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-Admin-Password': getStoredPassword() },
+                    body: JSON.stringify({ key: 'wp_publishing_enabled', value: enabled ? 'true' : 'false' })
+                });
+                if (!res.ok) {
+                    alert('Failed to save setting: ' + res.status);
+                    renderWpToggle();
+                    return;
+                }
+                settings['wp_publishing_enabled'] = enabled ? 'true' : 'false';
+                renderWpToggle();
+            } catch (e) {
+                alert('Network error saving setting: ' + e.message);
+                renderWpToggle();
+            }
         }
 
         function renderCategoryList() {
@@ -405,7 +469,6 @@
                     return;
                 }
 
-                // Update local data so counts refresh
                 const src = sources.find(s => s.id === id);
                 if (src) {
                     const oldCat = src.category;
@@ -417,7 +480,6 @@
                     }
                 }
 
-                // Flash saved indicator
                 const ind = document.getElementById('save-' + id);
                 if (ind) { ind.classList.add('show'); setTimeout(() => ind.classList.remove('show'), 1500); }
             } catch (e) {
