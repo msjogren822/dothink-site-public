@@ -6,7 +6,7 @@ https://www.dothink.in/
 
 ## Projects
 - [5/10/26 - Treehouse projet - Scout's News Grab](https://www.dothink.in/treehouse/)  
-  - [Treehouse projet - WordPress sync](https://162.243.166.51/)  
+  - [Treehouse projet - WordPress sync](https://scout.dothink.in/)  
   `public/treehouse`
   
 - [8/24/25 - $DOGify your image - experiment for X people](https://www.dothink.in/dogify.html)  
