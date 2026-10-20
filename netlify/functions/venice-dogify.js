@@ -8,9 +8,9 @@ exports.handler = async function (event) {
       return { statusCode: 500, body: JSON.stringify({ ok: false, error: 'Venice API key not configured' }) };
     }
 
-    const { userImage, dogImage } = JSON.parse(event.body || '{}');
-    if (!userImage || !dogImage) {
-      return { statusCode: 400, body: JSON.stringify({ ok: false, error: 'Missing userImage or dogImage' }) };
+    const { userImage } = JSON.parse(event.body || '{}');
+    if (!userImage) {
+      return { statusCode: 400, body: JSON.stringify({ ok: false, error: 'Missing userImage' }) };
     }
 
     const headers = {
@@ -58,29 +58,12 @@ exports.handler = async function (event) {
       return { statusCode: 502, body: JSON.stringify({ ok: false, error: 'Could not analyze the captured scene with available vision models' }) };
     }
 
-    const dogResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: workingModel,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: 'Describe this mascot in at most 120 characters: its appearance, clothing, colors, and logo. Only mention visible details.' },
-            { type: 'image_url', image_url: { url: dogImage } }
-          ]
-        }],
-        max_tokens: 65
-      })
-    });
-    if (dogResponse.ok) {
-      const result = await dogResponse.json();
-      dogAnalysis = (result.choices?.[0]?.message?.content || '').slice(0, 150);
-    }
-    if (!dogAnalysis) dogAnalysis = 'a small orange Shiba-like dog wearing an orange hoodie with a white Bitcoin symbol';
+    // Deliberately do not feed the realistic mascot reference into vision analysis.
+    // A fixed text description defines the mascot in the same cartoon style as the scene.
+    const dogAnalysis = 'a friendly cartoon Shiba-like Bitcoin mascot, orange hoodie, bold white Bitcoin symbol, simplified shapes, thick black outlines, flat colors, cel shading';
 
     // Keep the prompt comfortably below Venice's 1,500-character limit.
-    const placementPrompt = `BOLD 2D EDITORIAL CARTOON ILLUSTRATION — NOT A PHOTO. Recreate this scene: ${sceneAnalysis}. Preserve the camera view, composition, background layout, and positions of major objects, but DRAW THE ENTIRE IMAGE as one cohesive cartoon. Thick confident black ink outlines, simplified graphic shapes, expressive clean linework, flat vivid colors, and clear cel shading. Background and people/objects must be illustrated in the same style. Add this Bitcoin dog: ${dogAnalysis}. Make the dog a stylized cartoon mascot; keep its orange hoodie and white Bitcoin symbol clear. Use simple painted shadows only. ABSOLUTELY NO photorealism, realistic skin or fur texture, photographic lighting, 3D rendering, lens effects, fine photographic detail, extra dogs, captions, or watermark.`;
+    const placementPrompt = `BOLD 2D EDITORIAL CARTOON ILLUSTRATION — NOT A PHOTO. Recreate this scene: ${sceneAnalysis}. Preserve the camera view, composition, background layout, and positions of major objects, but DRAW THE ENTIRE IMAGE as one cohesive cartoon. Thick confident black ink outlines, simplified graphic shapes, expressive clean linework, flat vivid colors, and clear cel shading. Background and people/objects must be illustrated in the same style. Add this mascot: ${dogAnalysis}. Draw it as a flat 2D cartoon, not a realistic animal. Keep its orange hoodie and white Bitcoin symbol clear. Use simple painted shadows only. ABSOLUTELY NO photorealism, realistic skin or fur texture, photographic lighting, 3D rendering, lens effects, fine photographic detail, extra dogs, captions, or watermark.`;
     if (placementPrompt.length > 1450) {
       return { statusCode: 500, body: JSON.stringify({ ok: false, error: 'Generation prompt exceeded safe length limit', promptLength: placementPrompt.length }) };
     }
@@ -130,7 +113,7 @@ exports.handler = async function (event) {
         placementPrompt,
         visionModel: workingModel,
         imageModel: 'venice-sd35',
-        processingMode: 'vision-description-plus-cartoon-generation'
+        processingMode: 'scene-vision-plus-fixed-cartoon-mascot-generation'
       })
     };
   } catch (err) {
