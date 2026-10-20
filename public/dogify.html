@@ -303,7 +303,7 @@
         const saveToggle = document.getElementById('save-toggle');
         const shouldSave = saveToggle && saveToggle.checked;
         
-        if (shouldSave && result.saveToSupabase) {
+        if (shouldSave) {
           statusEl.innerHTML = `🔄 <strong>Saving image...</strong><br><small>Compressing for faster sharing</small>`;
           
           try {
@@ -374,13 +374,15 @@
             
             if (saveResponse.ok) {
               const saveResult = await saveResponse.json();
-              if (saveResult.ok) {
-                finalImageUrl = saveResult.url; // Use the direct storage URL
-                // Create proper shareable URL that will have static meta tags
+              if (saveResult.ok && saveResult.id) {
+                finalImageUrl = saveResult.url;
                 const imageId = saveResult.id;
-                shareableUrl = `${window.location.origin}/share/${imageId}`;
-                console.log('Image saved to Supabase:', imageId);
+                shareableUrl = window.location.origin + '/share/' + imageId;
+                console.log('Image saved to Netlify Blobs:', imageId);
                 console.log('Shareable URL created:', shareableUrl);
+              } else {
+                console.error('Image save function returned an unsuccessful result:', saveResult);
+                statusEl.innerHTML = `⚠️ <strong>Image generated, but saving failed.</strong><br><small>${saveResult.details || saveResult.error || 'The save function did not return an image ID.'} No share link was created.</small>`;
               }
             } else {
               const errorResult = await saveResponse.json().catch(() => ({}));
