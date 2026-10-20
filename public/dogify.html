@@ -384,11 +384,8 @@
               }
             } else {
               const errorResult = await saveResponse.json().catch(() => ({}));
-              if (saveResponse.status === 503) {
-                console.warn('Image saving service not configured - using Venice URL directly');
-              } else {
-                console.warn('Failed to save to Supabase:', errorResult);
-              }
+              console.error('Dogify image save failed:', saveResponse.status, errorResult);
+              statusEl.innerHTML = `⚠️ <strong>Image was generated, but saving failed.</strong><br><small>${errorResult.details || errorResult.error || `HTTP ${saveResponse.status}`}. No share link was created. Please try again.</small>`;
             }
           } catch (saveErr) {
             console.warn('Failed to save to Supabase:', saveErr);
