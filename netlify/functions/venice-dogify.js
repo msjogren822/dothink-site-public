@@ -33,7 +33,7 @@ exports.handler = async function (event) {
           messages: [{
             role: 'user',
             content: [
-              { type: 'text', text: 'Describe only visible facts in this photo in at most 280 characters. Include camera view, background, major objects and their positions, lighting, and colors. Do not guess text or invent details.' },
+              { type: 'text', text: 'Describe this photo in at most 280 characters. Identify the main person as a human and note approximate age, hair, expression, clothing colors, camera view, background, and positions of major objects. Do not describe the person as an animal or invent details.' },
               { type: 'image_url', image_url: { url: userImage } }
             ]
           }],
@@ -59,10 +59,10 @@ exports.handler = async function (event) {
 
     // Deliberately do not feed the realistic mascot reference into vision analysis.
     // A fixed text description defines the mascot in the same cartoon style as the scene.
-    const dogAnalysis = 'a friendly cartoon Shiba-like Bitcoin mascot, orange hoodie, bold white Bitcoin symbol, simplified shapes, thick black outlines, flat colors, cel shading';
+    const dogAnalysis = 'a separate small, four-legged Shiba Inu mascot with orange-and-cream fur, round friendly face, upright pointed ears, curled fluffy tail, wearing its distinctive orange hoodie with a large clear white Bitcoin ₿ symbol';
 
     // Keep the prompt comfortably below Venice's 1,500-character limit.
-    const placementPrompt = `BOLD 2D EDITORIAL CARTOON ILLUSTRATION — NOT A PHOTO. Recreate this scene: ${sceneAnalysis}. Preserve the camera view, composition, background layout, and positions of major objects, but DRAW THE ENTIRE IMAGE as one cohesive cartoon. Thick confident black ink outlines, simplified graphic shapes, expressive clean linework, flat vivid colors, and clear cel shading. Background and people/objects must be illustrated in the same style. Add this mascot: ${dogAnalysis}. Draw it as a flat 2D cartoon, not a realistic animal. Keep its orange hoodie and white Bitcoin symbol clear. Use simple painted shadows only. ABSOLUTELY NO photorealism, realistic skin or fur texture, photographic lighting, 3D rendering, lens effects, fine photographic detail, extra dogs, captions, or watermark.`;
+    const placementPrompt = `BOLD 2D EDITORIAL CARTOON — NOT A PHOTO. Scene from the user's photo: ${sceneAnalysis}. Keep the main person HUMAN, with a human face, hair, body, and original clothing colors; do not add animal ears or transform the person into a dog. Preserve the overall camera view, pose, and background layout. Redraw everything as one cohesive 2D cartoon with thick black ink outlines, simplified shapes, flat vivid colors, and cel shading. Add ONE SEPARATE, clearly visible small dog beside the person, sitting or standing naturally on the bed/pillow area: ${dogAnalysis}. The dog must be a distinct four-legged animal, not merged with or replacing the person. Match the mascot's orange hoodie and white Bitcoin symbol. Keep the dog recognizable as a Shiba Inu. No photorealism, realistic fur/skin texture, 3D rendering, extra dogs, captions, or watermark.`;
     if (placementPrompt.length > 1450) {
       return { statusCode: 500, body: JSON.stringify({ ok: false, error: 'Generation prompt exceeded safe length limit', promptLength: placementPrompt.length }) };
     }
