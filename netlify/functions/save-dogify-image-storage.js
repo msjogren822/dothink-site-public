@@ -120,41 +120,21 @@ export async function handler(event, context) {
       const imageId = crypto.randomUUID();
       const filename = `${imageId}.jpg`;
 
-      console.log('Uploading to Supabase Storage:', {
-        bucket: 'dogify-bucket',
-        filename: filename,
-        bufferSize: imageBuffer.length
+      // Store image bytes in Netlify Blobs for this test branch.
+      const { getStore } = await import('@netlify/blobs');
+      const imageStore = getStore('dogify-blobs-smoke-test');
+      await imageStore.set(filename, imageBuffer, {
+        metadata: { contentType: 'image/jpeg' }
       });
 
-      // Upload to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('dogify-bucket')
-        .upload(filename, imageBuffer, {
-          contentType: 'image/jpeg',
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        return {
-          statusCode: 500,
-          headers,
-          body: JSON.stringify({ 
-            ok: false, 
-            error: 'Failed to upload image',
-            details: uploadError.message
-          })
-        };
-      }
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('dogify-bucket')
-        .getPublicUrl(filename);
-
-      const publicUrl = urlData.publicUrl;
-      console.log('Image uploaded, public URL:', publicUrl);
+      // Keep the existing Supabase metadata table, but point its image URL
+      // at the Netlify Function that serves the Blobs object.
+      const publicUrl = `/.netlify/functions/serve-dogify-blob?id=${imageId}`;
+      console.log('Image stored in Netlify Blobs:', {
+        store: 'dogify-blobs-smoke-test',
+        filename,
+        bufferSize: imageBuffer.length
+      });
 
       // Save metadata to database (with fallback for missing columns)
       console.log('Saving metadata to database...');
