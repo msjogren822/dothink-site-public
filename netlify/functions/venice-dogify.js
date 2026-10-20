@@ -128,7 +128,7 @@ exports.handler = async function (event) {
     console.log(`Dog: ${dogAnalysis}`);
 
     // Step 3: Create simple placement prompt (like OpenAI version)
-    const placementPrompt = `Recreate this scene: ${sceneAnalysis}. Add this spritely, happy puppy: ${dogAnalysis}. Place the puppy naturally in the environment so it looks like it belongs there.`;
+    const placementPrompt = `Create a polished EDITORIAL CARTOON ILLUSTRATION, not a photograph. Reconstruct the scene described here as faithfully as possible: ${sceneAnalysis}. Preserve the original setting, camera viewpoint, composition, lighting direction, dominant colors, people, objects, and spatial relationships. Render the entire scene in one consistent editorial illustration style: confident clean ink outlines, simplified but accurate shapes, expressive details, subtle paper or painterly texture, and a restrained, appealing color palette. Add the specific Bitcoin dog described here: ${dogAnalysis}. The dog wears its distinctive orange hoodie with the white Bitcoin symbol. Make the dog clearly recognizable, charming, and naturally integrated into the scene with correct perspective, scale, lighting, contact shadows, and placement. Stylize the rendering, but preserve the actual situation and layout. The result must look like an intentionally illustrated editorial cartoon from edge to edge, never a realistic photo, photorealistic composite, or photo with a cartoon filter. Do not invent a different setting, change the main action, omit important objects, add extra dogs, or include captions, lettering, or watermarks.`;
     
     console.log(`Placement prompt (${placementPrompt.length} chars):`, placementPrompt);
 
