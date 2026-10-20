@@ -261,11 +261,7 @@
           seconds++;
           const dots = '.'.repeat((seconds % 4));
           
-          if (seconds <= 8) {
-            statusEl.innerHTML = `🔍 Analyzing your image${dots}<br><small>Using Venice.ai | ${seconds}s elapsed</small>`;
-          } else {
-            statusEl.innerHTML = `🐕 Adding $dog ${dots}<br><small>Using Venice.ai | ${seconds}s elapsed</small>`;
-          }
+          statusEl.innerHTML = `🎨 Cartoonizing your photo${dots}<br><small>Using Venice.ai | ${seconds}s elapsed</small>`;
         }, 1000);
         
         const dogImageData = await fetchImageAsDataURL(specialDogURL);
