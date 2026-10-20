@@ -132,17 +132,8 @@ exports.handler = async function (event) {
     
     console.log(`Placement prompt (${placementPrompt.length} chars):`, placementPrompt);
 
-    if (placementPrompt.length > 1400) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ 
-          ok: false, 
-          error: 'Placement prompt too long',
-          details: `Prompt length: ${placementPrompt.length}`
-        })
-      };
-    }
-
+    // Prompt includes style and scene-preservation instructions; allow the full prompt through to Venice.
+    
     // Step 4: Generate the combined image
     const imageResponse = await fetch('https://api.venice.ai/api/v1/images/generations', {
       method: 'POST',
