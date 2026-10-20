@@ -30,11 +30,11 @@ export default async function handler(request, context) {
     let imageBuffer;
     let contentType;
     if (imageData.startsWith("data:image/")) {
-      const match = imageData.match(/^data:(image\\/(?:jpeg|jpg|png));base64,([\\s\\S]+)$/i);
+      const match = imageData.match(/^data:(image\/(?:jpeg|jpg|png));base64,([\s\S]+)$/i);
       if (!match) throw new Error("Image must be a base64 JPEG or PNG data URL.");
       contentType = match[1].toLowerCase() === "image/jpg" ? "image/jpeg" : match[1].toLowerCase();
       imageBuffer = Buffer.from(match[2], "base64");
-    } else if (/^https?:\\/\\//i.test(imageData)) {
+    } else if (/^https?:\/\//i.test(imageData)) {
       const response = await fetch(imageData);
       if (!response.ok) throw new Error(`Unable to fetch image: HTTP ${response.status}`);
       contentType = (response.headers.get("content-type") || "").split(";")[0].toLowerCase();
