@@ -196,10 +196,14 @@
       captureLeftBtn.classList.add('button-active');
       captureRightBtn.classList.add('button-active');
       
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext('2d').drawImage(video, 0, 0);
-      capturedImageData = canvas.toDataURL('image/png', 0.8);
+      const sourceWidth = video.videoWidth;
+      const sourceHeight = video.videoHeight;
+      const scale = Math.min(1, 1024 / Math.max(sourceWidth, sourceHeight));
+      canvas.width = Math.round(sourceWidth * scale);
+      canvas.height = Math.round(sourceHeight * scale);
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      // JPEG keeps the request payload smaller while preserving enough detail for cartoonization.
+      capturedImageData = canvas.toDataURL('image/jpeg', 0.84);
       
       canvas.style.display = 'block';
       video.style.display = 'none';
