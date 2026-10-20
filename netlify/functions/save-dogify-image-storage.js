@@ -1,13 +1,13 @@
 // Save Dogify images and share-history metadata in Netlify Blobs.
-// No Supabase dependency: each share URL is backed by an image and a JSON record.
+// Uses a context-specific store so Deploy Previews cannot write to production data.
 
 import { getStore } from "@netlify/blobs";
 import { randomUUID } from "node:crypto";
 
-const STORE_NAME = "dogify-blobs-smoke-test";
+const STORE_PREFIX = "dogify-images";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export async function handler(event) {
+export default async function handler(request, context) {
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type",
@@ -15,26 +15,26 @@ export async function handler(event) {
     "Content-Type": "application/json"
   };
 
-  if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "" };
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, headers, body: JSON.stringify({ ok: false, error: "Method not allowed" }) };
+  if (request.method === "OPTIONS") return new Response("", { status: 200, headers });
+  if (request.method !== "POST") {
+    return new Response(JSON.stringify({ ok: false, error: "Method not allowed" }), { status: 405, headers });
   }
 
   try {
-    const body = JSON.parse(event.body || "{}");
+    const body = await request.json();
     const { imageData, sceneAnalysis, generationPrompt, modelUsed, generationTimeSeconds, userSession } = body;
     if (typeof imageData !== "string" || !imageData) {
-      return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: "Missing imageData" }) };
+      return new Response(JSON.stringify({ ok: false, error: "Missing imageData" }), { status: 400, headers });
     }
 
     let imageBuffer;
     let contentType;
     if (imageData.startsWith("data:image/")) {
-      const match = imageData.match(/^data:(image\/(?:jpeg|jpg|png));base64,([\s\S]+)$/i);
+      const match = imageData.match(/^data:(image\\/(?:jpeg|jpg|png));base64,([\\s\\S]+)$/i);
       if (!match) throw new Error("Image must be a base64 JPEG or PNG data URL.");
       contentType = match[1].toLowerCase() === "image/jpg" ? "image/jpeg" : match[1].toLowerCase();
       imageBuffer = Buffer.from(match[2], "base64");
-    } else if (/^https?:\/\//i.test(imageData)) {
+    } else if (/^https?:\\/\\//i.test(imageData)) {
       const response = await fetch(imageData);
       if (!response.ok) throw new Error(`Unable to fetch image: HTTP ${response.status}`);
       contentType = (response.headers.get("content-type") || "").split(";")[0].toLowerCase();
@@ -49,7 +49,7 @@ export async function handler(event) {
 
     if (!imageBuffer.length) throw new Error("The image was empty.");
     if (imageBuffer.length > 1.5 * 1024 * 1024) {
-      return { statusCode: 413, headers, body: JSON.stringify({ ok: false, error: "Image too large", details: "Maximum image size is 1.5 MB." }) };
+      return new Response(JSON.stringify({ ok: false, error: "Image too large", details: "Maximum image size is 1.5 MB." }), { status: 413, headers });
     }
 
     const isJpeg = imageBuffer[0] === 0xff && imageBuffer[1] === 0xd8;
@@ -58,10 +58,10 @@ export async function handler(event) {
     contentType = isPng ? "image/png" : "image/jpeg";
 
     const id = randomUUID();
-    const extension = isPng ? "png" : "jpg";
-    const imageKey = `${id}.${extension}`;
+    const imageKey = `${id}.${isPng ? "png" : "jpg"}`;
     const createdAt = new Date().toISOString();
-    const store = getStore(STORE_NAME);
+    const contextName = context?.deploy?.context || "unknown";
+    const store = getStore(`${STORE_PREFIX}-${contextName}`);
 
     const record = {
       id,
@@ -76,7 +76,6 @@ export async function handler(event) {
       user_session: userSession || null
     };
 
-    // Write image first, then its JSON record. If metadata writing fails, remove the image.
     await store.set(imageKey, imageBuffer, { metadata: { contentType } });
     try {
       await store.set(`${id}.json`, JSON.stringify(record), { metadata: { contentType: "application/json" } });
@@ -85,20 +84,12 @@ export async function handler(event) {
       throw error;
     }
 
-    const host = event.headers?.["x-forwarded-host"] || event.headers?.host || event.headers?.Host;
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
     const origin = host ? `https://${host}` : "";
     const imageUrl = `${origin}/.netlify/functions/serve-dogify-blob?id=${id}`;
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ ok: true, id, url: imageUrl, size: imageBuffer.length, message: "Image and share history saved to Netlify Blobs." })
-    };
+    return new Response(JSON.stringify({ ok: true, id, url: imageUrl, size: imageBuffer.length, message: "Image and share history saved to Netlify Blobs." }), { status: 200, headers });
   } catch (error) {
     console.error("Dogify Blobs save failed:", error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ ok: false, error: "Failed to save image", details: error?.message || "Unknown error" })
-    };
+    return new Response(JSON.stringify({ ok: false, error: "Failed to save image", details: error?.message || "Unknown error" }), { status: 500, headers });
   }
 }
