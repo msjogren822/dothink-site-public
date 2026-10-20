@@ -17,7 +17,7 @@
 <body>
   <script async src='https://static.addtoany.com/menu/page.js'></script>
   <h1>$dog-ify Your Photo</h1>
-  <p>Capture a photo and let AI add $dog to your scene! (processing time, about 30 seconds)</p>
+  <p>Capture a photo and turn it into a cartoon with $dog! (processing time varies)</p>
 
   <!-- Save Toggle Section -->
   <div class="save-toggle-section">
@@ -29,7 +29,7 @@
       </label>
     </div>
     <div class="save-disclaimer">
-      <small>Your captured image is <strong>NOT SAVED</strong>, only your generated image will be with your permission. Your generated image is based on text descriptions of your captured image so it is safe to store for sharing.</small>
+      <small>Your captured image is <strong>NOT SAVED</strong>, only your generated image will be with your permission. Your generated image is created by editing your captured photo into a cartoon. Only the generated image is saved, with your permission.</small>
     </div>
   </div>
 
@@ -455,7 +455,7 @@
         }, 100);
         
         // Populate technical details
-        sceneAnalysisEl.textContent = result.sceneAnalysis || result.imageAnalysis || 'No analysis available';
+        sceneAnalysisEl.textContent = result.sceneAnalysis || result.imageAnalysis || 'Original photo used directly as the base image; no text analysis performed.';
         generationPromptEl.textContent = result.placementPrompt || result.reproductionPrompt || 'No prompt available';
         techDetails.style.display = 'block';
         
