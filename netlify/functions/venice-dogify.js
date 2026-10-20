@@ -80,7 +80,7 @@ exports.handler = async function (event) {
     if (!dogAnalysis) dogAnalysis = 'a small orange Shiba-like dog wearing an orange hoodie with a white Bitcoin symbol';
 
     // Keep the prompt comfortably below Venice's 1,500-character limit.
-    const placementPrompt = `Editorial cartoon, not a photo. Recreate this scene: ${sceneAnalysis}. Keep the same camera view, composition, background, object positions, lighting, and colors. Use clean ink outlines, simplified accurate shapes, subtle painterly texture, and a restrained palette. Add this Bitcoin dog: ${dogAnalysis}. Keep its orange hoodie and white Bitcoin symbol clear. Match scale, perspective, and lighting. Do not invent or rearrange scene elements. No photorealism, extra dogs, captions, or watermark.`;
+    const placementPrompt = `BOLD 2D EDITORIAL CARTOON ILLUSTRATION — NOT A PHOTO. Recreate this scene: ${sceneAnalysis}. Preserve the camera view, composition, background layout, and positions of major objects, but DRAW THE ENTIRE IMAGE as one cohesive cartoon. Thick confident black ink outlines, simplified graphic shapes, expressive clean linework, flat vivid colors, and clear cel shading. Background and people/objects must be illustrated in the same style. Add this Bitcoin dog: ${dogAnalysis}. Make the dog a stylized cartoon mascot; keep its orange hoodie and white Bitcoin symbol clear. Use simple painted shadows only. ABSOLUTELY NO photorealism, realistic skin or fur texture, photographic lighting, 3D rendering, lens effects, fine photographic detail, extra dogs, captions, or watermark.`;
     if (placementPrompt.length > 1450) {
       return { statusCode: 500, body: JSON.stringify({ ok: false, error: 'Generation prompt exceeded safe length limit', promptLength: placementPrompt.length }) };
     }
@@ -96,7 +96,6 @@ exports.handler = async function (event) {
         n: 1,
         size: '1024x1024',
         quality: 'auto',
-        style: 'natural',
         response_format: 'url'
       })
     });
