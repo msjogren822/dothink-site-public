@@ -1,7 +1,7 @@
-// Static share page for /share/{uuid}, backed entirely by Netlify Blobs.
+// Share page for /share/{uuid}, backed by context-specific Netlify Blobs.
 import { getStore } from "@netlify/blobs";
 
-const STORE_NAME = "dogify-blobs-smoke-test";
+const STORE_PREFIX = "dogify-images";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function escapeHtml(value = "") {
@@ -16,7 +16,7 @@ function page(title, message, status = 404) {
   });
 }
 
-export default async (request) => {
+export default async (request, context) => {
   const url = new URL(request.url);
   const segments = url.pathname.split("/").filter(Boolean);
   const id = segments[segments.length - 1];
@@ -24,7 +24,8 @@ export default async (request) => {
   if (!id || !UUID_PATTERN.test(id)) return page("Invalid image ID", "This share link is not valid.", 400);
 
   try {
-    const store = getStore(STORE_NAME);
+    const contextName = context?.deploy?.context || "unknown";
+    const store = getStore(`${STORE_PREFIX}-${contextName}`);
     const record = await store.get(`${id}.json`, { type: "json" });
     if (!record || record.id !== id || !record.image_key) {
       return page("Image not found", "This $DOGified image may have been removed or the link is incorrect.", 404);
