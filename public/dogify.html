@@ -390,8 +390,8 @@
               statusEl.innerHTML = `⚠️ <strong>Image was generated, but saving failed.</strong><br><small>${errorResult.details || errorResult.error || `HTTP ${saveResponse.status}`}. No share link was created. Please try again.</small>`;
             }
           } catch (saveErr) {
-            console.warn('Failed to save to Supabase:', saveErr);
-            // Continue with original URL if save fails
+            console.error('Failed to save image to Netlify Blobs:', saveErr);
+            statusEl.innerHTML = `⚠️ <strong>Image generated, but saving failed.</strong><br><small>${saveErr.message || 'Unknown save error'}. No share link was created. Please try again.</small>`;
           }
         } else if (!shouldSave) {
           console.log('User opted not to save image - using Venice URL directly');
