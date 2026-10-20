@@ -12,8 +12,8 @@ exports.handler = async function (event) {
       };
     }
 
-    const { userImage, dogImage } = JSON.parse(event.body);
-    
+    const { userImage, dogImage } = JSON.parse(event.body || '{}');
+
     if (!userImage || !dogImage) {
       return {
         statusCode: 400,
@@ -21,195 +21,77 @@ exports.handler = async function (event) {
       };
     }
 
-    console.log('Venice.ai: Analyzing scene and adding happy puppy...');
+    // Convert data URLs to raw base64, as required by Venice's multi-edit endpoint.
+    const toBase64 = (value) => {
+      const comma = value.indexOf(',');
+      return value.startsWith('data:') && comma !== -1 ? value.slice(comma + 1) : value;
+    };
 
-    // Use the correct vision-capable models
-    const visionModels = ["mistral-31-24b", "qwen-2.5-vl"];
-    let sceneAnalysis = "";
-    let dogAnalysis = "";
-    let workingModel = "";
+    // Keep the captured photo as the base image and use the supplied Bitcoin dog
+    // image as a visual reference. No vision/chat LLM calls are needed.
+    const placementPrompt = 'Restyle the FIRST image as a polished editorial cartoon with clean ink outlines, simplified shapes, subtle painterly texture, and a tasteful limited color palette. Preserve the original photo composition: same camera angle, framing, background, objects, positions, colors, and spatial relationships. Do not reinterpret, rearrange, add, or remove scene elements. Add the dog from the SECOND reference image naturally into the scene, retaining its distinctive orange hoodie and white Bitcoin symbol. Match perspective, scale, lighting, and contact shadows. No photorealism, no extra dogs, no text, no watermark.';
 
-    // Step 1: Analyze the captured scene
-    for (const visionModel of visionModels) {
-      console.log(`Trying vision model: ${visionModel}`);
-      
-      const visionResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: visionModel,
-          messages: [{
-            role: "user",
-            content: [
-              { 
-                type: "text", 
-                text: "Describe this scene concisely: lighting, setting, main objects, colors. Keep under 400 characters." 
-              },
-              { 
-                type: "image_url", 
-                image_url: { url: userImage } 
-              }
-            ]
-          }],
-          max_tokens: 200
-        })
-      });
+    console.log('Dogify: cartoonizing source photo with Venice image multi-edit.');
 
-      if (visionResponse.ok) {
-        const visionResult = await visionResponse.json();
-        sceneAnalysis = visionResult.choices?.[0]?.message?.content || "";
-        if (sceneAnalysis && sceneAnalysis.length > 10) {
-          workingModel = visionModel;
-          console.log(`SUCCESS with ${visionModel} for scene: ${sceneAnalysis.length} chars`);
-          break;
-        }
-      } else {
-        const errorText = await visionResponse.text();
-        console.error(`Failed with ${visionModel}:`, errorText);
-        continue;
-      }
-    }
-
-    // Step 2: Analyze the dog image using the same working model
-    if (workingModel) {
-      console.log(`Analyzing dog with ${workingModel}`);
-      
-      const dogVisionResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: workingModel,
-          messages: [{
-            role: "user",
-            content: [
-              { 
-                type: "text", 
-                text: "Describe this dog concisely: breed, size, color, distinctive features. Keep under 200 characters." 
-              },
-              { 
-                type: "image_url", 
-                image_url: { url: dogImage } 
-              }
-            ]
-          }],
-          max_tokens: 100
-        })
-      });
-
-      if (dogVisionResponse.ok) {
-        const dogResult = await dogVisionResponse.json();
-        dogAnalysis = dogResult.choices?.[0]?.message?.content || "a small puppy";
-        console.log(`Dog analysis: ${dogAnalysis}`);
-      } else {
-        const errorText = await dogVisionResponse.text();
-        console.error('Dog vision failed:', errorText);
-        dogAnalysis = "a small, happy puppy";
-      }
-    }
-
-    if (!sceneAnalysis || sceneAnalysis.length < 10) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ 
-          ok: false, 
-          error: 'Could not analyze the captured scene',
-          details: 'Scene vision analysis failed'
-        })
-      };
-    }
-    
-    console.log(`Scene: ${sceneAnalysis}`);
-    console.log(`Dog: ${dogAnalysis}`);
-
-    // Step 3: Create simple placement prompt (like OpenAI version)
-    const placementPrompt = `Illustrate this scene as a polished editorial cartoon, not a photo: ${sceneAnalysis}. Preserve the described setting, camera viewpoint, composition, key objects, colors, lighting, and spatial relationships. Use clean ink outlines, simplified accurate shapes, subtle painterly texture, and a tasteful limited color palette. Add the Bitcoin dog: ${dogAnalysis}. Show its distinctive orange hoodie and white Bitcoin symbol. Integrate it naturally with correct scale, perspective, lighting, and contact shadows. Keep the same situation and layout. No photorealism, no photo-filter look, no invented setting, no extra dogs, no text or watermark.`;
-    
-    console.log(`Placement prompt (${placementPrompt.length} chars):`, placementPrompt);
-
-    // Prompt includes style and scene-preservation instructions; allow the full prompt through to Venice.
-    
-    // Step 4: Generate the combined image
-    const imageResponse = await fetch('https://api.venice.ai/api/v1/images/generations', {
+    const imageResponse = await fetch('https://api.venice.ai/api/v1/image/multi-edit', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: "venice-sd35",
-        prompt: placementPrompt, // Use single prompt like OpenAI
-        n: 1,
-        size: "1024x1024", // Keep consistent with OpenAI
-        quality: "auto",
-        style: "natural",
-        response_format: "url"
+        modelId: 'firered-image-edit',
+        images: [toBase64(userImage), toBase64(dogImage)],
+        prompt: placementPrompt,
+        resolution: '1K',
+        output_format: 'png',
+        enhance_prompt: false
       })
     });
 
     if (!imageResponse.ok) {
       const errorText = await imageResponse.text();
-      console.error('Venice image generation error:', errorText);
+      console.error('Venice image edit error:', imageResponse.status, errorText);
       return {
-        statusCode: 500,
-        body: JSON.stringify({ 
-          ok: false, 
-          error: `Venice image generation failed: ${imageResponse.status}`,
-          details: errorText.substring(0, 200)
+        statusCode: 502,
+        body: JSON.stringify({
+          ok: false,
+          error: `Venice image editing failed: ${imageResponse.status}`,
+          details: errorText.substring(0, 500)
         })
       };
     }
 
-    const imageResult = await imageResponse.json();
-    
-    // Handle different response formats
-    let imageUrl;
-    if (imageResult.data && imageResult.data[0] && imageResult.data[0].url) {
-      imageUrl = imageResult.data[0].url;
-    } else if (imageResult.url) {
-      imageUrl = imageResult.url;
-    } else if (imageResult.images && imageResult.images[0]) {
-      imageUrl = imageResult.images[0];
-    } else {
-      console.error('Venice response structure:', imageResult);
+    // Venice returns the edited image as raw binary, not JSON or a hosted URL.
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    if (!imageBuffer.length) {
       return {
-        statusCode: 500,
-        body: JSON.stringify({ 
-          ok: false, 
-          error: 'No image URL found in Venice response', 
-          debug: Object.keys(imageResult)
-        })
+        statusCode: 502,
+        body: JSON.stringify({ ok: false, error: 'Venice returned an empty edited image' })
       };
     }
+
+    const imageDataUrl = `data:image/png;base64,${imageBuffer.toString('base64')}`;
 
     return {
       statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ok: true,
-        generatedImageUrl: imageUrl,
-        sceneAnalysis: sceneAnalysis,
-        dogAnalysis: dogAnalysis,
-        placementPrompt: placementPrompt, // Changed from combinationPrompt
-        visionModel: workingModel,
-        imageModel: "venice-sd35",
-        testPhase: "Simple puppy placement like OpenAI",
-        saveToSupabase: true // Flag to indicate we should save this
+        generatedImageUrl: imageDataUrl,
+        sceneAnalysis: 'Direct image editing: original photo used as the base image.',
+        dogAnalysis: 'Dog supplied as a visual reference image.',
+        placementPrompt,
+        visionModel: 'none',
+        imageModel: 'firered-image-edit',
+        processingMode: 'single-call-image-to-image'
       })
     };
-
   } catch (err) {
     console.error('Venice function error:', err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ 
-        ok: false, 
-        error: err.message
-      })
+      body: JSON.stringify({ ok: false, error: err.message || 'Unexpected image processing error' })
     };
   }
 };
