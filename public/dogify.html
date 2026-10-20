@@ -300,6 +300,7 @@
         // Save image to Supabase for stable sharing URL (only if toggle is enabled)
         let finalImageUrl = result.generatedImageUrl;
         let shareableUrl = window.location.href;
+        let saveErrorMessage = "";
         const saveToggle = document.getElementById('save-toggle');
         const shouldSave = saveToggle && saveToggle.checked;
         
@@ -382,16 +383,19 @@
                 console.log('Shareable URL created:', shareableUrl);
               } else {
                 console.error('Image save function returned an unsuccessful result:', saveResult);
-                statusEl.innerHTML = `⚠️ <strong>Image generated, but saving failed.</strong><br><small>${saveResult.details || saveResult.error || 'The save function did not return an image ID.'} No share link was created.</small>`;
+                saveErrorMessage = saveResult.details || saveResult.error || 'The save function did not return an image ID.';
+                statusEl.innerHTML = `⚠️ <strong>Image generated, but saving failed.</strong><br><small>${saveErrorMessage} No share link was created.</small>`;
               }
             } else {
               const errorResult = await saveResponse.json().catch(() => ({}));
               console.error('Dogify image save failed:', saveResponse.status, errorResult);
-              statusEl.innerHTML = `⚠️ <strong>Image was generated, but saving failed.</strong><br><small>${errorResult.details || errorResult.error || `HTTP ${saveResponse.status}`}. No share link was created. Please try again.</small>`;
+              saveErrorMessage = errorResult.details || errorResult.error || `HTTP ${saveResponse.status}`;
+              statusEl.innerHTML = `⚠️ <strong>Image was generated, but saving failed.</strong><br><small>${saveErrorMessage}. No share link was created. Please try again.</small>`;
             }
           } catch (saveErr) {
             console.error('Failed to save image to Netlify Blobs:', saveErr);
-            statusEl.innerHTML = `⚠️ <strong>Image generated, but saving failed.</strong><br><small>${saveErr.message || 'Unknown save error'}. No share link was created. Please try again.</small>`;
+            saveErrorMessage = saveErr.message || 'Unknown save error';
+            statusEl.innerHTML = `⚠️ <strong>Image generated, but saving failed.</strong><br><small>${saveErrorMessage}. No share link was created. Please try again.</small>`;
           }
         } else if (!shouldSave) {
           console.log('User opted not to save image - using Venice URL directly');
@@ -455,10 +459,9 @@
         generationPromptEl.textContent = result.placementPrompt || result.reproductionPrompt || 'No prompt available';
         techDetails.style.display = 'block';
         
-        statusEl.innerHTML = `
-          ✨ <strong>$dog Added!</strong> (${seconds}s)<br>
-          <small>Using ${result.visionModel || result.model} | Refresh to try again</small>
-        `;
+        statusEl.innerHTML = saveErrorMessage
+          ? `✨ <strong>$dog Added!</strong> (${seconds}s)<br><small>Image generated, but saving failed: ${saveErrorMessage}</small>`
+          : `✨ <strong>$dog Added!</strong> (${seconds}s)<br><small>Using ${result.visionModel || result.model} | Refresh to try again</small>`;
         
       } catch (err) {
         console.error('$dogify error:', err);
