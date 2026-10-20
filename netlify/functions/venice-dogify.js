@@ -4,79 +4,134 @@ exports.handler = async function (event) {
     if (event.httpMethod !== 'POST') {
       return { statusCode: 405, body: JSON.stringify({ ok: false, error: 'Method not allowed' }) };
     }
-
     if (!process.env.VENICE_API_KEY) {
       return { statusCode: 500, body: JSON.stringify({ ok: false, error: 'Venice API key not configured' }) };
     }
 
-    const { userImage } = JSON.parse(event.body || '{}');
-    if (!userImage || typeof userImage !== 'string') {
-      return { statusCode: 400, body: JSON.stringify({ ok: false, error: 'Missing userImage' }) };
+    const { userImage, dogImage } = JSON.parse(event.body || '{}');
+    if (!userImage || !dogImage) {
+      return { statusCode: 400, body: JSON.stringify({ ok: false, error: 'Missing userImage or dogImage' }) };
     }
 
-    // Venice expects raw base64, not a data:image/...;base64, prefix.
-    const comma = userImage.indexOf(',');
-    const imageBase64 = userImage.startsWith('data:') && comma >= 0
-      ? userImage.slice(comma + 1)
-      : userImage;
+    const headers = {
+      'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
+      'Content-Type': 'application/json'
+    };
 
-    const placementPrompt = 'Restyle this exact photo as a polished editorial cartoon with clean ink outlines and a restrained color palette. Preserve the same scene, framing, perspective, background, objects, and positions; do not rearrange or invent anything. Add one small, friendly Shiba-like dog wearing an orange hoodie with a white Bitcoin symbol, naturally matching the photo lighting and perspective. No photorealism, extra dogs, captions, or watermark.';
+    // Use a vision-capable text model for short descriptions, then one inexpensive
+    // text-to-image generation call. No image-edit endpoint or per-edit premium fee.
+    const visionModels = ['mistral-31-24b', 'qwen-2.5-vl'];
+    let sceneAnalysis = '';
+    let dogAnalysis = '';
+    let workingModel = '';
 
-    console.log('Dogify: direct image-to-image cartoon edit; input base64 chars:', imageBase64.length);
+    for (const model of visionModels) {
+      const response = await fetch('https://api.venice.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Describe only visible facts in this photo in at most 280 characters. Include camera view, background, major objects and their positions, lighting, and colors. Do not guess text or invent details.' },
+              { type: 'image_url', image_url: { url: userImage } }
+            ]
+          }],
+          max_tokens: 130
+        })
+      });
+      if (!response.ok) {
+        console.error('Scene vision failed:', model, response.status, (await response.text()).slice(0, 300));
+        continue;
+      }
+      const result = await response.json();
+      const description = result.choices?.[0]?.message?.content || '';
+      if (description.length > 10) {
+        sceneAnalysis = description.slice(0, 320);
+        workingModel = model;
+        break;
+      }
+    }
 
-    const startedAt = Date.now();
-    const imageResponse = await fetch('https://api.venice.ai/api/v1/image/edit', {
+    if (!sceneAnalysis) {
+      return { statusCode: 502, body: JSON.stringify({ ok: false, error: 'Could not analyze the captured scene with available vision models' }) };
+    }
+
+    const dogResponse = await fetch('https://api.venice.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.VENICE_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify({
-        model: 'firered-image-edit',
-        image: imageBase64,
+        model: workingModel,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Describe this mascot in at most 120 characters: its appearance, clothing, colors, and logo. Only mention visible details.' },
+            { type: 'image_url', image_url: { url: dogImage } }
+          ]
+        }],
+        max_tokens: 65
+      })
+    });
+    if (dogResponse.ok) {
+      const result = await dogResponse.json();
+      dogAnalysis = (result.choices?.[0]?.message?.content || '').slice(0, 150);
+    }
+    if (!dogAnalysis) dogAnalysis = 'a small orange Shiba-like dog wearing an orange hoodie with a white Bitcoin symbol';
+
+    // Keep the prompt comfortably below Venice's 1,500-character limit.
+    const placementPrompt = `Editorial cartoon, not a photo. Recreate this scene: ${sceneAnalysis}. Keep the same camera view, composition, background, object positions, lighting, and colors. Use clean ink outlines, simplified accurate shapes, subtle painterly texture, and a restrained palette. Add this Bitcoin dog: ${dogAnalysis}. Keep its orange hoodie and white Bitcoin symbol clear. Match scale, perspective, and lighting. Do not invent or rearrange scene elements. No photorealism, extra dogs, captions, or watermark.`;
+    if (placementPrompt.length > 1450) {
+      return { statusCode: 500, body: JSON.stringify({ ok: false, error: 'Generation prompt exceeded safe length limit', promptLength: placementPrompt.length }) };
+    }
+
+    console.log('Dogify prompt length:', placementPrompt.length, 'vision model:', workingModel);
+
+    const imageResponse = await fetch('https://api.venice.ai/api/v1/images/generations', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: 'venice-sd35',
         prompt: placementPrompt,
-        enhance_prompt: false,
-        safe_mode: true
+        n: 1,
+        size: '1024x1024',
+        quality: 'auto',
+        style: 'natural',
+        response_format: 'url'
       })
     });
 
-    const elapsedMs = Date.now() - startedAt;
-    console.log('Venice image edit response:', imageResponse.status, 'elapsed ms:', elapsedMs);
-
     if (!imageResponse.ok) {
       const errorText = await imageResponse.text();
-      console.error('Venice image edit error:', imageResponse.status, errorText);
+      console.error('Venice image generation error:', imageResponse.status, errorText);
       return {
         statusCode: 502,
         body: JSON.stringify({
           ok: false,
-          error: `Venice image editing failed: ${imageResponse.status}`,
+          error: `Venice image generation failed: ${imageResponse.status}`,
           details: errorText.substring(0, 500)
         })
       };
     }
 
-    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-    if (!imageBuffer.length) {
-      return { statusCode: 502, body: JSON.stringify({ ok: false, error: 'Venice returned an empty edited image' }) };
+    const imageResult = await imageResponse.json();
+    const imageUrl = imageResult.data?.[0]?.url || imageResult.url || imageResult.images?.[0];
+    if (!imageUrl) {
+      console.error('Unexpected Venice response keys:', Object.keys(imageResult));
+      return { statusCode: 502, body: JSON.stringify({ ok: false, error: 'No image URL found in Venice response' }) };
     }
-
-    const contentType = imageResponse.headers.get('content-type') || 'image/png';
-    const imageDataUrl = `data:${contentType};base64,${imageBuffer.toString('base64')}`;
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ok: true,
-        generatedImageUrl: imageDataUrl,
-        sceneAnalysis: 'Original photo edited directly; no text-based scene analysis.',
-        dogAnalysis: 'Dog specified directly in the edit instruction.',
+        generatedImageUrl: imageUrl,
+        sceneAnalysis,
+        dogAnalysis,
         placementPrompt,
-        visionModel: 'none',
-        imageModel: 'firered-image-edit',
-        processingMode: 'single-call-single-image-edit',
-        processingTimeMs: elapsedMs
+        visionModel: workingModel,
+        imageModel: 'venice-sd35',
+        processingMode: 'vision-description-plus-cartoon-generation'
       })
     };
   } catch (err) {
