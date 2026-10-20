@@ -129,7 +129,8 @@ export async function handler(event, context) {
 
       // Keep the existing Supabase metadata table, but point its image URL
       // at the Netlify Function that serves the Blobs object.
-      const publicUrl = `/.netlify/functions/serve-dogify-blob?id=${imageId}`;
+      const host = event.headers?.host || event.headers?.Host;
+      const publicUrl = `${host ? `https://${host}` : ''}/.netlify/functions/serve-dogify-blob?id=${imageId}`;
       console.log('Image stored in Netlify Blobs:', {
         store: 'dogify-blobs-smoke-test',
         filename,
