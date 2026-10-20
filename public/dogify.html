@@ -278,14 +278,16 @@
 
         clearInterval(counterInterval);
 
-        if (!response.ok) {
-          const text = await response.text();
-          console.error('Server response:', text);
-          throw new Error(`Server error: ${response.status}`);
-        }
+        const result = await response.json().catch(async () => ({
+          ok: false,
+          error: await response.text().catch(() => 'No response body')
+        }));
 
-        const result = await response.json();
-        if (!result.ok) throw new Error(result.error);
+        if (!response.ok || !result.ok) {
+          console.error('Dogify server response:', response.status, result);
+          const detail = result.details ? `: ${result.details}` : '';
+          throw new Error(`${result.error || `Server error: ${response.status}`}${detail}`);
+        }
 
         dogifiedImgEl.src = result.generatedImageUrl;
         dogifiedImgEl.style.display = 'block';
