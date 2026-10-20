@@ -36,7 +36,7 @@ exports.handler = async function (event) {
         model: 'firered-image-edit',
         image: userImage,
         prompt: placementPrompt,
-        resolution: '1K',
+        // firered-image-edit does not accept a resolution parameter; let the model choose.
         enhance_prompt: false,
         safe_mode: true
       })
