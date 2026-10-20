@@ -22,7 +22,6 @@ exports.handler = async function (event) {
     // text-to-image generation call. No image-edit endpoint or per-edit premium fee.
     const visionModels = ['mistral-31-24b', 'qwen-2.5-vl'];
     let sceneAnalysis = '';
-    let dogAnalysis = '';
     let workingModel = '';
 
     for (const model of visionModels) {
