@@ -33,7 +33,7 @@ exports.handler = async function (event) {
           messages: [{
             role: 'user',
             content: [
-              { type: 'text', text: 'Describe this photo in at most 280 characters. Identify the main person as a human and note approximate age, hair, expression, clothing colors, camera view, background, and positions of major objects. Do not describe the person as an animal or invent details.' },
+              { type: 'text', text: 'Describe the visible scene in at most 280 characters. Identify its main subjects (which may be people, animals, landscapes, buildings, or objects), their positions, camera view, background, and dominant colors. Mention people only if present. Stick to visible facts; do not invent details.' },
               { type: 'image_url', image_url: { url: userImage } }
             ]
           }],
@@ -62,7 +62,7 @@ exports.handler = async function (event) {
     const dogAnalysis = 'a separate small, four-legged Shiba Inu mascot with orange-and-cream fur, round friendly face, upright pointed ears, curled fluffy tail, wearing its distinctive orange hoodie with a large clear white Bitcoin ₿ symbol';
 
     // Keep the prompt comfortably below Venice's 1,500-character limit.
-    const placementPrompt = `BOLD 2D EDITORIAL CARTOON — NOT A PHOTO. Scene from the user's photo: ${sceneAnalysis}. Keep the main person HUMAN, with a human face, hair, body, and original clothing colors; do not add animal ears or transform the person into a dog. Preserve the overall camera view, pose, and background layout. Redraw everything as one cohesive 2D cartoon with thick black ink outlines, simplified shapes, flat vivid colors, and cel shading. Add ONE SEPARATE, clearly visible small dog beside the person, sitting or standing naturally on the bed/pillow area: ${dogAnalysis}. The dog must be a distinct four-legged animal, not merged with or replacing the person. Match the mascot's orange hoodie and white Bitcoin symbol. Keep the dog recognizable as a Shiba Inu. No photorealism, realistic fur/skin texture, 3D rendering, extra dogs, captions, or watermark.`;
+    const placementPrompt = `BOLD 2D EDITORIAL CARTOON — NOT A PHOTO. Scene: ${sceneAnalysis}. Preserve the scene's overall viewpoint, layout, and key subjects. Redraw the entire image as one cohesive 2D cartoon with thick black ink outlines, simplified shapes, flat vivid colors, and cel shading. Add ONE SEPARATE, clearly visible small Shiba Inu mascot: ${dogAnalysis}. Place it naturally in an open area of the scene, beside the main subject when suitable, without covering important details. Keep the mascot a distinct four-legged dog; never merge it with, replace, or transform any person, animal, or object in the original scene. Preserve the original scene's subjects and setting. Keep the orange hoodie and white Bitcoin ₿ symbol clear. No photorealism, 3D rendering, extra mascot dogs, captions, or watermark.`;
     if (placementPrompt.length > 1450) {
       return { statusCode: 500, body: JSON.stringify({ ok: false, error: 'Generation prompt exceeded safe length limit', promptLength: placementPrompt.length }) };
     }
