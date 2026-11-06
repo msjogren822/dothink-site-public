@@ -165,7 +165,9 @@ async function notifyDiscord(webhookUrl, session, firstMessage) {
           // differently so the two are easy to tell apart in Discord.
           username: 'dothink.in — homepage chat',
           content:
-            `[homepage chat — dothink.in] New chat — session \`${session}\`\n` +
+            `[homepage chat — dothink.in] New chat\n` +
+            `Session: \`${session}\`\n` +
+            `Chat URL: https://www.dothink.in/\n` +
             `First message: ${excerpt || '(empty)'}`
         }),
         signal: controller.signal

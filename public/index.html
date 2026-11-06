@@ -1573,6 +1573,34 @@
         var chatHistory = []; // { role, content } — in memory only, this session
         var chatBusy = false;
 
+        // A real session id for this visit, matching the WordPress chat:
+        // one UUID per page load, stable across every message in the
+        // conversation, kept in memory only (never stored). It goes out
+        // with each request so the Discord notification can carry the
+        // Session line (and the "!r your message" reply format can key
+        // off it) instead of the bare site name standing in as the id.
+        function makeSessionId() {
+          if (window.crypto && typeof window.crypto.randomUUID === "function") {
+            return window.crypto.randomUUID();
+          }
+          var bytes = new Uint8Array(16);
+          if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+            window.crypto.getRandomValues(bytes);
+          } else {
+            for (var i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random() * 256);
+          }
+          bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+          bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10
+          var hex = "";
+          for (var j = 0; j < 16; j++) {
+            hex += (bytes[j] + 0x100).toString(16).slice(1);
+            if (j === 3 || j === 5 || j === 7 || j === 9) hex += "-";
+          }
+          return hex;
+        }
+        var chatSessionId = makeSessionId();
+        var chatSessionStartedAt = new Date().toISOString();
+
         function scrollChatToBottom() {
           chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
         }
@@ -1648,7 +1676,20 @@
           fetch(CHAT_ENDPOINT, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages: chatHistory.slice(), session: "dothink.in" })
+            body: JSON.stringify({
+              messages: chatHistory.slice(),
+              // Session data, mirroring what the WordPress chat sends so
+              // its Discord message can show the same lines: the session
+              // UUID, where the chat lives, and when this session began.
+              // "session" carries the UUID itself (as WordPress sends it);
+              // "site" keeps the old "dothink.in" label available as the
+              // human-readable source rather than as the session id.
+              session: chatSessionId,
+              session_id: chatSessionId,
+              site: "dothink.in",
+              chat_url: "https://www.dothink.in/",
+              session_started_at: chatSessionStartedAt
+            })
           }).then(function (res) {
             if (!res.ok) throw new Error("chat unavailable");
             return res.json().catch(function () { throw new Error("chat unavailable"); });
