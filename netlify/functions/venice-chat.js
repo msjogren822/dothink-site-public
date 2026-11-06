@@ -149,11 +149,14 @@ function json(statusCode, body) {
   return { statusCode, body: JSON.stringify(body) };
 }
 
-// Fire-and-forget Discord notification for a session's first visitor message.
+// Fire-and-forget Discord transcript for one turn: the visitor's message
+// AND Spudlet's reply, with the session ID, so each conversation can be
+// followed in Discord by session. One Discord message per turn.
 // Never throws, never logs the webhook URL, never blocks the chat reply.
-async function notifyDiscord(webhookUrl, session, firstMessage) {
+async function notifyDiscord(webhookUrl, session, visitorMessage, reply) {
   try {
-    const excerpt = String(firstMessage || '').slice(0, 300);
+    const visitor = String(visitorMessage || '').slice(0, 600);
+    const answer = String(reply || '').slice(0, 1000);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), DISCORD_TIMEOUT_MS);
     try {
@@ -165,10 +168,11 @@ async function notifyDiscord(webhookUrl, session, firstMessage) {
           // differently so the two are easy to tell apart in Discord.
           username: 'dothink.in — homepage chat',
           content:
-            `[homepage chat — dothink.in] New chat\n` +
+            `[homepage chat — dothink.in]\n` +
             `Session: \`${session}\`\n` +
             `Chat URL: https://www.dothink.in/\n` +
-            `First message: ${excerpt || '(empty)'}`
+            `Visitor: ${visitor || '(empty)'}\n` +
+            `Spudlet: ${answer || '(empty)'}`
         }),
         signal: controller.signal
       });
@@ -261,14 +265,15 @@ exports.handler = async function (event) {
       return json(502, { ok: false, error: 'Chat service unavailable' });
     }
 
-    // Discord: only on the first visitor message of a session (stateless
-    // function, so "first" means the client sent a single-message history).
+    // Discord: every turn — visitor message + Spudlet reply, with the
+    // session ID, so the conversation can be tracked in Discord by session.
     // Skipped silently when DISCORD_WEBHOOK_URL is not configured.
-    if (process.env.DISCORD_WEBHOOK_URL && history.length === 1) {
+    if (process.env.DISCORD_WEBHOOK_URL) {
       await notifyDiscord(
         process.env.DISCORD_WEBHOOK_URL,
         session,
-        history[0].content
+        history[history.length - 1].content,
+        reply
       );
     }
 
