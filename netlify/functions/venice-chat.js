@@ -141,8 +141,19 @@ const CONTACT_GATE = `CONTACT RULE — follow it exactly:
 - You MAY talk about Matthew's background in general terms (from the context above and the resume section, once filled in), and you MAY offer the on-site contact form / this chat as the way to reach him.
 - Once the visitor has given their name and reason, you may share his contact details. If you do not have his contact details in your context, say so honestly and offer the contact form instead — never invent an email address or phone number.`;
 
+// Dates — a dated credential is not a current one. The resume lists
+// Google Analytics (2025) and Google Ads (2025); both expired in 2025,
+// so never present Matthew as currently certified in either — say
+// "formerly certified (2025, expired)" if asked. In general, only claim
+// a credential, role, or job as current when the context says it is
+// current; keep the dates attached to the facts instead of dropping them.
+const DATE_RULE = `DATES — be mindful of dates:
+- A credential listed with a year is dated, not necessarily current. Google Analytics (2025) and Google Ads (2025) both expired in 2025 — never say Matthew is currently Google Analytics/Ads certified; say he was formerly certified (2025, expired).
+- Only describe a role, job, or credential as current when the context says it is current. A past end date means past.
+- Keep dates attached to the facts when you mention them; do not drop the year and turn a dated fact into a timeless claim.`;
+
 function systemPrompt(ctx) {
-  return HOMEPAGE_CONTEXT + '\n\n' + resumeBlock(ctx) + '\n\n' + CONTACT_GATE + '\n\n' + contactDetailsBlock(ctx);
+  return HOMEPAGE_CONTEXT + '\n\n' + resumeBlock(ctx) + '\n\n' + DATE_RULE + '\n\n' + CONTACT_GATE + '\n\n' + contactDetailsBlock(ctx);
 }
 
 function json(statusCode, body) {
