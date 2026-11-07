@@ -529,7 +529,7 @@
     <div class="tag">Matt&rsquo;s Office, agent ready</div>
 
     <div class="hud">
-      <div class="hint" role="img" aria-label="Drag to look around. Scroll or pinch to zoom. Tap the cradle to swing it, the phone or notepad to chat, the lamp to toggle it, and the coffee for a surprise.">
+      <div class="hint" role="img" aria-label="Drag to look around. Scroll or pinch to zoom. Tap the cradle to swing it, the phone or notepad to chat, the lamp to toggle it, the newspaper to zoom in on its headline, and the coffee for a surprise.">
         <span class="hint-item" title="Drag to look around"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><path d="M2 12h20"/><path d="M12 2v20"/></svg></span>
         <span class="hint-item" title="Scroll or pinch to zoom"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg></span>
         <span class="hint-item" title="Tap the cradle to swing it"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3.5h18"/><path d="M6.2 3.5 3.9 12.3"/><circle cx="3.3" cy="14.6" r="2.3"/><path d="M10.6 3.5v11"/><circle cx="10.6" cy="16.8" r="2.3"/><path d="M14.8 3.5v11"/><circle cx="14.8" cy="16.8" r="2.3"/><path d="M19 3.5v11"/><circle cx="19" cy="16.8" r="2.3"/></svg></span>
@@ -1565,6 +1565,283 @@
         handle.castShadow = true;
         handleGrp.add(handle);
 
+        /* ------------------------------------------- drinks stand + decanter */
+        // Small wooden stand pushed against the left wall, under the grey
+        // flag, with its tray top at waist height (0.94 — above the desk
+        // top, well below the flag's lower edge). Turned side-on to the
+        // room so its back edge sits flush with the wall panelling.
+        var drinksStand = new THREE.Group();
+        drinksStand.position.set(-3.24, 0, -0.15);
+        drinksStand.rotation.y = Math.PI / 2;
+        scene.add(drinksStand);
+        var STAND_TOP = 0.94;
+        // top tray with a raised rim, four legs, a lower shelf, brass feet
+        box(0.58, 0.035, 0.40, M.deskWood, 0, 0.9225, 0, drinksStand);
+        box(0.58, 0.03, 0.02, M.darkWood, 0, 0.953, -0.19, drinksStand);
+        box(0.58, 0.03, 0.02, M.darkWood, 0, 0.953, 0.19, drinksStand);
+        box(0.02, 0.03, 0.36, M.darkWood, -0.28, 0.953, 0, drinksStand);
+        box(0.02, 0.03, 0.36, M.darkWood, 0.28, 0.953, 0, drinksStand);
+        [[-0.25, -0.16], [0.25, -0.16], [-0.25, 0.16], [0.25, 0.16]].forEach(function (c) {
+          box(0.045, 0.905, 0.045, M.darkWood, c[0], 0.4625, c[1], drinksStand);
+          box(0.052, 0.022, 0.052, M.brass, c[0], 0.011, c[1], drinksStand);
+        });
+        box(0.50, 0.024, 0.32, M.deskWood, 0, 0.24, 0, drinksStand);
+        box(0.46, 0.03, 0.03, M.darkWood, 0, 0.45, -0.16, drinksStand);
+        box(0.46, 0.03, 0.03, M.darkWood, 0, 0.45, 0.16, drinksStand);
+
+        var glassMat = new THREE.MeshPhysicalMaterial({
+          color: 0xe9f2f5, transparent: true, opacity: 0.30, roughness: 0.07,
+          metalness: 0, clearcoat: 1, clearcoatRoughness: 0.08,
+          envMapIntensity: 1.7, side: THREE.DoubleSide, depthWrite: false
+        });
+        var cutGlassMat = new THREE.MeshPhysicalMaterial({
+          color: 0xe9f2f5, transparent: true, opacity: 0.34, roughness: 0.10,
+          metalness: 0, clearcoat: 1, clearcoatRoughness: 0.10,
+          envMapIntensity: 1.7, side: THREE.DoubleSide, depthWrite: false,
+          flatShading: true
+        });
+        var amberMat = new THREE.MeshPhysicalMaterial({
+          color: 0xc47a1e, transparent: true, opacity: 0.88, roughness: 0.18,
+          metalness: 0, emissive: 0x542c00, emissiveIntensity: 0.28
+        });
+        var rimMat = new THREE.MeshStandardMaterial({
+          color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.35,
+          roughness: 0.2, metalness: 0.4, transparent: true, opacity: 0.85
+        });
+        function latheFrom(pts, mat, seg) {
+          var v = pts.map(function (p) { return new THREE.Vector2(p[0], p[1]); });
+          var m = new THREE.Mesh(new THREE.LatheGeometry(v, seg || 28), mat);
+          m.castShadow = true;
+          return m;
+        }
+        // white lace doily under the decanter: a flat disc whose canvas
+        // texture carries the scalloped edge, crochet spokes and pierced
+        // holes (transparent outside the lace itself)
+        var doilyTex = canvasTex(256, 256, function (g, w, h) {
+          var cx = w / 2, cy = h / 2;
+          g.clearRect(0, 0, w, h);
+          g.fillStyle = "#f7f3ea";
+          // scalloped rim: a ring of small overlapping loops
+          for (var k = 0; k < 28; k++) {
+            var a = k / 28 * Math.PI * 2;
+            g.beginPath(); g.arc(cx + Math.cos(a) * 108, cy + Math.sin(a) * 108, 13, 0, 7); g.fill();
+          }
+          g.beginPath(); g.arc(cx, cy, 112, 0, 7); g.fill();
+          // crochet spokes + rings in a soft grey so the pattern reads
+          g.strokeStyle = "rgba(168,160,146,0.85)"; g.lineWidth = 2;
+          for (var s = 0; s < 16; s++) {
+            var sa = s / 16 * Math.PI * 2;
+            g.beginPath();
+            g.moveTo(cx + Math.cos(sa) * 18, cy + Math.sin(sa) * 18);
+            g.lineTo(cx + Math.cos(sa) * 104, cy + Math.sin(sa) * 104);
+            g.stroke();
+          }
+          [34, 58, 82, 102].forEach(function (r) {
+            g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke();
+          });
+          // pierced lace holes
+          g.globalCompositeOperation = "destination-out";
+          [46, 70, 94].forEach(function (r2, ri) {
+            var n = 12 + ri * 4;
+            for (var i = 0; i < n; i++) {
+              var ha = i / n * Math.PI * 2 + ri * 0.3;
+              g.beginPath(); g.arc(cx + Math.cos(ha) * r2, cy + Math.sin(ha) * r2, 4.2, 0, 7); g.fill();
+            }
+          });
+          g.beginPath(); g.arc(cx, cy, 9, 0, 7); g.fill();
+          g.globalCompositeOperation = "source-over";
+          g.fillStyle = "#f7f3ea";
+          g.beginPath(); g.arc(cx, cy, 5, 0, 7); g.fill();
+        });
+        var doily = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.24),
+          new THREE.MeshStandardMaterial({ map: doilyTex, transparent: true, roughness: 0.9, metalness: 0, depthWrite: false }));
+        doily.rotation.x = -Math.PI / 2;
+        doily.position.set(-0.13, STAND_TOP + 0.0025, -0.02);
+        doily.receiveShadow = true;
+        doily.renderOrder = 1;
+        drinksStand.add(doily);
+        // decanter: broad base, narrow neck, flared lip, amber fill, stopper
+        var decanter = new THREE.Group();
+        decanter.position.set(-0.13, STAND_TOP, -0.02);
+        drinksStand.add(decanter);
+        var decBody = latheFrom([
+          [0.001, 0], [0.042, 0], [0.053, 0.008], [0.056, 0.032],
+          [0.050, 0.066], [0.030, 0.092], [0.018, 0.108], [0.017, 0.138],
+          [0.023, 0.152], [0.024, 0.162]
+        ], glassMat);
+        decBody.renderOrder = 3;
+        decanter.add(decBody);
+        var decFill = latheFrom([
+          [0.001, 0.004], [0.040, 0.004], [0.050, 0.011], [0.052, 0.030],
+          [0.047, 0.056], [0.036, 0.068], [0.001, 0.068]
+        ], amberMat);
+        decFill.renderOrder = 2;
+        decanter.add(decFill);
+        var decShoulder = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.0016, 8, 28), rimMat);
+        decShoulder.rotation.x = Math.PI / 2;
+        decShoulder.position.y = 0.088;
+        decanter.add(decShoulder);
+        var stopperPlug = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.0135, 0.022, 14), glassMat);
+        stopperPlug.position.y = 0.168;
+        stopperPlug.renderOrder = 3;
+        decanter.add(stopperPlug);
+        var stopper = new THREE.Mesh(new THREE.OctahedronGeometry(0.024, 0), cutGlassMat);
+        stopper.position.y = 0.196;
+        stopper.castShadow = true;
+        stopper.renderOrder = 3;
+        decanter.add(stopper);
+        // cut-glass tumblers, empty and turned over: each rests on its
+        // rim with the heavy base uppermost, and there is no fill in them
+        function makeTumbler(tx, tz) {
+          var tg = new THREE.Group();
+          tg.position.set(tx, STAND_TOP, tz);
+          drinksStand.add(tg);
+          // body inverted: the wide mouth (0.032) is at the bottom,
+          // touching the tray, the narrower base end (0.027) at the top
+          var tBody = new THREE.Mesh(new THREE.CylinderGeometry(0.027, 0.032, 0.088, 12), cutGlassMat);
+          tBody.position.y = 0.044;
+          tBody.castShadow = true;
+          tBody.renderOrder = 3;
+          tg.add(tBody);
+          // the thick glass base, now on top
+          var tBase = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.027, 0.013, 12), glassMat);
+          tBase.position.y = 0.088 + 0.0065;
+          tBase.renderOrder = 3;
+          tg.add(tBase);
+          // the rim ring sits on the tray surface
+          var tRim = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.0016, 8, 24), rimMat);
+          tRim.rotation.x = Math.PI / 2;
+          tRim.position.y = 0.002;
+          tg.add(tRim);
+          return tg;
+        }
+        makeTumbler(0.11, 0.075);
+        makeTumbler(0.175, -0.085);
+
+        /* ------------------------------------- Keller Zabel Investments plaque */
+        // Small standing desk plaque on the front edge of the desk, right
+        // of centre: faces the visitor (and the camera), clear of the
+        // blotter behind it, the cradle to its left and the folder rack
+        // behind-right. A brushed-steel plate on a dark wood base with
+        // brass supports — clean, understated steel-industry lettering.
+        var plaqueTex = canvasTex(512, 128, function (g, w, h) {
+          var grad = g.createLinearGradient(0, 0, 0, h);
+          grad.addColorStop(0, "#c3c9cd"); grad.addColorStop(0.5, "#a9b1b7"); grad.addColorStop(1, "#98a1a7");
+          g.fillStyle = grad; g.fillRect(0, 0, w, h);
+          for (var i = 0; i < 160; i++) {
+            g.fillStyle = "rgba(255,255,255," + (Math.random() * 0.05) + ")";
+            g.fillRect(0, Math.random() * h, w, 1);
+            g.fillStyle = "rgba(40,46,52," + (Math.random() * 0.05) + ")";
+            g.fillRect(0, Math.random() * h, w, 1);
+          }
+          g.strokeStyle = "rgba(52,58,64,0.65)"; g.lineWidth = 3;
+          g.strokeRect(7, 7, w - 14, h - 14);
+          g.fillStyle = "#33393f";
+          [[20, 20], [w - 20, 20], [20, h - 20], [w - 20, h - 20]].forEach(function (r) {
+            g.beginPath(); g.arc(r[0], r[1], 5, 0, 7); g.fill();
+            g.fillStyle = "#d6dbde";
+            g.beginPath(); g.arc(r[0] - 1.5, r[1] - 1.5, 1.8, 0, 7); g.fill();
+            g.fillStyle = "#33393f";
+          });
+          g.fillStyle = "#2e3439";
+          g.font = "bold 27px Arial, Helvetica, sans-serif";
+          g.textAlign = "center"; g.textBaseline = "middle";
+          try { g.letterSpacing = "1px"; } catch (e) {}
+          g.fillText("KELLER ZABEL INVESTMENTS", w / 2, h / 2 - 8);
+          g.fillRect(w / 2 - 152, h / 2 + 24, 304, 3);
+        });
+        var plaque = new THREE.Group();
+        plaque.position.set(0.52, DESK_TOP, 0.575);
+        plaque.rotation.y = -0.07;
+        desk.add(plaque);
+        box(0.37, 0.016, 0.055, M.darkWood, 0, 0.008, 0, plaque);
+        box(0.37, 0.006, 0.058, M.brass, 0, 0.019, 0, plaque);
+        var plaqueTilt = new THREE.Group();
+        plaqueTilt.position.y = 0.02;
+        plaqueTilt.rotation.x = -0.13;
+        plaque.add(plaqueTilt);
+        var plaquePlate = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.088, 0.007),
+          new THREE.MeshStandardMaterial({ color: 0x9aa4ab, roughness: 0.38, metalness: 0.85 }));
+        plaquePlate.position.y = 0.048;
+        plaquePlate.castShadow = plaquePlate.receiveShadow = true;
+        plaqueTilt.add(plaquePlate);
+        var plaqueFace = new THREE.Mesh(new THREE.PlaneGeometry(0.344, 0.082),
+          new THREE.MeshStandardMaterial({ map: plaqueTex, roughness: 0.42, metalness: 0.55 }));
+        plaqueFace.position.set(0, 0.048, 0.0042);
+        plaqueTilt.add(plaqueFace);
+        [-0.13, 0.13].forEach(function (px) {
+          var strut = box(0.014, 0.05, 0.014, M.brass, px, 0.032, -0.026, plaque);
+          strut.rotation.x = 0.5;
+        });
+
+        /* ------------------------------------------- folded Wall Street Journal */
+        // A folded WSJ on the visitor-side left corner of the desk: a small
+        // stack of sheets, the top one carrying the masthead and the day's
+        // headline. Tapping it swings the camera in close on the title
+        // (see zoomToPaper in the interaction section); Reset returns.
+        var wsjTex = canvasTex(512, 360, function (g, w, h) {
+          g.fillStyle = "#f2eee3"; g.fillRect(0, 0, w, h);
+          // the fold: the right half sits a shade darker, with a soft
+          // shadow falling along the centre crease
+          g.fillStyle = "rgba(120,110,90,0.10)"; g.fillRect(w / 2, 0, w / 2, h);
+          var crease = g.createLinearGradient(w / 2 - 14, 0, w / 2 + 14, 0);
+          crease.addColorStop(0, "rgba(90,80,60,0)");
+          crease.addColorStop(0.5, "rgba(90,80,60,0.35)");
+          crease.addColorStop(1, "rgba(90,80,60,0)");
+          g.fillStyle = crease; g.fillRect(w / 2 - 14, 0, 28, h);
+          // masthead
+          g.fillStyle = "#191919";
+          g.fillRect(28, 20, w - 56, 2.5);
+          g.font = "bold 41px Georgia, 'Times New Roman', serif";
+          g.textAlign = "center"; g.textBaseline = "middle";
+          g.fillText("The Wall Street Journal.", w / 2, 52);
+          g.fillRect(28, 76, w - 56, 1.5);
+          g.font = "10px Georgia, serif";
+          g.fillStyle = "#555049";
+          g.fillText("N E W   Y O R K", w / 2, 90);
+          g.fillRect(28, 100, w - 56, 3);
+          // headline
+          g.fillStyle = "#141414";
+          g.font = "bold 33px Georgia, 'Times New Roman', serif";
+          g.fillText("Blue Star on video call", w / 2, 138);
+          g.fillText("with Anacott Steel", w / 2, 176);
+          g.font = "italic 14px Georgia, serif";
+          g.fillStyle = "#4c463e";
+          g.fillText("Dow Jones Newswires", w / 2, 204);
+          g.fillRect(w / 2 - 60, 220, 120, 1.5);
+          // body columns as quiet grey lines under the headline
+          g.fillStyle = "rgba(70,66,58,0.55)";
+          for (var col = 0; col < 3; col++) {
+            var cx0 = 30 + col * 158;
+            for (var ly = 238; ly < h - 16; ly += 11) {
+              g.fillRect(cx0, ly, 138 - (ly % 33 === 5 ? 26 : 0), 3.5);
+            }
+          }
+          g.strokeStyle = "rgba(40,38,32,0.5)"; g.lineWidth = 2;
+          g.strokeRect(1, 1, w - 2, h - 2);
+        });
+        var newspaper = new THREE.Group();
+        newspaper.position.set(-0.74, DESK_TOP, 0.42);
+        newspaper.rotation.y = 0.22;
+        desk.add(newspaper);
+        var sheetMat = new THREE.MeshStandardMaterial({ color: 0xe9e5d8, roughness: 0.92 });
+        [[-0.004, 0.003], [0.003, -0.002], [0, 0]].forEach(function (off, si) {
+          var sheet = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.0022, 0.25), sheetMat);
+          sheet.position.set(off[0], 0.0012 + si * 0.0022, off[1]);
+          sheet.rotation.y = (si - 1) * 0.02;
+          sheet.castShadow = sheet.receiveShadow = true;
+          newspaper.add(sheet);
+        });
+        var wsjFace = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.25),
+          new THREE.MeshStandardMaterial({ map: wsjTex, roughness: 0.9 }));
+        wsjFace.rotation.x = -Math.PI / 2;
+        wsjFace.position.y = 0.0082;
+        wsjFace.receiveShadow = true;
+        newspaper.add(wsjFace);
+        // (the fold itself is carried by the centre crease shading in the
+        // texture above and the layered sheets — nothing covers the
+        // masthead or headline, so both stay fully readable on zoom-in)
+
         /* --------------------------------------------------------- click audio */
         var audioCtx = null;
         function ensureAudio() {
@@ -1654,6 +1931,22 @@
           raycaster.setFromCamera(pointer, camera);
           return raycaster.intersectObject(root, true).length > 0;
         }
+        /* -------------------------------------------------- newspaper zoom */
+        // Tapping the folded Journal swings the camera in close over it,
+        // near-top-down so the masthead and headline are legible. The
+        // usual polar clamp keeps the camera near eye level, so it is
+        // relaxed while zoomed; Reset (below) restores it along with the
+        // home view.
+        var paperWorld = new THREE.Vector3();
+        newspaper.getWorldPosition(paperWorld);
+        paperWorld.y = DESK_TOP + 0.01;
+        function zoomToPaper() {
+          controls.target.copy(paperWorld);
+          camera.position.set(paperWorld.x + 0.14, paperWorld.y + 0.72, paperWorld.z + 0.52);
+          controls.minPolarAngle = 0.3;
+          controls.update();
+        }
+
         var lampOn = true;
         var lampBtn = document.getElementById("btn-lamp");
         function toggleLamp() {
@@ -1703,6 +1996,7 @@
           if (moved > 7) return; // it was a look-around drag
           setPointer(e);
           if (hitsAny(cradle)) { swingCradle(); return; }
+          if (hitsAny(newspaper)) { zoomToPaper(); return; }
           if (hitsAny(mug)) { showCoffeeAd(); return; }
           if (hitsAny(phone) || hitsAny(pad)) { openChat(); return; }
           if (hitsAny(lamp)) { toggleLamp(); }
@@ -1711,6 +2005,7 @@
         document.getElementById("btn-lamp").addEventListener("click", function () { ensureAudio(); toggleLamp(); });
         document.getElementById("btn-reset").addEventListener("click", function () {
           stopCradle(); // Reset view also brings the cradle to a full stop
+          controls.minPolarAngle = 1.12; // undo the newspaper zoom's relaxed tilt
           camera.position.copy(CAM_HOME);
           controls.target.copy(TGT_HOME);
           controls.update();
