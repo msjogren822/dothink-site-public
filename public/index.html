@@ -191,9 +191,57 @@
         border: 1px solid var(--plate-line);
         border-radius: 10px;
         box-shadow: 0 22px 55px rgba(0, 0, 0, 0.55);
-        overflow: hidden;
+        overflow: visible;
       }
       .chat-panel[hidden] { display: none; }
+      /* Side banner: sits outside the chat rectangle, on its left edge,
+         up in the header band (above the divider under "Chat"). It is a
+         child of the panel, so it hides with the panel when closed. The
+         panel needs overflow visible for it to show — the header and
+         form below carry the corner radii the panel used to clip to. */
+      .chat-brands {
+        position: absolute;
+        top: 5px;
+        right: 100%;
+        width: 106px;
+        padding: 4px 9px;
+        background:
+          linear-gradient(150deg, rgba(88, 101, 242, 0.32), rgba(18, 14, 9, 0.97) 52%, rgba(255, 77, 46, 0.26)),
+          rgba(18, 14, 9, 0.97);
+        border: 1px solid var(--plate-line);
+        border-right: none;
+        border-radius: 8px 0 0 8px;
+        box-shadow: -8px 10px 24px rgba(0, 0, 0, 0.38);
+        pointer-events: none;
+      }
+      .chat-brand {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 1px 0;
+        font-size: 12.5px;
+        letter-spacing: 0.02em;
+        line-height: 1.2;
+        color: #f2ecdf;
+        white-space: nowrap;
+      }
+      .chat-brand + .chat-brand {
+        border-top: 1px solid rgba(232, 221, 201, 0.14);
+        margin-top: 1px;
+        padding-top: 3px;
+      }
+      .chat-brand-icon {
+        flex: 0 0 auto;
+        width: 20px;
+        height: 20px;
+        display: grid;
+        place-items: center;
+        border-radius: 6px;
+        color: #fff;
+      }
+      .chat-brand-icon--discord { background: #5865f2; }
+      .chat-brand-icon--venice { background: linear-gradient(135deg, #ff5a36, #c81e3a); }
+      .chat-brand-icon svg { display: block; }
       .chat-head {
         display: flex;
         align-items: flex-start;
@@ -201,6 +249,7 @@
         gap: 12px;
         padding: 14px 10px 12px 16px;
         border-bottom: 1px solid rgba(216, 178, 110, 0.22);
+        border-radius: 10px 10px 0 0;
         background: rgba(216, 178, 110, 0.07);
       }
       .chat-head strong {
@@ -282,6 +331,7 @@
         padding: 10px;
         padding-bottom: max(10px, env(safe-area-inset-bottom));
         border-top: 1px solid rgba(216, 178, 110, 0.22);
+        border-radius: 0 0 10px 10px;
         background: rgba(0, 0, 0, 0.22);
       }
       .chat-form textarea {
@@ -326,8 +376,24 @@
         .chat-panel {
           right: max(14px, env(safe-area-inset-right));
           bottom: calc(max(14px, env(safe-area-inset-bottom)) + 182px);
+          /* Narrower here so the side banner outside the panel's left
+             edge still fits on screen instead of running off it. */
+          width: min(368px, calc(100vw - 28px - 88px));
           height: min(480px, calc(100dvh - 210px));
           max-height: calc(100dvh - 210px);
+        }
+        .chat-brands {
+          width: 88px;
+          padding: 4px 7px;
+        }
+        .chat-brand {
+          gap: 5px;
+          font-size: 11.5px;
+        }
+        .chat-brand-icon {
+          width: 19px;
+          height: 19px;
+          border-radius: 5px;
         }
       }
 
@@ -485,6 +551,16 @@
     </button>
 
     <section id="chat-panel" class="chat-panel" hidden role="dialog" aria-modal="false" aria-label="Chat">
+      <div class="chat-brands" role="img" aria-label="Connected via Discord and Venice">
+        <span class="chat-brand">
+          <span class="chat-brand-icon chat-brand-icon--discord" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.873-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .078-.011c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.007.127 12.3 12.3 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.697.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03ZM8.02 15.331c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.419 0 1.333-.956 2.419-2.157 2.419Zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.419 0 1.333-.946 2.419-2.157 2.419Z"/></svg></span>
+          <span>Discord</span>
+        </span>
+        <span class="chat-brand">
+          <span class="chat-brand-icon chat-brand-icon--venice" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.5 3.5 12 21 21.5 3.5h-4.1L12 13.9 6.6 3.5H2.5Z"/></svg></span>
+          <span>Venice</span>
+        </span>
+      </div>
       <div class="chat-head">
         <div>
           <strong>Chat</strong>
@@ -750,7 +826,16 @@
           g.strokeRect(tx - 92, base - th * 0.60, 20, th * 0.60);
           g.strokeRect(tx + 72, base - th * 0.60, 20, th * 0.60);
           g.fillStyle = "#dfe9f5"; g.fillRect(tx - 3, base - th - 26, 6, 28); // spire
-          litWindows(tx - 28, base - th * 0.60, tx + 24, base - 14);
+          // windows follow the pyramid's taper: each row spans only the
+          // width the pyramid actually has left at that height, inset a
+          // little, so no lit square ever spills past the sloped edges
+          g.fillStyle = "rgba(255,196,110,0.9)";
+          for (var pwy = base - th * 0.60; pwy < base - 14; pwy += 13) {
+            var phw = 72 * (1 - (base - pwy) / th) - 7;
+            for (var pwx = tx - phw; pwx < tx + phw - 3; pwx += 10) {
+              if (rnd() < 0.5) g.fillRect(pwx, pwy, 3.4, 4.6);
+            }
+          }
           // Willis (Sears) Tower — center: darkest of the three, its nine
           // bundled tubes stepping down at different heights, twin antennas
           var sx = w * 0.50, sw = 140, sh = 545;
@@ -774,7 +859,14 @@
           g.fillStyle = "#ff5040";
           g.beginPath(); g.arc(sx - 23.5, base - sh - 120, 5, 0, 7); g.fill();
           g.beginPath(); g.arc(sx + 24.5, base - sh - 134, 5, 0, 7); g.fill();
-          litWindows(sx - sw / 2 + 8, base - sh + 12, sx + sw / 2 - 10, base - 12);
+          // Windows clipped band by band to the stepped silhouette: the
+          // bundled tubes only reach full width up to 72% of the height,
+          // so a single rectangle here would leave lit squares floating
+          // in the sky above the lower corner tubes.
+          litWindows(sx - sw * 0.18 + 6, base - sh + 12, sx + sw * 0.18 - 8, base - sh * 0.86); // tallest tubes only
+          litWindows(sx - sw / 2 + 8, base - sh * 0.86 + 6, sx + sw * 0.18 - 8, base - sh * 0.80); // left + tallest tubes
+          litWindows(sx - sw / 2 + 8, base - sh * 0.80 + 6, sx + sw / 2 - 10, base - sh * 0.72); // mid tubes, full width
+          litWindows(sx - sw / 2 + 8, base - sh * 0.72 + 6, sx + sw / 2 - 10, base - 12); // lowest tubes, full width
           // Empire State Building — right third: tiered setbacks with a
           // warm floodlit crown and mooring-mast spire, its signature at dusk
           var ex = w * 0.82, eh = 510;
@@ -1001,14 +1093,14 @@
         }
         // ---- the three landmarks, each with its own material and build so
         // it reads at a glance through the window, not as a generic tower ----
-        var transMat = new THREE.MeshStandardMaterial({ color: 0xaeb6bf, roughness: 0.85, emissive: 0xffca7a, emissiveMap: towerWinTex, emissiveIntensity: 0.45 });
+        var transMat = new THREE.MeshStandardMaterial({ color: 0x7e8791, roughness: 0.85, emissive: 0xffca7a, emissiveMap: towerWinTex, emissiveIntensity: 0.30 });
         var willisMat = new THREE.MeshStandardMaterial({ color: 0x111419, roughness: 0.9, emissive: 0xffca7a, emissiveMap: towerWinTex, emissiveIntensity: 0.95 });
         var empireMat = new THREE.MeshStandardMaterial({ color: 0x77694f, roughness: 0.9, emissive: 0xffca7a, emissiveMap: towerWinTex, emissiveIntensity: 0.7 });
         var crownMat = new THREE.MeshStandardMaterial({ color: 0xe3c88f, roughness: 0.7, emissive: 0xffd9a0, emissiveIntensity: 1.15 });
         var beaconMat = new THREE.MeshStandardMaterial({ color: 0x881111, emissive: 0xff2a1e, emissiveIntensity: 2.2, roughness: 0.4 });
 
-        // Transamerica Pyramid — left: pale quartz-concrete pyramid, far
-        // lighter than anything around it, with both wings and its spire cap
+        // Transamerica Pyramid — left: quartz-concrete pyramid in a muted
+        // mid-grey, kept deliberately quiet, with both wings and its spire cap
         var trans = new THREE.Group();
         var pyr = new THREE.Mesh(new THREE.ConeGeometry(0.92, 4.6, 4), transMat);
         pyr.rotation.y = Math.PI / 4;
@@ -1016,10 +1108,14 @@
         trans.add(pyr);
         var pyrBase = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.5, 1.25), transMat);
         pyrBase.position.y = 0.25; trans.add(pyrBase);
-        // signature east/west "wings" that ride up the pyramid's upper half
+        // signature east/west "wings" that ride up the pyramid's upper
+        // half — tilted to follow the pyramid's slope and kept short, so
+        // they stay attached to its faces instead of ending up as lit
+        // boxes floating beside the narrowing tower near the top
         [-1, 1].forEach(function (s) {
-          var wing = new THREE.Mesh(new THREE.BoxGeometry(0.20, 2.1, 0.42), transMat);
-          wing.position.set(s * 0.40, 2.75, 0);
+          var wing = new THREE.Mesh(new THREE.BoxGeometry(0.20, 1.9, 0.42), transMat);
+          wing.position.set(s * 0.33, 2.55, 0);
+          wing.rotation.z = s * 0.16;
           trans.add(wing);
         });
         var pyrCap = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.38, 4), crownMat);
@@ -1044,9 +1140,11 @@
         }
         sears.position.set(0.1, -0.4, -7.6);
         scene.add(sears);
-        // twin antennas on the tallest tubes, red beacons on the tips
+        // twin antennas on the tallest tubes, red beacons on the tips.
+        // Plain dark metal for the rods: the window-lit tower material
+        // would speckle them with glowing squares above the roofline.
         [[-0.20, 5.60], [0.22, 5.75]].forEach(function (a) {
-          rod(new THREE.Vector3(a[0], 4.55, 0), new THREE.Vector3(a[0], a[1], 0), 0.016, willisMat, sears);
+          rod(new THREE.Vector3(a[0], 4.55, 0), new THREE.Vector3(a[0], a[1], 0), 0.016, M.blackMetal, sears);
           var beacon = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), beaconMat);
           beacon.position.set(a[0], a[1] + 0.03, 0);
           sears.add(beacon);
@@ -1068,6 +1166,42 @@
         empire.add(spireTip);
         empire.position.set(3.7, -0.4, -7.3);
         scene.add(empire);
+        // Easter egg: a small bitcoin sign low on the front face of the
+        // centre tower, directly behind the chair. From the default view
+        // the chair back hides it completely; it only appears when the
+        // visitor rotates the camera around the chair and zooms in.
+        // The ₿ is built from a bold B plus its twin vertical strokes so
+        // it renders even in fonts that lack the U+20BF glyph.
+        var btcTex = canvasTex(256, 256, function (g, w, h) {
+          g.fillStyle = "#101216"; g.fillRect(0, 0, w, h);
+          g.strokeStyle = "rgba(216,178,110,0.55)"; g.lineWidth = 4;
+          g.strokeRect(9, 9, w - 18, h - 18);
+          g.fillStyle = "#b4620f";
+          g.beginPath(); g.arc(w / 2, h / 2, 76, 0, 7); g.fill();
+          g.fillStyle = "#000000";
+          g.font = "bold 118px Arial, Helvetica, sans-serif";
+          g.textAlign = "center"; g.textBaseline = "middle";
+          var bX = w / 2 + 7, bY = h / 2 + 8;
+          g.fillText("B", bX, bY);
+          // Twin strokes of the ₿: short stubs only, centred as a pair on
+          // the B and protruding just above and below it — never running
+          // through the letter. Their extent is taken from the B's own
+          // measured bounds so each stub meets the letter's top and bottom
+          // edges exactly, whatever font ends up rendering it.
+          var bMet = g.measureText("B");
+          var bAsc = bMet.actualBoundingBoxAscent != null ? bMet.actualBoundingBoxAscent : 43;
+          var bDesc = bMet.actualBoundingBoxDescent != null ? bMet.actualBoundingBoxDescent : 43;
+          var bTop = bY - bAsc, bBot = bY + bDesc;
+          var stubW = 9, stubOut = 17, stubIn = 5;
+          [bX - 15, bX + 15].forEach(function (cx) {
+            g.fillRect(cx - stubW / 2, bTop - stubOut, stubW, stubOut + stubIn);
+            g.fillRect(cx - stubW / 2, bBot - stubIn, stubW, stubOut + stubIn);
+          });
+        });
+        var btcSign = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.34),
+          new THREE.MeshStandardMaterial({ map: btcTex, emissive: 0xffffff, emissiveMap: btcTex, emissiveIntensity: 0.12, roughness: 0.6 }));
+        btcSign.position.set(0, 1.55, 0.606); // front face of the centre-front tube
+        sears.add(btcSign);
         // filler towers
         tower(0.8, 2.2, 0.8, -2.1, -8.2, [1]);
         tower(0.7, 2.8, 0.7, 1.9, -8.4, [0.7, 0.3]);
