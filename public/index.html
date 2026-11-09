@@ -135,11 +135,62 @@
         outline-offset: 2px;
       }
 
-      .tag {
+      /* ------------------------------------------------------ music toggle */
+      /* Background-music mute, lower left. Large and round like the chat
+         bubble so it reads as a sibling control. On wide screens it sits
+         in the bottom corner, clear of the centred HUD; at 720px and
+         below the HUD spans nearly the whole width, so the button lifts
+         above it — the same move the chat toggle makes on that side. */
+      .music-toggle {
+        position: fixed;
+        left: max(16px, env(safe-area-inset-left));
+        bottom: max(16px, env(safe-area-inset-bottom));
+        z-index: 10;
+        width: 64px;
+        height: 64px;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        color: var(--ink);
+        background: rgba(24, 18, 11, 0.94);
+        border: 1px solid var(--plate-line);
+        border-radius: 50%;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
+        cursor: pointer;
+        backdrop-filter: blur(6px);
+      }
+      .music-toggle:hover { border-color: var(--accent); color: #fff; }
+      .music-toggle:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .music-toggle svg { display: block; }
+      .music-toggle .vol-slash { display: none; }
+      .music-toggle.is-muted { color: #8d8577; }
+      .music-toggle.is-muted .vol-on { opacity: 0.42; }
+      .music-toggle.is-muted .vol-wave { display: none; }
+      .music-toggle.is-muted .vol-slash { display: block; }
+      @media (max-width: 720px) {
+        .music-toggle {
+          left: max(14px, env(safe-area-inset-left));
+          bottom: calc(max(14px, env(safe-area-inset-bottom)) + 118px);
+          width: 58px;
+          height: 58px;
+        }
+      }
+
+      .tag-stack {
         position: fixed;
         top: max(12px, env(safe-area-inset-top));
         left: 14px;
         z-index: 5;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        pointer-events: none;
+      }
+      .tag {
         font-size: 12px;
         letter-spacing: 0.14em;
         text-transform: uppercase;
@@ -151,6 +202,26 @@
         pointer-events: none;
       }
       .tag span { color: var(--accent); }
+      .resume-link {
+        pointer-events: auto;
+        font-family: inherit;
+        font-size: 12.5px;
+        letter-spacing: 0.04em;
+        color: var(--accent);
+        background: var(--plate);
+        border: 1px solid var(--plate-line);
+        border-radius: 3px;
+        padding: 5px 10px;
+        cursor: pointer;
+        backdrop-filter: blur(4px);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .resume-link:hover { border-color: var(--accent); color: #fff; }
+      .resume-link:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
 
       /* ------------------------------------------------------------ chat */
       .sr-only {
@@ -420,6 +491,165 @@
         }
       }
 
+      /* ------------------------------------------------------------ resume */
+      .resume-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(8, 5, 3, 0.55);
+      }
+      .resume-overlay[hidden] { display: none; }
+      .resume-panel {
+        display: flex;
+        flex-direction: column;
+        width: min(660px, calc(100vw - 32px));
+        height: min(76dvh, 720px);
+        max-height: calc(100dvh - 40px);
+        color: var(--ink);
+        background: rgba(18, 14, 9, 0.97);
+        border: 1px solid var(--plate-line);
+        border-radius: 10px;
+        box-shadow: 0 22px 55px rgba(0, 0, 0, 0.55);
+        overflow: hidden;
+      }
+      .resume-head {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 10px 12px 18px;
+        border-bottom: 1px solid rgba(216, 178, 110, 0.22);
+        background: rgba(216, 178, 110, 0.07);
+      }
+      .resume-head strong {
+        display: block;
+        font-size: 18px;
+        font-weight: normal;
+        letter-spacing: 0.03em;
+        color: #fff;
+      }
+      .resume-close {
+        flex: 0 0 auto;
+        width: 44px; height: 44px;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        font-family: inherit;
+        font-size: 24px;
+        line-height: 1;
+        color: var(--ink);
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .resume-close:hover { border-color: var(--plate-line); color: #fff; }
+      .resume-actions {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .resume-action {
+        font-family: inherit;
+        font-size: 13.5px;
+        letter-spacing: 0.03em;
+        color: var(--ink);
+        background: transparent;
+        border: 1px solid var(--plate-line);
+        border-radius: 6px;
+        padding: 8px 13px;
+        min-height: 40px;
+        cursor: pointer;
+      }
+      .resume-action:hover:not(:disabled) { border-color: var(--accent); color: #fff; }
+      .resume-action:disabled { opacity: 0.45; cursor: default; }
+      .resume-close:focus-visible,
+      .resume-action:focus-visible,
+      .resume-body:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .resume-contact-note {
+        margin: 3px 0 0;
+        font-size: 13px;
+        line-height: 1.45;
+        font-style: italic;
+        color: var(--ink-dim);
+        white-space: normal;
+      }
+      .resume-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 20px 22px 24px;
+        font-size: 15px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      .resume-body.is-status {
+        color: var(--ink-dim);
+        font-style: italic;
+      }
+      @media (max-width: 720px) {
+        .resume-overlay { padding: 14px; }
+        .resume-panel {
+          width: calc(100vw - 28px);
+          height: min(78dvh, 720px);
+          max-height: calc(100dvh - 28px);
+        }
+        .resume-body { padding: 16px 16px 20px; }
+        .resume-action { padding: 8px 10px; font-size: 13px; }
+      }
+      /* Print: only the résumé panel prints — not the 3D scene, HUD,
+         chat, or any other page chrome. */
+      @media print {
+        html, body { height: auto !important; background: #fff !important; overflow: visible !important; }
+        #scene, .hud, .tag-stack, .chat-toggle, .chat-panel, .coffee-ad, .music-toggle, #err { display: none !important; }
+        .resume-overlay {
+          position: static !important;
+          inset: auto !important;
+          display: block !important;
+          padding: 0 !important;
+          background: #fff !important;
+        }
+        .resume-overlay[hidden] { display: none !important; }
+        .resume-panel {
+          width: 100% !important;
+          height: auto !important;
+          max-height: none !important;
+          color: #000 !important;
+          background: #fff !important;
+          border: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          overflow: visible !important;
+        }
+        .resume-head {
+          padding: 0 0 10px !important;
+          border-bottom: 1px solid #999 !important;
+          background: #fff !important;
+        }
+        .resume-head strong { color: #000 !important; }
+        .resume-actions, .resume-close { display: none !important; }
+        .resume-body {
+          overflow: visible !important;
+          padding: 16px 0 0 !important;
+          color: #000 !important;
+          background: #fff !important;
+        }
+        .resume-body.is-status { color: #000 !important; }
+        .resume-contact-note { color: #444 !important; }
+      }
+
       /* --------------------------------------------------------- coffee ad */
       .coffee-ad {
         position: fixed;
@@ -552,7 +782,10 @@
   /></noscript>
     <div id="scene"></div>
 
-    <div class="tag">Matt&rsquo;s Office, agent ready</div>
+    <div class="tag-stack">
+      <div class="tag">Matt&rsquo;s Office, agent ready</div>
+      <button id="resume-link" class="resume-link" type="button">View r&eacute;sum&eacute;</button>
+    </div>
 
     <div class="hud">
       <div class="hint" role="img" aria-label="Drag to look around. Scroll or pinch to zoom. Tap the cradle to swing it, the phone or notepad to chat, the lamp to toggle it, the newspaper to zoom in on its headline, and the coffee for a surprise.">
@@ -569,6 +802,10 @@
         <a class="icon-btn" href="https://github.com/msjogren822/dothink-site-public/blob/main/public/index.html" target="_blank" rel="noopener noreferrer" aria-label="View the homepage index file on GitHub" title="View on GitHub"><svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
       </div>
     </div>
+
+    <button id="music-toggle" class="music-toggle" type="button" aria-pressed="false" aria-label="Mute background music" title="Talking Heads - This Must Be the Place (Naive Melody) - [Incomplete] onlinesequencer-net-3678577.mid">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g class="vol-on"><path d="M11 5 6.5 9H3v6h3.5L11 19V5z" fill="currentColor" stroke="none"/><path class="vol-wave" d="M14.5 9.2a3.9 3.9 0 0 1 0 5.6"/><path class="vol-wave" d="M17 6.8a7.4 7.4 0 0 1 0 10.4"/></g><line class="vol-slash" x1="3.5" y1="3.5" x2="20.5" y2="20.5" stroke="#e0654f" stroke-width="2.2"/></svg>
+    </button>
 
     <button id="chat-toggle" class="chat-toggle" type="button" aria-expanded="false" aria-controls="chat-panel" aria-label="Open chat">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
@@ -603,6 +840,22 @@
         <button id="chat-send" class="chat-send" type="submit">Send</button>
       </form>
     </section>
+
+    <div id="resume-overlay" class="resume-overlay" hidden>
+      <section id="resume-panel" class="resume-panel" role="dialog" aria-modal="true" aria-labelledby="resume-title">
+        <div class="resume-head">
+          <div>
+            <strong id="resume-title">R&eacute;sum&eacute;</strong>
+          </div>
+          <div class="resume-actions">
+            <button id="resume-print" class="resume-action" type="button" disabled>Print</button>
+            <button id="resume-download" class="resume-action" type="button" disabled>Download</button>
+            <button id="resume-close" class="resume-close" type="button" aria-label="Close r&eacute;sum&eacute;">&times;</button>
+          </div>
+        </div>
+        <div id="resume-body" class="resume-body is-status" tabindex="0">Loading resume&hellip;</div>
+      </section>
+    </div>
 
     <div id="coffee-ad" class="coffee-ad" hidden>
       <div class="coffee-ad-card" role="dialog" aria-modal="true" aria-labelledby="coffee-ad-title">
@@ -1957,6 +2210,22 @@
           raycaster.setFromCamera(pointer, camera);
           return raycaster.intersectObject(root, true).length > 0;
         }
+        function isChairObject(obj) {
+          while (obj) {
+            if (obj === chair) return true;
+            obj = obj.parent;
+          }
+          return false;
+        }
+        // The chair counts only when it is the first thing the tap ray
+        // meets among the chair and the desk — so a tap on the blotter
+        // or desktop in front of it does not fire through to the seat
+        // hidden behind the desk.
+        function hitsChair() {
+          raycaster.setFromCamera(pointer, camera);
+          var hits = raycaster.intersectObjects([chair, desk], true);
+          return hits.length > 0 && isChairObject(hits[0].object);
+        }
         /* -------------------------------------------------- newspaper zoom */
         // Tapping the folded Journal swings the camera in close over it,
         // near-top-down so the masthead and headline are legible. The
@@ -2025,7 +2294,8 @@
           if (hitsAny(newspaper)) { zoomToPaper(); return; }
           if (hitsAny(mug)) { showCoffeeAd(); return; }
           if (hitsAny(phone) || hitsAny(pad)) { openChat(); return; }
-          if (hitsAny(lamp)) { toggleLamp(); }
+          if (hitsAny(lamp)) { toggleLamp(); return; }
+          if (hitsChair()) { openResume(); }
         });
         document.getElementById("btn-swing").addEventListener("click", swingCradle);
         document.getElementById("btn-lamp").addEventListener("click", function () { ensureAudio(); toggleLamp(); });
@@ -2035,6 +2305,117 @@
           camera.position.copy(CAM_HOME);
           controls.target.copy(TGT_HOME);
           controls.update();
+        });
+
+        /* ------------------------------------------------------------- resume */
+        // Matthew's résumé, fetched on first open from the same Netlify
+        // function the chat uses — the text itself never lives in this
+        // page. The server strips contact details before sending it.
+        // A successful fetch is cached for the rest of the visit, so
+        // later opens (chair or link) show it instantly; a failed fetch
+        // is not cached, so the next open tries again.
+        var RESUME_ENDPOINT = "/.netlify/functions/venice-chat";
+        var RESUME_UNAVAILABLE = "Resume isn\u2019t available right now \u2014 ask the chat instead.";
+        var resumeOverlay = document.getElementById("resume-overlay");
+        var resumeBody = document.getElementById("resume-body");
+        var resumeClose = document.getElementById("resume-close");
+        var resumePrint = document.getElementById("resume-print");
+        var resumeDownload = document.getElementById("resume-download");
+        var CONTACT_NOTE = "(please ask Spudly in the chat interface for my contact info.)";
+        var resumeCache = null;
+        var resumeLoading = false;
+        function setResumeBody(text, isStatus) {
+          resumeBody.classList.toggle("is-status", !!isStatus);
+          resumeBody.scrollTop = 0;
+          if (isStatus) {
+            resumeBody.textContent = text;
+            resumePrint.disabled = true;
+            resumeDownload.disabled = true;
+            return;
+          }
+          // Show the résumé text with the contact note slotted in where
+          // contact details would go: right under the name/location
+          // header lines (the first two non-empty lines). The note is a
+          // separate element, not part of the résumé text itself, so the
+          // Download below can stay byte-for-byte the fetched text.
+          var lines = text.split("\n");
+          var seen = 0;
+          var insertAfter = 0;
+          for (var i = 0; i < lines.length; i++) {
+            if (lines[i].trim() !== "") {
+              seen++;
+              insertAfter = i;
+              if (seen >= 2) break;
+            }
+          }
+          var top = document.createElement("div");
+          top.textContent = lines.slice(0, insertAfter + 1).join("\n");
+          var note = document.createElement("p");
+          note.className = "resume-contact-note";
+          note.textContent = CONTACT_NOTE;
+          var rest = document.createElement("div");
+          rest.textContent = lines.slice(insertAfter + 1).join("\n");
+          resumeBody.textContent = "";
+          resumeBody.appendChild(top);
+          resumeBody.appendChild(note);
+          resumeBody.appendChild(rest);
+          resumePrint.disabled = false;
+          resumeDownload.disabled = false;
+        }
+        resumePrint.addEventListener("click", function () {
+          if (resumeCache === null) return;
+          window.print();
+        });
+        resumeDownload.addEventListener("click", function () {
+          if (resumeCache === null) return;
+          // Exactly the text fetched from the server — nothing added,
+          // nothing reformatted (so it stays stripped of phone/email).
+          var blob = new Blob([resumeCache], { type: "text/plain;charset=utf-8" });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = "matthew-sjogren-resume.txt";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        });
+        function openResume() {
+          resumeOverlay.hidden = false;
+          if (resumeCache !== null) {
+            setResumeBody(resumeCache, false);
+          } else {
+            setResumeBody("Loading resume\u2026", true);
+            if (!resumeLoading) {
+              resumeLoading = true;
+              fetch(RESUME_ENDPOINT, { method: "GET" }).then(function (res) {
+                if (!res.ok) throw new Error("resume unavailable");
+                return res.json().catch(function () { throw new Error("resume unavailable"); });
+              }).then(function (data) {
+                if (!data || data.ok !== true || typeof data.resume !== "string" || !data.resume) {
+                  throw new Error("resume unavailable");
+                }
+                resumeCache = data.resume;
+                if (!resumeOverlay.hidden) setResumeBody(resumeCache, false);
+              }).catch(function () {
+                if (!resumeOverlay.hidden) setResumeBody(RESUME_UNAVAILABLE, true);
+              }).then(function () {
+                resumeLoading = false;
+              });
+            }
+          }
+          window.setTimeout(function () { resumeClose.focus(); }, 60);
+        }
+        function closeResume() {
+          resumeOverlay.hidden = true;
+        }
+        document.getElementById("resume-link").addEventListener("click", openResume);
+        resumeClose.addEventListener("click", closeResume);
+        resumeOverlay.addEventListener("pointerdown", function (e) {
+          if (e.target === resumeOverlay) closeResume();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && !resumeOverlay.hidden) closeResume();
         });
 
         /* --------------------------------------------------------------- chat */
@@ -2243,6 +2624,335 @@
           }
         }
         animate();
+      })();
+    </script>
+    <script>
+      /* ------------------------------------------------------ background music
+         "This Must Be the Place (Naive Melody)" — the visitor's MIDI file,
+         embedded below as base64 so the page makes no extra request for it.
+         The file is parsed in the browser and played with Web Audio synths
+         voiced per track (bass / clean guitar / string pad / two drum kits).
+         Playback tries to start on arrival; browsers hold audio until the
+         first interaction, so the first pointer, key, touch or scroll
+         anywhere on the page starts it if autoplay was blocked. It loops.
+         The lower-left speaker button mutes and unmutes it. */
+      (function () {
+        "use strict";
+        var MIDI_B64 = "TVRoZAAAAAYAAQAFAYBNVHJrAAAHgAD/WAQEAhgIAP9RAwgH6wD/AwRCYXNzAMAgAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJApMmCAKQBgkCkygUCAKQCBQJApMoFAgCkAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAJAnMmCAJwBgkCcygUCAJwCBQJAnMoFAgCcAAJArMoFAgCsAAJArMoFAgCsAAJAuMoFAgC4AAJAwMoFAgDAAAP8vAE1UcmsAAAUsAP8DDENsZWFuIEd1aXRhcgDBG7AAkU8UYIFPAGCRTxRggU8AgiCRTxRggU8AYJFRFGCBUQBgkVEUYIFRAIIgkVEUYIFRAGCRUxRggVMAYJFTFGCBUwCCIJFTFGCBUwBgkVEUYIFRAGCRURRggVEAgiCRURRggVEAYJFPFGCBTwBgkU8UYIFPAIIgkU8UYIFPAGCRURRggVEAYJFRFGCBUQCCIJFRFGCBUQBgkVMUYIFTAGCRUxRggVMAgiCRUxRggVMAYJFRFGCBUQBgkVEUYIFRAIIgkVEUYIFRAGCRTxRggU8AYJFPFGCBTwCCIJFPFGCBTwBgkVEUYIFRAGCRURRggVEAgiCRURRggVEAYJFTFGCBUwBgkVMUYIFTAIIgkVMUYIFTAGCRURRggVEAYJFRFGCBUQCCIJFRFGCBUQBgkU8UYIFPAGCRTxRggU8AgiCRTxRggU8AYJFRFGCBUQBgkVEUYIFRAIIgkVEUYIFRAGCRUxRggVMAYJFTFGCBUwCCIJFTFGCBUwBgkVEUYIFRAGCRURRggVEAgiCRURRggVEAYJFPFGCBTwBgkU8UYIFPAIIgkU8UYIFPAGCRURRggVEAYJFRFGCBUQCCIJFRFGCBUQBgkVMUYIFTAGCRUxRggVMAgiCRUxRggVMAYJFRFGCBUQBgkVEUYIFRAIIgkVEUYIFRAGCRTxRggU8AYJFPFGCBTwCCIJFPFGCBTwBgkVEUYIFRAGCRURRggVEAgiCRURRggVEAYJFTFGCBUwBgkVMUYIFTAIIgkVMUYIFTAGCRURRggVEAYJFRFGCBUQCCIJFRFGCBUQBgkVMUYIFTAGCRUxRggVMAgiCRUxRggVMAYJFRFGCBUQBgkVEUYIFRAIIgkVEUYIFRAGCRTxRggU8AYJFPFGCBTwCCIJFPFGCBTwBgkVEUYIFRAGCRURRggVEAgiCRURRggVEAYJFPFGCBTwBgkU8UYIFPAIIgkU8UYIFPAGCRURRggVEAYJFRFGCBUQCCIJFRFGCBUQBgkVMUYIFTAGCRUxRggVMAgiCRUxRggVMAYJFRFGCBUQBgkVEUYIFRAIIgkVEUYIFRAGCRTxRggU8AYJFPFGCBTwCCIJFPFGCBTwBgkVEUYIFRAGCRURRggVEAgiCRURRggVEAYJFTFGCBUwBgkVMUYIFTAIIgkVMUYIFTAGCRURRggVEAYJFRFGCBUQCCIJFRFGCBUQBgkU8UYIFPAGCRTxRggU8AgiCRTxRggU8AYJFRFGCBUQBgkVEUYIFRAIIgkVEUYIFRAGCRUxRggVMAYJFTFGCBUwCCIJFTFGCBUwBgkVEUYIFRAGCRURRggVEAgiCRURRggVEAYJFPFGCBTwBgkU8UYIFPAIIgkU8UYIFPAGCRURRggVEAYJFRFGCBUQCCIJFRFGCBUQBgkVMUYIFTAGCRUxRggVMAgiCRUxRggVMAYJFRFGCBUQBgkVEUYIFRAIIgkVEUYIFRAGCRTxRggU8AYJFPFGCBTwCCIJFPFGCBTwBgkVEUYIFRAGCRURRggVEAgiCRURRggVEAYJFTFGCBUwBgkVMUYIFTAIIgkVMUYIFTAGCRURRggVEAYJFRFGCBUQCCIJFRFGCBUQBgkU8UYIFPAGCRTxRggU8AgiCRTxRggU8AYJFRFGCBUQBgkVEUYIFRAIIgkVEUYIFRAGCRUxRggVMAYJFTFGCBUwCCIJFTFGCBUwBgkVEUYIFRAGCRURRggVEAgiCRURRggVEAAP8vAE1UcmsAAAcdAP8DEUVsZWN0cmljIERydW0gS2l0AMl2mACZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgBgmSoyYIkqAGCZKjJgiSoAYJkqMmCJKgAA/y8ATVRyawAAA88A/wMMODA4IERydW0gS2l0AMkArQCZJiFgiSYAYJkmIWCJJgBgmSMhYIkjAIIgmSYhYIkmAIIgmSMhYIkjAIIgmSYhYIkmAIIgmSMhYIkjAIIgmSYhYIkmAIIgmSMhYIkjAIIgmSYhYIkmAIIgmSMhYIkjAIIgmSYhYIkmAIIgmSMhYIkjAIIgmSYhYIkmAIIgmSMhYIkjAIIgmSYhYIkmAIIgmSMhYIkjAIIgmSYhYIkmAIIgmSMhYIkjAIIgmSYhYIkmAIIgmSMhYIkjAIIgmSYhYIkmAIIgmSMhYIkjAIIgmSYhYIkmAIIgmSMhYIkjAIIgmSYhYIkmAIIgmSMhYIkjAIIgmSYhYIkmAIIgmSMhYIkjAIIgmSYhYIkmAIIg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";
+        var btn = document.getElementById("music-toggle");
+        if (!btn) return;
+
+        /* ------------------------------------------------------------ parse */
+        function decodeMidi(b64) {
+          var bin = atob(b64);
+          var bytes = new Uint8Array(bin.length);
+          for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          return bytes;
+        }
+        function readVarLen(dv, st) {
+          var v = 0, b;
+          do { b = dv.getUint8(st.p++); v = (v << 7) | (b & 0x7f); } while (b & 0x80);
+          return v;
+        }
+        function parseMidi(bytes) {
+          var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+          function tag(o) {
+            return String.fromCharCode(dv.getUint8(o), dv.getUint8(o + 1), dv.getUint8(o + 2), dv.getUint8(o + 3));
+          }
+          if (tag(0) !== "MThd") throw new Error("not a MIDI file");
+          var ntrk = dv.getUint16(10);
+          var division = dv.getUint16(12);
+          var pos = 8 + dv.getUint32(4);
+          var events = [];
+          var tempos = [];
+          var maxTick = 0;
+          for (var t = 0; t < ntrk; t++) {
+            if (tag(pos) !== "MTrk") break;
+            var end = pos + 8 + dv.getUint32(pos + 4);
+            var st = { p: pos + 8 };
+            var tick = 0, running = 0;
+            while (st.p < end) {
+              tick += readVarLen(dv, st);
+              var status = dv.getUint8(st.p);
+              if (status & 0x80) { st.p++; running = status; } else { status = running; }
+              if (status === 0xff) {
+                var meta = dv.getUint8(st.p++);
+                var len = readVarLen(dv, st);
+                if (meta === 0x51 && len === 3) {
+                  tempos.push({ tick: tick, us: (dv.getUint8(st.p) << 16) | (dv.getUint8(st.p + 1) << 8) | dv.getUint8(st.p + 2) });
+                }
+                st.p += len;
+              } else if (status === 0xf0 || status === 0xf7) {
+                st.p += readVarLen(dv, st);
+              } else {
+                var type = status & 0xf0, ch = status & 0x0f;
+                if (type === 0xc0 || type === 0xd0) {
+                  events.push({ tick: tick, type: type, ch: ch, a: dv.getUint8(st.p), b: 0 });
+                  st.p += 1;
+                } else {
+                  events.push({ tick: tick, type: type, ch: ch, a: dv.getUint8(st.p), b: dv.getUint8(st.p + 1) });
+                  st.p += 2;
+                }
+              }
+              if (tick > maxTick) maxTick = tick;
+            }
+            pos = end;
+          }
+          events.sort(function (x, y) { return x.tick - y.tick; });
+          tempos.sort(function (x, y) { return x.tick - y.tick; });
+          function tickToSec(tk) {
+            var sec = 0, last = 0, us = 500000;
+            for (var i = 0; i < tempos.length; i++) {
+              if (tempos[i].tick >= tk) break;
+              sec += (tempos[i].tick - last) * (us / division) / 1000000;
+              last = tempos[i].tick; us = tempos[i].us;
+            }
+            sec += (tk - last) * (us / division) / 1000000;
+            return sec;
+          }
+          var notes = [];
+          var open = {};
+          var programs = {};
+          for (var j = 0; j < events.length; j++) {
+            var e = events[j];
+            if (e.type === 0xc0) { programs[e.ch] = e.a; continue; }
+            var key = e.ch * 128 + e.a;
+            if (e.type === 0x90 && e.b > 0) {
+              (open[key] = open[key] || []).push({
+                start: tickToSec(e.tick), vel: e.b, ch: e.ch, pitch: e.a, prog: programs[e.ch] || 0
+              });
+            } else if (e.type === 0x80 || (e.type === 0x90 && e.b === 0)) {
+              var stack = open[key];
+              if (stack && stack.length) {
+                var n = stack.shift();
+                n.dur = Math.max(0.05, tickToSec(e.tick) - n.start);
+                notes.push(n);
+              }
+            }
+          }
+          var endSec = tickToSec(maxTick);
+          Object.keys(open).forEach(function (k) {
+            open[k].forEach(function (n) {
+              n.dur = Math.max(0.05, endSec - n.start);
+              notes.push(n);
+            });
+          });
+          notes.sort(function (x, y) { return x.start - y.start; });
+          return {
+            notes: notes,
+            duration: endSec,
+            bpm: tempos.length ? 60000000 / tempos[0].us : 120
+          };
+        }
+
+        /* ------------------------------------------------------------- synth */
+        var actx = null, master = null, delaySend = null, noiseBuf = null;
+        var song = null;
+        var playing = false, muted = false;
+        var loopStart = 0, nextIdx = 0, timerId = null;
+        var LOOKAHEAD = 0.6, TICK_MS = 150;
+
+        function buildGraph() {
+          actx = new (window.AudioContext || window.webkitAudioContext)();
+          master = actx.createGain();
+          master.gain.value = muted ? 0 : 0.4;
+          var comp = actx.createDynamicsCompressor();
+          comp.threshold.value = -16; comp.knee.value = 22; comp.ratio.value = 8;
+          comp.attack.value = 0.004; comp.release.value = 0.18;
+          master.connect(comp);
+          comp.connect(actx.destination);
+          // a short tempo-locked echo (dotted eighth) for space on the
+          // guitar, strings and snare — copies the delay on the original
+          var delay = actx.createDelay(1);
+          delay.delayTime.value = (60 / song.bpm) * 0.75;
+          var damp = actx.createBiquadFilter();
+          damp.type = "lowpass"; damp.frequency.value = 2400;
+          var fb = actx.createGain(); fb.gain.value = 0.22;
+          var wet = actx.createGain(); wet.gain.value = 0.16;
+          delay.connect(damp); damp.connect(fb); fb.connect(delay);
+          delay.connect(wet); wet.connect(master);
+          delaySend = delay;
+        }
+        function midiFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+        // ADSR-ish envelope; returns the time the note is fully released.
+        function env(g, t, peak, attack, decay, sustain, dur, release) {
+          var susLevel = Math.max(0.0001, peak * sustain);
+          var susT = t + attack + decay;
+          var relT = Math.max(susT, t + dur);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.linearRampToValueAtTime(peak, t + attack);
+          g.gain.linearRampToValueAtTime(susLevel, susT);
+          g.gain.setValueAtTime(susLevel, relT);
+          g.gain.exponentialRampToValueAtTime(0.0001, relT + release);
+          return relT + release;
+        }
+        function playBass(n, t) {
+          var f = midiFreq(n.pitch);
+          var peak = 0.5 * (0.35 + 0.65 * (n.vel / 127));
+          var o1 = actx.createOscillator(); o1.type = "triangle"; o1.frequency.value = f;
+          var o2 = actx.createOscillator(); o2.type = "sine"; o2.frequency.value = f;
+          var lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = 0.6;
+          lp.frequency.setValueAtTime(Math.min(2600, f * 10), t);
+          lp.frequency.exponentialRampToValueAtTime(Math.max(180, f * 2.2), t + Math.min(0.3, n.dur));
+          var g = actx.createGain();
+          var end = env(g, t, peak, 0.008, 0.09, 0.75, n.dur, 0.06);
+          o1.connect(lp); o2.connect(lp); lp.connect(g); g.connect(master);
+          o1.start(t); o2.start(t);
+          o1.stop(end + 0.05); o2.stop(end + 0.05);
+        }
+        function playGuitar(n, t) {
+          var f = midiFreq(n.pitch);
+          var peak = 0.3 * (0.3 + 0.7 * (n.vel / 127));
+          var dur = Math.max(n.dur, 0.28);
+          var o1 = actx.createOscillator(); o1.type = "triangle"; o1.frequency.value = f;
+          var o2 = actx.createOscillator(); o2.type = "square"; o2.frequency.value = f;
+          var g2 = actx.createGain(); g2.gain.value = 0.18;
+          var lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3200; lp.Q.value = 0.4;
+          var g = actx.createGain();
+          var end = env(g, t, peak, 0.004, 0.16, 0.32, dur, 0.09);
+          o1.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g);
+          g.connect(master); g.connect(delaySend);
+          o1.start(t); o2.start(t);
+          o1.stop(end + 0.05); o2.stop(end + 0.05);
+        }
+        function playStrings(n, t) {
+          var f = midiFreq(n.pitch);
+          var peak = 0.16 * (0.3 + 0.7 * (n.vel / 127));
+          var atk = Math.min(0.09, n.dur * 0.3);
+          var lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2600; lp.Q.value = 0.3;
+          var g = actx.createGain();
+          var rel = Math.min(0.14, n.dur * 0.4 + 0.04);
+          var end = env(g, t, peak, atk, 0.12, 0.8, n.dur, rel);
+          lp.connect(g); g.connect(master); g.connect(delaySend);
+          var lfo = actx.createOscillator(); lfo.type = "sine"; lfo.frequency.value = 5.2;
+          var lfoGain = actx.createGain(); lfoGain.gain.value = 4;
+          lfo.connect(lfoGain);
+          var oscs = [];
+          [-5, 0, 5].forEach(function (cents) {
+            var o = actx.createOscillator();
+            o.type = "sawtooth"; o.frequency.value = f; o.detune.value = cents;
+            lfoGain.connect(o.detune);
+            o.connect(lp);
+            oscs.push(o);
+          });
+          lfo.start(t); lfo.stop(end + 0.05);
+          oscs.forEach(function (o) { o.start(t); o.stop(end + 0.05); });
+        }
+        function getNoise() {
+          if (!noiseBuf) {
+            noiseBuf = actx.createBuffer(1, Math.floor(actx.sampleRate * 0.5), actx.sampleRate);
+            var d = noiseBuf.getChannelData(0);
+            for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+          }
+          return noiseBuf;
+        }
+        function playKick(t, vel) {
+          var o = actx.createOscillator(); o.type = "sine";
+          o.frequency.setValueAtTime(150, t);
+          o.frequency.exponentialRampToValueAtTime(43, t + 0.11);
+          var g = actx.createGain();
+          g.gain.setValueAtTime(0.85 * (0.4 + 0.6 * vel), t);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+          o.connect(g); g.connect(master);
+          o.start(t); o.stop(t + 0.26);
+        }
+        function playSnare(t, vel) {
+          var peak = 0.4 * (0.4 + 0.6 * vel);
+          var src = actx.createBufferSource(); src.buffer = getNoise();
+          var bp = actx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1900; bp.Q.value = 0.8;
+          var g = actx.createGain();
+          g.gain.setValueAtTime(peak, t);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+          src.connect(bp); bp.connect(g);
+          g.connect(master); g.connect(delaySend);
+          src.start(t); src.stop(t + 0.15);
+          var o = actx.createOscillator(); o.type = "triangle"; o.frequency.value = 192;
+          var g2 = actx.createGain();
+          g2.gain.setValueAtTime(peak * 0.5, t);
+          g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+          o.connect(g2); g2.connect(master);
+          o.start(t); o.stop(t + 0.1);
+        }
+        function playHat(t, vel) {
+          var src = actx.createBufferSource(); src.buffer = getNoise();
+          src.playbackRate.value = 1.7;
+          var hp = actx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 7800;
+          var g = actx.createGain();
+          g.gain.setValueAtTime(0.16 * (0.35 + 0.65 * vel), t);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+          src.connect(hp); hp.connect(g); g.connect(master);
+          src.start(t); src.stop(t + 0.07);
+        }
+        function playNote(n, t) {
+          var vel = n.vel / 127;
+          if (n.ch === 9) {
+            if (n.pitch === 35) playKick(t, vel);
+            else if (n.pitch === 38) playSnare(t, vel);
+            else playHat(t, vel);
+          } else if (n.ch === 0) {
+            playBass(n, t);
+          } else if (n.ch === 1) {
+            playGuitar(n, t);
+          } else {
+            playStrings(n, t);
+          }
+        }
+
+        /* ---------------------------------------------------------- playback */
+        function scheduler() {
+          if (!actx || !song) return;
+          var horizon = actx.currentTime + LOOKAHEAD;
+          var guard = 0;
+          while (guard++ < 100000) {
+            if (nextIdx >= song.notes.length) {
+              loopStart += song.duration;
+              nextIdx = 0;
+              if (loopStart > horizon) break;
+              continue;
+            }
+            var n = song.notes[nextIdx];
+            var when = loopStart + n.start;
+            if (when > horizon) break;
+            if (!muted && when >= actx.currentTime - 0.06) playNote(n, when);
+            nextIdx++;
+          }
+        }
+        function startMusic() {
+          if (playing) {
+            if (actx && actx.state === "suspended") actx.resume();
+            return;
+          }
+          try {
+            if (!song) song = parseMidi(decodeMidi(MIDI_B64));
+            if (!actx) buildGraph();
+            if (actx.state === "suspended") actx.resume();
+            loopStart = actx.currentTime + 0.08;
+            nextIdx = 0;
+            playing = true;
+            scheduler();
+            timerId = window.setInterval(scheduler, TICK_MS);
+          } catch (e) { /* music is decoration — never break the page over it */ }
+        }
+        function setMuted(m) {
+          muted = m;
+          btn.classList.toggle("is-muted", muted);
+          btn.setAttribute("aria-pressed", muted ? "true" : "false");
+          btn.setAttribute("aria-label", muted ? "Unmute background music" : "Mute background music");
+          if (master && actx) {
+            var t = actx.currentTime;
+            master.gain.cancelScheduledValues(t);
+            master.gain.setValueAtTime(master.gain.value, t);
+            master.gain.linearRampToValueAtTime(muted ? 0 : 0.4, t + 0.06);
+          }
+        }
+        btn.addEventListener("click", function () { setMuted(!muted); });
+        // Start on arrival; if the browser blocks that, the first
+        // interaction anywhere on the page starts it instead.
+        window.addEventListener("pointerdown", startMusic, true);
+        window.addEventListener("keydown", startMusic, true);
+        window.addEventListener("touchend", startMusic, true);
+        window.addEventListener("wheel", startMusic, { capture: true, passive: true });
+        startMusic();
       })();
     </script>
   </body>
