@@ -196,8 +196,28 @@ async function notifyDiscord(webhookUrl, session, visitorMessage, reply) {
   }
 }
 
+// Public resume, with direct contact details stripped: the resume in
+// Neon carries Matthew's phone and email in its header line, and the
+// contact gate exists precisely so those are not handed out freely.
+// The on-page resume therefore shows everything except the phone number
+// and email address — visitors who want to reach him use the chat or
+// the contact form, same as before. The resume text itself stays out of
+// the public repo; it is served from Neon (or the env fallback) on demand.
+function publicResume(ctx) {
+  return (ctx.resume || '')
+    .replace(/\b\d{3}-\d{3}-\d{4}\b/g, '')
+    .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, '')
+    .replace(/[•·]\s*[•·]/g, '•')
+    .trim();
+}
+
 exports.handler = async function (event) {
   try {
+    if (event.httpMethod === 'GET') {
+      const ctx = await loadHomepageContext();
+      return json(200, { ok: true, resume: publicResume(ctx) });
+    }
+
     if (event.httpMethod !== 'POST') {
       return json(405, { ok: false, error: 'Method not allowed' });
     }
